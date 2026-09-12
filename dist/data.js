@@ -3,7 +3,7 @@
  * The five records are a sample, not a complete or independently validated taxonomy.
  */
 window.MIYAR_DATA = {
-  version: 'demo-1.0',
+  version: 'demo-2.0',
   source: 'عينة مشروع معيار — data.xlsx',
   roles: [
     {
@@ -81,3 +81,21 @@ window.MIYAR_DATA = {
   emergingObjective:'تصميم حلول الذكاء الاصطناعي التوليدي، وبناء تطبيقات النماذج اللغوية وحوكمتها وتقييم مخرجاتها.',
   seniority:{professional:'ممارس مهني',junior:'بداية المسار',senior:'خبرة متقدمة',leadership:'قيادي / إداري'}
 };
+/* Authored English copy; source identifiers remain unchanged. */
+(() => {
+ const english = {
+  industrial: {summary:'Improve operations, resource use, performance indicators and working methods.',reason:'The role combines operations analysis, resource efficiency and performance measurement, matching the task evidence in this request.',scenario:'Improve operations efficiency, reduce duplication and waste, and develop KPIs and resource allocation methods.',taxonomyLabel:'Industrial and production engineers',groups:['Operations efficiency','Waste and duplication','Performance measurement','Working methods']},
+  civil: {summary:'Assess sites and soil, review designs and specifications, and oversee construction delivery.',reason:'Site assessment, design review and construction delivery align with the core activities described in this request.',scenario:'Improve construction project delivery through soil and site assessment, design and specifications review, and execution quality checks.',taxonomyLabel:'Civil engineers',groups:['Project design','Site and soil assessment','Materials and specifications','Project delivery']},
+  mechanical: {summary:'Design mechanical systems and plan their installation, operation and preventive maintenance.',reason:'Mechanical systems, equipment maintenance and reliability are central to the work described in this request.',scenario:'Improve mechanical reliability and reduce equipment downtime through preventive maintenance and better installation procedures.',taxonomyLabel:'Mechanical engineers',groups:['Mechanical systems','Preventive maintenance','Equipment and installation','Reliability']},
+  chemical: {summary:'Develop chemical production processes, improve unit operations and monitor technical performance.',reason:'Chemical manufacturing and unit operations connect this role to the production and process safety tasks in the request.',scenario:'Improve chemical production and unit operations, monitor manufacturing performance and strengthen process safety.',taxonomyLabel:'Chemical engineers',groups:['Chemical production','Unit operations','Manufacturing processes','Process safety']},
+  mining: {summary:'Identify ore bodies, plan extraction and improve ore quality and mining documentation.',reason:'Ore assessment, extraction planning and mining operations align with the essential activities in this request.',scenario:'Plan mineral extraction from ore bodies, improve ore quality and develop mining operations and documentation.',taxonomyLabel:'Mining engineers',groups:['Mining operations','Ore deposits','Extraction planning','Ore quality']}
+ };
+ window.MIYAR_DATA.roles.forEach(role=>{
+  const e=english[role.id];
+  ['summary','reason','scenario','taxonomyLabel'].forEach(key=>role[key+'En']=e[key]);
+  role.groups.forEach((group,i)=>group.labelEn=e.groups[i]);
+ });
+ const scenarios=[['Operations efficiency','Better resources, less duplication'],['Project quality','From design to delivery'],['Equipment reliability','Maintenance with less downtime'],['Beyond the sample','When should we seek review?']];
+ window.MIYAR_DATA.scenarios.forEach((s,i)=>{s.titleEn=scenarios[i][0];s.subtitleEn=scenarios[i][1];});
+ window.MIYAR_DATA.emergingObjectiveEn='Design generative AI solutions, build language model applications, and develop governance and output evaluation.';
+})();

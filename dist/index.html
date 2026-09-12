@@ -4,74 +4,17 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#122d32">
-  <meta name="description" content="معيار — تجربة تفاعلية لربط الاحتياج الوظيفي بالتصنيف المهني، مع تفسير الترشيح ومراجعة القرار.">
-  <title>معيار | ذكاء القوى العاملة</title>
+  <meta name="description" content="معيار | Miyar — bilingual workforce intelligence demo: occupation matching, position creation, job descriptions and evaluation evidence.">
+  <title>معيار | Miyar — Workforce Intelligence</title>
   <link rel="icon" type="image/svg+xml" href="./assets/favicon.svg">
   <link rel="stylesheet" href="./styles.css">
   <script defer src="./data.js"></script>
   <script defer src="./engine.js"></script>
+  <script defer src="./position.js"></script>
   <script defer src="./app.js"></script>
 </head>
 <body>
-  <a class="skip-link" href="#main">تجاوز إلى المحتوى</a>
-  <div class="app-shell">
-    <aside class="sidebar" aria-label="التنقل الرئيسي">
-      <a class="brand" href="#demo" aria-label="معيار — تجربة التصنيف">
-        <span class="brand-mark" aria-hidden="true"><i></i><i></i><i></i></span>
-        <span class="brand-type">معيار<small lang="en" dir="ltr">MI’YĀR</small></span>
-      </a>
-      <div class="sidebar-label">ذكاء القوى العاملة</div>
-      <nav class="nav-list" aria-label="صفحات معيار">
-        <a href="#demo" class="nav-link active" data-view="demo"><span data-icon="spark"></span>تجربة التصنيف<span class="nav-number">01</span></a>
-        <a href="#value" class="nav-link" data-view="value"><span data-icon="chart"></span>القيمة والأثر<span class="nav-number">02</span></a>
-        <a href="#journey" class="nav-link" data-view="journey"><span data-icon="route"></span>رحلة القرار<span class="nav-number">03</span></a>
-        <a href="#catalog" class="nav-link" data-view="catalog"><span data-icon="layers"></span>دليل المهن<span class="nav-number">04</span></a>
-      </nav>
-      <div class="sidebar-note"><span data-icon="shield"></span><strong>قرار يمكن تفسيره.</strong><p>الاحتياج، والمرجع، وأسباب الترشيح في مسار واحد.</p></div>
-      <div class="sidebar-footer"><div class="mini-wordmark">KAU <span>RESEARCH & INNOVATION</span></div><p>مشروع بحثي · جامعة الملك عبدالعزيز</p><small>نسخة عرض تفاعلية</small></div>
-    </aside>
-    <div class="workspace">
-      <header class="topbar">
-        <div class="breadcrumb"><span>مساحة معيار</span><span class="slash">/</span><strong id="breadcrumb-title">تجربة التصنيف</strong></div>
-        <div class="top-actions"><span class="demo-tag">عرض تجريبي</span><button class="button button-dark button-sm" id="present-btn"><span data-icon="present"></span>وضع العرض</button></div>
-      </header>
-      <main id="main" tabindex="-1">
-        <section id="view-demo" class="view" aria-labelledby="demo-heading">
-          <div class="page-heading"><div><div class="eyebrow"><span class="eyebrow-line"></span>من الاحتياج إلى الدور المناسب</div><h1 id="demo-heading">لكل هدف، <span>دور يصنع الأثر.</span></h1><p>حوّل هدفك الاستراتيجي إلى ترشيح وظيفي واضح، مرتبط بمرجع مهني.</p></div><span class="edition">MI’YĀR <b>DEMO / 01</b></span></div>
-          <div class="context-strip"><span><span data-icon="target"></span>احتياج واضح</span><i aria-hidden="true">←</i><span><span data-icon="layers"></span>مرجع مهني</span><i aria-hidden="true">←</i><span><span data-icon="shield"></span>قرار قابل للمراجعة</span><small>العينة الحالية: 5 مهن هندسية</small></div>
-          <div class="scenario-heading"><h2>ابدأ من سيناريو</h2><span>أو اكتب احتياجك مباشرة</span></div>
-          <div class="scenario-grid" id="scenarios"></div>
-          <div class="demo-grid">
-            <section class="panel input-panel" aria-labelledby="input-heading">
-              <div class="panel-heading"><div><span class="section-index">01</span><h2 id="input-heading">صِف الاحتياج</h2></div><button id="reset-btn" class="text-button" type="button">إعادة ضبط <span data-icon="reset"></span></button></div>
-              <form id="role-form" novalidate>
-                <label for="objective">ما الذي تريد تحقيقه؟ <span class="required">*</span></label>
-                <textarea id="objective" name="objective" rows="4" maxlength="1600" required placeholder="مثال: تحسين كفاءة التشغيل وتقليل ازدواجية المهام وتطوير مؤشرات الأداء..."></textarea>
-                <div class="field-hint"><span>ركّز على المهام والنتيجة المطلوبة.</span><span id="objective-count" dir="ltr">0 / 1600</span></div>
-                <div class="form-row"><div><label for="domain">المجال الوظيفي</label><select id="domain" name="domain"><option value="all">الهندسة — جميع التخصصات</option><option value="industrial">الهندسة الصناعية</option><option value="civil">الهندسة المدنية</option><option value="mechanical">الهندسة الميكانيكية</option><option value="chemical">الهندسة الكيميائية</option><option value="mining">هندسة التعدين</option><option value="other">مجال آخر</option></select></div><div><label for="seniority">المستوى المطلوب</label><select id="seniority" name="seniority"><option value="professional">ممارس مهني</option><option value="junior">بداية المسار</option><option value="senior">خبرة متقدمة</option><option value="leadership">قيادي / إداري</option></select></div></div>
-                <label for="constraints">القيود والاعتبارات <span class="optional">اختياري</span></label>
-                <input id="constraints" name="constraints" maxlength="500" placeholder="مثل: دون مهام إدارية، أو عمل مكتبي فقط">
-                <p id="form-error" class="form-error" role="alert" hidden></p>
-                <button class="button button-primary run-button" type="submit"><span data-icon="spark"></span>حلّل الاحتياج<span class="button-arrow" aria-hidden="true">←</span></button>
-                <div class="input-footnote"><span data-icon="info"></span>مطابقة توضيحية داخل العينة؛ لا تتصل هذه النسخة بنموذج ذكاء اصطناعي.</div>
-              </form>
-            </section>
-            <section class="panel result-panel" aria-labelledby="result-heading" aria-live="polite" aria-atomic="false">
-              <div class="panel-heading"><div><span class="section-index">02</span><h2 id="result-heading">بطاقة الترشيح</h2></div><span class="small-badge" id="result-badge">مثال جاهز</span></div>
-              <div id="result-content"></div>
-            </section>
-          </div>
-          <section class="session-panel" aria-labelledby="session-heading"><div class="session-title"><span data-icon="clock"></span><h2 id="session-heading">أثر القرار في هذه الجلسة</h2><span id="session-count">0 أحداث</span></div><div id="session-log" class="session-log"><p>يبدأ السجل عند تحليل احتياجك أو مراجعة الترشيح. يُمسح عند إعادة تحميل الصفحة.</p></div></section>
-        </section>
-        <section id="view-value" class="view" aria-labelledby="value-heading" hidden></section>
-        <section id="view-journey" class="view" aria-labelledby="journey-heading" hidden></section>
-        <section id="view-catalog" class="view" aria-labelledby="catalog-heading" hidden></section>
-        <footer class="main-footer"><span>معيار · ذكاء القوى العاملة</span><span>أ.د. أديب نور <span class="footer-separator">/</span> أحمد رضا خان</span></footer>
-      </main>
-    </div>
-  </div>
-  <dialog id="presentation" class="presentation-dialog" aria-label="عرض معيار"><div class="presentation-top"><span class="presentation-brand">معيار <small>MI’YĀR</small></span><button class="icon-button" id="close-presentation" aria-label="إغلاق العرض"><span data-icon="close"></span></button></div><div id="presentation-content" class="presentation-content"></div><div class="presentation-bottom"><span id="slide-counter" dir="ltr"></span><div id="slide-dots" class="slide-dots"></div><div class="presentation-controls"><button class="button button-outline" id="prev-slide">السابق</button><button class="button button-primary" id="next-slide">التالي <span aria-hidden="true">←</span></button></div></div></dialog>
-  <div id="toast" class="toast" role="status" hidden></div>
-  <noscript><p class="no-script">فعّل JavaScript لتجربة التصنيف والتصفح التفاعلي.</p></noscript>
+  <div id="app"></div>
+  <noscript><p class="no-script">فعّل JavaScript لتجربة معيار. Enable JavaScript to explore Miyar.</p></noscript>
 </body>
 </html>

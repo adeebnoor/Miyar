@@ -1,52 +1,81 @@
-# Mi’yār | معيار
+# معيار | MI’YĀR
 
-An Arabic, responsive demonstration of the Miyar workforce-intelligence concept: start from a strategic objective, identify an occupational reference, explain the recommendation, and record a review step.
+**تجربة عربية وإنجليزية لذكاء القوى العاملة وإنشاء المناصب.**  
+**An Arabic / English workforce intelligence and position-creation demo.**
 
-The interface includes four views, five engineering occupations from the supplied project workbook, four ready-to-use scenarios, a five-screen presentation mode, a temporary session log, and downloadable JSON decision cards.
+[الموقع / Live demo](https://adeebnoor.github.io/Miyar/) · [متطلبات رحلة المنصب / Workflow coverage](docs/position-workflow.md)
 
-## Use the demo
+معيار يجمع احتياج الأعمال، والمرجع المهني، والوصف الوظيفي، وأدلة التقييم في تجربة عرض تفاعلية. مشروع بحثي — جامعة الملك عبدالعزيز. أ.د. أديب نور / أحمد رضا خان.
 
-Open `dist/index.html` directly in a modern browser. Application files and the Arabic font are local, so the downloaded site also works without a network connection. No API keys or installation are required.
+Miyar brings business needs, occupation references, job descriptions and evaluation evidence into an interactive presentation experience. Research project — King Abdulaziz University. Prof. Adeeb Noor / Ahmad Raza Khan.
 
-For the meeting, use **وضع العرض** in the top bar. Navigate with the buttons or left/right arrow keys. Escape closes presentation mode. Select **جرّب معيار** on the final screen to return to the interactive application.
+## تجربة العرض | Demo tour
 
-Suggested demonstration:
+1. **التصنيف / Matching:** جرّب كفاءة التشغيل أو اعتمادية المعدات، وناقش أسباب الترشيح ورموزه. Try an operations or equipment scenario and inspect the suggestion and task evidence.
+2. **إنشاء منصب / Create a position:** حمّل المثال، ثم انتقل من طلب الأعمال إلى التحليل والوصف والتقييم. Load the example and walk through intake, analysis, description and evaluation.
+3. **حزمة المخرجات / Output package:** اطبع أو احفظ PDF من نافذة الطباعة، أو نزّل التقرير HTML والبيانات JSON. Print or save PDF through the print dialog, or download HTML and JSON.
+4. **الممارسات العالمية / Global practices:** قارِن التصميم بمراجع O*NET وESCO وSAP وKorn Ferry مع روابط المصادر. Inspect the sourced design comparison.
+5. **وضع العرض / Present:** سبع شرائح، مع تبديل اللغة وأزرار التنقل ولوحة المفاتيح. Seven slides with language switching, navigation buttons and keyboard controls.
 
-1. Select **كفاءة التشغيل** and explain the strategic objective.
-2. Run **حلّل الاحتياج** and inspect the Industrial Engineer role, its codes and task evidence.
-3. Add a constraint. The previous result becomes stale until reanalysis.
-4. Record an acknowledgement and download the decision card.
-5. Select **دور خارج العينة** to demonstrate referral without an invented code.
+The interface, built-in scenarios, descriptions and presentation are bilingual. Arabic uses RTL; English uses LTR. Custom text remains in the language entered and is never automatically translated. Only language preference is saved locally. Position information and the session log disappear on reload unless exported.
 
-## Scope and evidence
+## ما ينفذه الديمو | What is implemented
 
-This is a **deterministic presentation demo**, not a deployment of the original E5/Gemini Python application. It uses bilingual term groups over five supplied records. It abstains when evidence is insufficient, leading results tie, the selected domain is outside the sample, or task evidence conflicts with the selected domain. A recommendation needs at least two task groups; this is a demonstration rule, not a calibrated confidence threshold.
+- Deterministic Arabic/English task matching against five engineering records.
+- Fixed title / occupation-code / education-code pairs transcribed from the supplied data.xlsx.
+- Human-review routing for insufficient, conflicting or out-of-sample evidence.
+- A four-step OD position workflow, live input-completeness chart and organization diagram.
+- Structured JD output, business-review recording and specialist-reported evaluation fields.
+- Separate occupation, education, Saudization and certification review records.
+- Self-contained downloadable HTML reports, printable output and JSON packages.
+- Sourced global-practice comparison and an audience presentation.
+- Automatic testing and deployment to GitHub Pages from main.
 
-Codes and English role titles come from the supplied `data.xlsx`. Arabic translations, task-group dictionaries, explanations and scenarios were prepared for the interface. Mappings have not been independently validated against a current official classification release. The interface does not claim accuracy, savings, compliance certification, production model connectivity, enterprise integration, or a permanent audit ledger. Constraints are retained for human review, not certified as satisfied.
+## حدود النسخة | Scope and limitations
 
-The session log is cleared on refresh. The review control records a demonstration acknowledgement, not professional or regulatory approval. Exported cards include these limitations. No entered information is sent to an AI provider.
+هذه نسخة عرض، وليست نظام موارد بشرية معتمدًا. لا تستدعي نماذج الذكاء الاصطناعي ولا تمنح اعتمادًا مهنيًا أو نظاميًا.
 
-This source includes the demonstration UI and sample data only. Original credentials, private correspondence, invention-disclosure files, national identifiers and contact details are not distributed.
+This is a demonstration, not an approved HR system.
 
-## Files
+- The supplied prototype uses E5 and Gemini. This static interface does **not** call either model and does not claim to measure their accuracy.
+- JD content is assembled from form values, not generated by an AI service.
+- Input completeness measures field presence; it is not quality, matching confidence or a job-evaluation score.
+- Korn Ferry’s publicly described factors inform evidence fields only. No proprietary guide charts, scoring rules, grade calculations or certification are included.
+- Entered reviews, scores and grades are **reported and unverified**. A position’s approval status remains pending.
+- No Saudization percentage or licensing applicability is inferred. Requirements need a source, check date and specialist review.
+- The five source records are a limited sample. Current occupation and education references still need verification before institutional use.
+- There is no backend, employee database, external analytics, HRIS integration, durable audit ledger or multi-user approval workflow.
+- The original private attachments and credentials are not distributed with this demo. User-entered form values are not sent to GitHub.
 
-- `dist/index.html`: accessible Arabic page structure.
-- `dist/styles.css`: responsive layout and presentation styles.
-- `dist/data.js`: five source records and demonstration vocabulary.
-- `dist/engine.js`: isolated matching and export logic.
-- `dist/app.js`: navigation, forms, presentation and temporary log.
-- `dist/assets/`: local font, OFL license and favicon.
-- `tests/engine.test.cjs`: behavioral checks with Node's built-in test runner.
+## المراجع | References
 
-## Verify
+These are sources for design practices, not endorsements, integrations or product rankings. Reviewed September 12, 2026.
 
-```sh
-node --test tests/engine.test.cjs
-node --check dist/app.js
-```
+- [O*NET Content Model](https://www.onetcenter.org/content.html): structured descriptions of work, skills, knowledge and experience.
+- [ESCO occupations](https://esco.ec.europa.eu/en/classification/occupation_main): multilingual occupational concepts, hierarchy and relevant skills.
+- [SAP SuccessFactors Position Management](https://learning.sap.com/courses/sap-successfactors-employee-central-position-management-academy/describing-sap-successfactors-employee-central-position-management_bcd65377-bc96-400d-9df9-c31c228a8ecf): positions and organization structure independent of employee assignments.
+- [Korn Ferry Architect](https://www.kornferry.com/capabilities/talent-suite/korn-ferry-architect): public factors of know-how, problem-solving and accountability.
 
-The static `dist/` directory can be served by a static web host. No build is required.
+## تشغيل محلي | Run locally
 
-Project contributors: Professor Adeeb Noor and Ahmad Raza Khan.
+No build step or runtime dependencies are needed. Serve the dist directory over HTTP:
 
-IBM Plex Sans Arabic is distributed under the included SIL Open Font License. No open-source license is asserted for the underlying Miyar invention or original research implementation.
+~~~sh
+python -m http.server 8000 --directory dist
+~~~
+
+Then open http://localhost:8000.
+
+Run the behavior tests with Node.js:
+
+~~~sh
+node --test tests/*.test.cjs
+~~~
+
+## النشر | Deployment
+
+The GitHub Actions workflow tests the domain logic, uploads only dist, and publishes it to GitHub Pages. The repository's Pages source must be set to **GitHub Actions**. A successful deployment is visible in the Actions tab and the github-pages environment.
+
+Files use relative URLs and hash navigation so the site works at /Miyar/.
+
+The bundled IBM Plex Sans Arabic font is unmodified and distributed under the SIL Open Font License. See [dist/assets/OFL.txt](dist/assets/OFL.txt).
