@@ -26,14 +26,14 @@ test('bulk headers and imported matrices reject data loss and invalid content',(
  for(const content of [{title:'Test',raci:[1]},{title:'Test',headcount:1.5},{title:'Test',directReports:0.5},{title:'Test',provisional:true,occupationCode:'251204'}])assert.throws(()=>C.importDraft({content}));
 });
 
-test('complete deployed script bundle opens the enterprise workspace and all local assets exist',async()=>{
+test('complete deployed script bundle opens the public entrance and keeps workspace navigation',async()=>{
  const markup=fs.readFileSync(path.join(dir,'index.html'),'utf8'),errors=[],vc=new VirtualConsole();vc.on('jsdomError',e=>errors.push(e));
  const dom=new JSDOM(markup,{url:'https://example.test/Miyar/',runScripts:'outside-only',pretendToBeVisual:true,virtualConsole:vc});const w=dom.window;
  try{
   w.structuredClone=structuredClone;w.AbortSignal=AbortSignal;w.scrollTo=()=>{};w.confirm=()=>false;w.fetch=async url=>({ok:true,json:async()=>JSON.parse(fs.readFileSync(path.join(dir,String(url))))});
   w.HTMLDialogElement.prototype.showModal=function(){this.open=true;};w.HTMLDialogElement.prototype.close=function(){this.open=false;this.dispatchEvent(new w.Event('close'));};
   for(const x of w.document.querySelectorAll('link[href],script[src]')){const target=x.getAttribute('src')||x.getAttribute('href');assert.ok(fs.existsSync(path.join(dir,target)),target);if(x.tagName==='SCRIPT')w.eval(fs.readFileSync(path.join(dir,target),'utf8'));}
-  await new Promise(r=>setImmediate(r));assert.equal(w.document.getElementById('view-enterprise').hidden,false);assert.ok(w.document.getElementById('enterprise-heading'));
+  await new Promise(r=>setImmediate(r));assert.equal(w.document.getElementById('view-home').hidden,false);assert.equal(w.document.getElementById('view-enterprise').hidden,true);assert.ok(w.document.getElementById('enterprise-heading'));
   w.document.querySelector('[data-enterprise-open="readiness"]').click();assert.match(w.document.getElementById('ent-content').textContent,/متاحة محليًا/);
   w.document.getElementById('language-btn').click();await new Promise(r=>setImmediate(r));assert.match(w.document.getElementById('ent-content').textContent,/Available locally/);
   assert.equal(w.document.getElementById('present-btn'),null);w.document.getElementById('service-new').click();assert.ok(w.document.querySelector('[data-field="title"]'));assert.equal(w.document.querySelector('[data-field="title"]').value,'');
