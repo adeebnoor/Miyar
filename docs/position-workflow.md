@@ -30,11 +30,11 @@ Implementation coverage of the supplied **Position Creation Workflow** requireme
 - **unmapped**: the sample does not support a mapping; no code is fabricated.
 - **positionApproval** remains pending in every package.
 
-The completeness chart counts the 15 required input fields. It does not measure job quality, evaluation score or the truth of entered information.
+The completeness chart counts the 18 required input fields. It does not measure job quality, evaluation score or the truth of entered information.
 
 ## Data handling / التعامل مع البيانات
 
-All form data stays in browser memory until the user exports it. Language choice is the only saved preference. Reloading clears position values and the session log. Exported reports contain the current inputs; drafts with missing fields visibly mark them as pending.
+Explicit Save stores drafts in this browser with an internal MJR ID and a revision number. Reopen drafts from the searchable saved-position library. Unsaved values and the session log clear on reload. Export JSON for transfer or backup; clearing browser data removes local drafts. Reports retain the current inputs and visibly mark missing fields. Scope changes require renewed business and evaluation review; imported review records also require renewed review.
 
 The interface switches between Arabic and English. Built-in examples switch language while unedited; customized inputs preserve their original text. There is no translation service.
 
@@ -43,3 +43,4 @@ The interface switches between Arabic and English. Built-in examples switch lang
 Behavior tests cover both sample languages, stable source codes, ambiguous and unknown roles, missing inputs, review prerequisites, unverified evaluation and regulatory states, and preservation of supplied evidence. The demo also receives interaction checks for language switching, stale results, the intake flow, output downloads, the presentation and catalog search.
 
 Framework reference links and the current / future comparison are available in the **Global practices** screen and the repository README.
+

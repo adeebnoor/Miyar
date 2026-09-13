@@ -17,7 +17,7 @@ Miyar brings business needs, occupation references, job descriptions and evaluat
 4. **الممارسات العالمية / Global practices:** قارِن التصميم بمراجع O*NET وESCO وSAP وKorn Ferry مع روابط المصادر. Inspect the sourced design comparison.
 5. **وضع العرض / Present:** سبع شرائح، مع تبديل اللغة وأزرار التنقل ولوحة المفاتيح. Seven slides with language switching, navigation buttons and keyboard controls.
 
-The interface, built-in scenarios, descriptions and presentation are bilingual. Arabic uses RTL; English uses LTR. Custom text remains in the language entered and is never automatically translated. Only language preference is saved locally. Position information and the session log disappear on reload unless exported.
+The interface, built-in scenarios, descriptions and presentation are bilingual. Arabic uses RTL; English uses LTR. Custom text remains in the language entered and is never automatically translated. Language preference is saved locally. Position drafts persist only after explicit Save; they can be reopened from the occupation and saved-position library. Unsaved changes and the session log clear on reload. JSON export provides a portable backup.
 
 ## ما ينفذه الديمو | What is implemented
 
@@ -79,3 +79,14 @@ The GitHub Actions workflow tests the domain logic, uploads only dist, and publi
 Files use relative URLs and hash navigation so the site works at /Miyar/.
 
 The bundled IBM Plex Sans Arabic font is unmodified and distributed under the SIL Open Font License. See [dist/assets/OFL.txt](dist/assets/OFL.txt).
+
+
+## HR review update (13 September 2026)
+
+Search by Arabic/English title or occupation code, including Arabic/Persian digits. Direct lookup is labeled separately from task matching. Generic administrative terms alone cannot produce an engineering suggestion; ambiguous or uncovered needs are referred for review.
+
+Position creation now includes request type, hiring alternatives, success measures, advisory duplication/content checks, an in-page report preview and explicit local save/resume. Internal MJR draft IDs are not occupation codes. Export JSON to transfer a draft; imports require review again. Local revisions are not a central audit ledger.
+
+Install test dependencies with `npm ci --ignore-scripts`, then run all model and interface regression tests with `npm test`.
+
+See [HR review and Tafany comparison](docs/hr-product-review.md). The public site still uses only five engineering occupation records; it is not a complete Saudi occupation database or a production HRIS.
