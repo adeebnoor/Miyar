@@ -1,13 +1,13 @@
-/* Role codes and English titles are transcribed from the supplied data.xlsx.
+/* Five authored task templates, with codes corrected using the supplied 2019 occupation and 2020 education PDFs.
  * Arabic explanations, term lists and scenarios are authored for this demo.
  * The five records are a sample, not a complete or independently validated taxonomy.
  */
 window.MIYAR_DATA = {
   version: 'demo-2.0',
-  source: 'عينة مشروع معيار — data.xlsx',
+  source: 'قوالب معيار مع رموز مراجعة على دليل المهن 2019 والتعليم 2020',
   roles: [
     {
-      id: 'industrial', title: 'مهندس صناعي', titleEn: 'Industrial Engineer', code: '214101', educationCode: '71903', icon: 'chart',
+      id: 'industrial', title: 'مهندس صناعي', titleEn: 'Industrial Engineer', code: '214116', educationCode: '071903', icon: 'chart',
       summary: 'تحسين أداء العمليات، وتوظيف الموارد، وتطوير مؤشرات الأداء وأساليب العمل.',
       reason: 'يجمع هذا الدور بين تحليل العمليات وتحسين استخدام الموارد وقياس الأداء؛ وهي مهام تتقاطع مع الاحتياج المدخل.',
       groups: [
@@ -20,7 +20,7 @@ window.MIYAR_DATA = {
       taxonomyUnit:'2141',taxonomyLabel:'المهندسون الصناعيون ومهندسو الإنتاج'
     },
     {
-      id:'civil',title:'مهندس مدني',titleEn:'Civil Engineer',code:'214201',educationCode:'73201',icon:'building',
+      id:'civil',title:'مهندس مدني',titleEn:'Civil Engineer',code:'214201',educationCode:'073201',icon:'building',
       summary:'تقييم الموقع والتربة، ومراجعة التصاميم والمواصفات، ومتابعة جودة التنفيذ.',
       reason:'يتمحور هذا الدور حول تقييم الموقع ومراجعة التصميم والإشراف على التنفيذ؛ وهي صلة مباشرة بمهام المشروع الإنشائي.',
       groups:[
@@ -33,7 +33,7 @@ window.MIYAR_DATA = {
       taxonomyUnit:'2142',taxonomyLabel:'المهندسون المدنيون'
     },
     {
-      id:'mechanical',title:'مهندس ميكانيكي',titleEn:'Mechanical Engineer',code:'214401',educationCode:'71501',icon:'gear',
+      id:'mechanical',title:'مهندس ميكانيكي',titleEn:'Mechanical Engineer',code:'214401',educationCode:'071501',icon:'gear',
       summary:'تصميم الأنظمة الميكانيكية، وتخطيط تركيبها وتشغيلها وصيانتها الوقائية.',
       reason:'يرتبط هذا الدور باعتمادية الأنظمة الميكانيكية وتشغيل المعدات وصيانتها، بما ينسجم مع الاحتياج إلى أداء تشغيلي مستقر.',
       groups:[
@@ -46,7 +46,7 @@ window.MIYAR_DATA = {
       taxonomyUnit:'2144',taxonomyLabel:'المهندسون الميكانيكيون'
     },
     {
-      id:'chemical',title:'مهندس كيميائي',titleEn:'Chemical Engineer',code:'214501',educationCode:'71101',icon:'flask',
+      id:'chemical',title:'مهندس كيميائي',titleEn:'Chemical Engineer',code:'214501',educationCode:'071101',icon:'flask',
       summary:'تطوير عمليات الإنتاج الكيميائي، وتحسين وحدات التشغيل ومتابعة الأداء الفني.',
       reason:'يركز هذا الدور على عمليات التصنيع الكيميائي ووحدات التشغيل، مع توثيق الأداء وتحسين سلامة الإنتاج وكفاءته.',
       groups:[
@@ -59,7 +59,7 @@ window.MIYAR_DATA = {
       taxonomyUnit:'2145',taxonomyLabel:'المهندسون الكيميائيون'
     },
     {
-      id:'mining',title:'مهندس تعدين',titleEn:'Mining Engineer',code:'214601',educationCode:'72401',icon:'mountain',
+      id:'mining',title:'مهندس تعدين',titleEn:'Mining Engineer',code:'214602',educationCode:'072401',icon:'mountain',
       summary:'تحديد مكامن الخام، وتخطيط الاستخراج، وتحسين جودة الخام وتوثيق عمليات التعدين.',
       reason:'يجمع هذا الدور بين دراسة مكامن الخام وتخطيط الاستخراج وتحسين عمليات التعدين؛ وهي المهام الأساسية للاحتياج المحدد.',
       groups:[
@@ -81,7 +81,7 @@ window.MIYAR_DATA = {
   emergingObjective:'تصميم حلول الذكاء الاصطناعي التوليدي، وبناء تطبيقات النماذج اللغوية وحوكمتها وتقييم مخرجاتها.',
   seniority:{professional:'ممارس مهني',junior:'بداية المسار',senior:'خبرة متقدمة',leadership:'قيادي / إداري'}
 };
-/* Authored English copy; source identifiers remain unchanged. */
+/* Authored bilingual task templates. Codes corrected against the supplied 2019 occupation and 2020 education editions; these templates are not official task profiles. */
 (() => {
  const english = {
   industrial: {summary:'Improve operations, resource use, performance indicators and working methods.',reason:'The role combines operations analysis, resource efficiency and performance measurement, matching the task evidence in this request.',scenario:'Improve operations efficiency, reduce duplication and waste, and develop KPIs and resource allocation methods.',taxonomyLabel:'Industrial and production engineers',groups:['Operations efficiency','Waste and duplication','Performance measurement','Working methods']},
@@ -99,3 +99,6 @@ window.MIYAR_DATA = {
  window.MIYAR_DATA.scenarios.forEach((s,i)=>{s.titleEn=scenarios[i][0];s.subtitleEn=scenarios[i][1];});
  window.MIYAR_DATA.emergingObjectiveEn='Design generative AI solutions, build language model applications, and develop governance and output evaluation.';
 })();
+
+
+window.MIYAR_DATA.roles.forEach(function(role){role.occupationRelease="ssco-2019-supplied";role.educationRelease="saudi-education-2020-supplied";role.sourceTitleAr=role.id==="industrial"?"مهندس صناعي عام":role.id==="mining"?"مهندس تعدين واستغلال محاجر":role.title;});

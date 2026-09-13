@@ -1,0 +1,204 @@
+{
+  "type": "technical-smoke-test-not-accuracy-benchmark",
+  "model": "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2",
+  "modelFingerprint": "7072fa090d772bb9597a0e8508b8d5b8bf5f2ef044da14a26be7fa84f367c2cb",
+  "occupationCount": 5041,
+  "firstQuerySeconds": 48.191,
+  "peakRSSMiB": 886.8,
+  "cases": [
+    {
+      "query": "مهندس مدني",
+      "elapsedSeconds": 0.012,
+      "candidates": [
+        {
+          "code": "214201",
+          "titleAr": "مهندس مدني",
+          "sourcePage": 34,
+          "cosineSimilarity": 0.96204,
+          "semanticDistance": 0.03796,
+          "skillOverlapPercent": null,
+          "matchedSkillIds": [],
+          "sourceWarning": false,
+          "skillDenominator": 0,
+          "profile": null,
+          "taskOverlapPercent": null
+        },
+        {
+          "code": "214222",
+          "titleAr": "مهندس مدني ري",
+          "sourcePage": 34,
+          "cosineSimilarity": 0.93548,
+          "semanticDistance": 0.06452,
+          "skillOverlapPercent": null,
+          "matchedSkillIds": [],
+          "sourceWarning": false,
+          "skillDenominator": 0,
+          "profile": null,
+          "taskOverlapPercent": null
+        },
+        {
+          "code": "214203",
+          "titleAr": "مهندس سكك حديدية",
+          "sourcePage": 34,
+          "cosineSimilarity": 0.91576,
+          "semanticDistance": 0.08424,
+          "skillOverlapPercent": null,
+          "matchedSkillIds": [],
+          "sourceWarning": false,
+          "skillDenominator": 0,
+          "profile": null,
+          "taskOverlapPercent": null
+        }
+      ]
+    },
+    {
+      "query": "software engineer",
+      "elapsedSeconds": 0.008,
+      "candidates": [
+        {
+          "code": "251204",
+          "titleAr": "مهندس برمجيات",
+          "sourcePage": 63,
+          "cosineSimilarity": 0.94732,
+          "semanticDistance": 0.05268,
+          "skillOverlapPercent": null,
+          "matchedSkillIds": [],
+          "sourceWarning": false,
+          "skillDenominator": 0,
+          "profile": {
+            "code": "251204",
+            "titleEn": "Software engineer",
+            "onetCode": "15-1252.00",
+            "sourceUrl": "https://www.onetonline.org/link/details/15-1252.00",
+            "skills": [
+              "onet:2.A.2.a",
+              "onet:2.A.2.b",
+              "onet:2.A.1.a",
+              "onet:2.B.3.e",
+              "onet:2.B.4.e",
+              "onet:2.B.4.g"
+            ],
+            "tasks": [
+              {
+                "ar": "تحليل المتطلبات وتقدير جدوى الحل البرمجي",
+                "en": "Assess requirements and the feasibility of a software solution"
+              },
+              {
+                "ar": "تصميم البرامج واختبارها وتصحيح أخطائها",
+                "en": "Design, test and debug software"
+              },
+              {
+                "ar": "تنسيق تنفيذ الحل مع المحللين والمهندسين",
+                "en": "Coordinate solution delivery with analysts and engineers"
+              }
+            ],
+            "crosswalkStatus": "authored-review-required",
+            "retrieved": "2026-09-13",
+            "notice": "Selected O*NET tasks paraphrased by Miyar; this SSCO crosswalk is proposed, not an official equivalence or a complete skill inventory."
+          },
+          "taskOverlapPercent": null
+        },
+        {
+          "code": "251404",
+          "titleAr": "اختصاصي تطويرالبرمجيات",
+          "sourcePage": 64,
+          "cosineSimilarity": 0.86847,
+          "semanticDistance": 0.13153,
+          "skillOverlapPercent": null,
+          "matchedSkillIds": [],
+          "sourceWarning": false,
+          "skillDenominator": 0,
+          "profile": null,
+          "taskOverlapPercent": null
+        },
+        {
+          "code": "251203",
+          "titleAr": "مهندس نظم",
+          "sourcePage": 63,
+          "cosineSimilarity": 0.86008,
+          "semanticDistance": 0.13992,
+          "skillOverlapPercent": null,
+          "matchedSkillIds": [],
+          "sourceWarning": false,
+          "skillDenominator": 0,
+          "profile": null,
+          "taskOverlapPercent": null
+        }
+      ]
+    },
+    {
+      "query": "تحليل النظم والبرمجة وتطوير حلول الذكاء الاصطناعي",
+      "elapsedSeconds": 0.016,
+      "candidates": [
+        {
+          "code": "251104",
+          "titleAr": "محلل نظم",
+          "sourcePage": 63,
+          "cosineSimilarity": 0.63282,
+          "semanticDistance": 0.36718,
+          "skillOverlapPercent": 33.3,
+          "matchedSkillIds": [
+            "onet:2.B.4.g"
+          ],
+          "sourceWarning": false,
+          "skillDenominator": 3,
+          "profile": {
+            "code": "251104",
+            "titleEn": "Systems analyst",
+            "onetCode": "15-1211.00",
+            "sourceUrl": "https://www.onetonline.org/link/details/15-1211.00",
+            "skills": [
+              "onet:2.B.4.g",
+              "onet:2.B.4.h"
+            ],
+            "tasks": [
+              {
+                "ar": "جمع احتياجات المستخدمين وتحليل إجراءات معالجة المعلومات",
+                "en": "Gather user needs and examine information-processing procedures"
+              },
+              {
+                "ar": "تقييم النظم وتشخيص مشاكلها واقتراح تحسينات",
+                "en": "Evaluate systems, diagnose issues and recommend improvements"
+              },
+              {
+                "ar": "تقدير التكلفة والمنفعة لبدائل الأنظمة",
+                "en": "Compare costs and benefits of system alternatives"
+              }
+            ],
+            "crosswalkStatus": "authored-review-required",
+            "retrieved": "2026-09-13",
+            "notice": "Selected O*NET tasks paraphrased by Miyar; this SSCO crosswalk is proposed, not an official equivalence or a complete skill inventory."
+          },
+          "taskOverlapPercent": null
+        },
+        {
+          "code": "251115",
+          "titleAr": "اختصاصي توثيق البرامج والنظم",
+          "sourcePage": 63,
+          "cosineSimilarity": 0.61701,
+          "semanticDistance": 0.38299,
+          "skillOverlapPercent": null,
+          "matchedSkillIds": [],
+          "sourceWarning": false,
+          "skillDenominator": 3,
+          "profile": null,
+          "taskOverlapPercent": null
+        },
+        {
+          "code": "351305",
+          "titleAr": "فني تحليل نظم",
+          "sourcePage": 113,
+          "cosineSimilarity": 0.61053,
+          "semanticDistance": 0.38947,
+          "skillOverlapPercent": null,
+          "matchedSkillIds": [],
+          "sourceWarning": false,
+          "skillDenominator": 3,
+          "profile": null,
+          "taskOverlapPercent": null
+        }
+      ]
+    }
+  ],
+  "limitations": "No held-out expert labels or manual baseline; timings are from this development environment, not hosting SLAs."
+}

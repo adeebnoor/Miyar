@@ -36,7 +36,7 @@ test('wrong selected domain cannot force an unrelated title',()=>{
 });
 test('constraints and leadership remain review items',()=>{
  const i=request(data.roles[0].scenario,{seniority:'leadership',constraints:'دون عمل ميداني'}),r=E.classify(i,data.roles);
- assert.equal(r.kind,'match');assert.equal(r.role.titleEn,'Industrial Engineer');assert.equal(r.role.code,'214101');
+ assert.equal(r.kind,'match');assert.equal(r.role.titleEn,'Industrial Engineer');assert.equal(r.role.code,'214116');
  assert.ok(r.notes.some(x=>x.includes('قيادية')));assert.ok(r.notes.some(x=>x.includes('لم يتحقق')));assert.equal(r.review,'pending');
 });
 test('English task request works without a confidence percentage',()=>{
@@ -55,3 +55,4 @@ test('export preserves input and demo limitations',()=>{
  const c=E.decisionRecord(r,i,'specific-id');
  assert.equal(c.id,'specific-id');assert.equal(c.input.constraints,i.constraints);assert.equal(c.reviewStatus,'acknowledged');assert.equal(c.mode,'deterministic-demo');assert.ok(c.limitations.length>=4);
 });
+

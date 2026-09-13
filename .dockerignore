@@ -1,0 +1,9 @@
+.venv
+.runtime
+.model-cache
+tmp
+upload
+node_modules
+.env*
+**/__pycache__
+**/*.pyc

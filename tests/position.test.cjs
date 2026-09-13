@@ -24,8 +24,8 @@ test('both sample languages give a complete draft with the same source mapping',
   const i=P.sample(locale),r=match(i),p=P.packageRecord(i,r,locale);
   assert.equal(p.inputCompleteness.missing.length,0);
   assert.equal(r.kind,'match');
-  assert.equal(p.occupationMapping.saudiCode,'214101');
-  assert.equal(p.occupationMapping.educationCode,'71903');
+  assert.equal(p.occupationMapping.saudiCode,'214116');
+  assert.equal(p.occupationMapping.educationCode,'071903');
   assert.equal(p.jobDescription.status,'draft');
   assert.equal(p.evaluation.status,'pending');
   assert.equal(p.regulatoryReview.saudization.status,'pending');
@@ -75,3 +75,4 @@ test('every English occupation scenario matches its immutable sample record',()=
   assert.ok(r.role.reasonEn&&r.groups.every(g=>g.labelEn));
  }
 });
+

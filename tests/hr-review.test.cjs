@@ -11,7 +11,7 @@ test('existing Arabic, English and feminine titles work without invented task ev
 });
 test('occupation lookup normalizes Arabic and Persian digits; education codes stay distinct',()=>{
  for(const code of ['214201','٢١٤٢٠١','۲۱۴۲۰۱']){const r=classify(code);assert.equal(r.role.code,'214201');assert.equal(r.basis,'occupation-code');}
- assert.equal(classify('٧٣٢٠١').kind,'outside');assert.equal(E.search('٧٣٢٠١',roles)[0].basis,'education-code');assert.equal(classify('999999').kind,'outside');
+ assert.equal(classify('٠٧٣٢٠١').kind,'outside');assert.equal(E.search('٠٧٣٢٠١',roles)[0].basis,'education-code');assert.equal(classify('999999').kind,'outside');
 });
 test('catalog search accepts reversed words, aliases and partial codes',()=>{
  for(const query of ['مدني مهندس','مهندسة مدنية','٢١٤٢','engineer civil'])assert.equal(E.search(query,roles)[0].role.id,'civil');

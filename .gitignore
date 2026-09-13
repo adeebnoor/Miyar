@@ -4,3 +4,13 @@
 !.env.example
 node_modules/
 *.log
+.venv/
+__pycache__/
+.pytest_cache/
+*.db
+*.db-shm
+*.db-wal
+tmp/
+.runtime/
+.model-cache/
+secrets/

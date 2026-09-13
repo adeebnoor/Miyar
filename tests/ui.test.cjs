@@ -18,9 +18,9 @@ function app({locale='ar',saved=null}={}){
 test('both interfaces distinguish direct lookup from task analysis and render ambiguity candidates',()=>{
  for(const locale of ['ar','en']){const a=app({locale});try{
   a.submit(locale==='ar'?'مهندس مدني':'Civil Engineer');assert.match(a.$('result-content').textContent,/214201/);assert.match(a.$('result-badge').textContent,/بحث مرجعي|Reference lookup/);assert.equal(a.$('form-error').hidden,true);
-  a.submit('تحسين الأداء وتوزيع الموارد ومتابعة العمل في الإدارة المالية');assert.doesNotMatch(a.$('result-content').textContent,/214101/);
+  a.submit('تحسين الأداء وتوزيع الموارد ومتابعة العمل في الإدارة المالية');assert.doesNotMatch(a.$('result-content').textContent,/214116/);
   a.submit('soil construction mechanical maintenance');assert.equal(a.w.document.querySelectorAll('[data-candidate]').length,2);
-  a.fill('catalog-search','٢١٤٢٠١');assert.match(a.$('catalog-grid').textContent,/214201/);assert.doesNotMatch(a.$('catalog-grid').textContent,/214101/);
+  a.fill('catalog-search','٢١٤٢٠١');assert.match(a.$('catalog-grid').textContent,/214201/);assert.doesNotMatch(a.$('catalog-grid').textContent,/214116/);
   assert.deepEqual(a.errors,[]);
  }finally{a.close();}}
 });
@@ -46,4 +46,15 @@ test('replacing an unsaved draft needs an explicit choice and saving retains its
 });
 test('reference-to-position continuation preserves constraints without inventing responsibilities',()=>{
  const a=app({locale:'en'});try{a.submit('214201');a.fill('constraints','Office work only');a.$('role-form').dispatchEvent(new a.w.Event('submit',{cancelable:true}));a.$('draft-position').click();assert.equal(a.$('od-title').value,'Civil Engineer');assert.equal(a.$('od-constraints').value,'Office work only');assert.equal(a.$('od-purpose').value,'');assert.equal(a.$('od-requestType').value,'additional-headcount');assert.deepEqual(a.errors,[]);}finally{a.close();}
+});
+
+test('Field and Seniority accept arbitrary typed text, survive language changes and export without HTML execution',()=>{
+ const a=app({locale:'en'});try{
+  assert.equal(a.$('domain').tagName,'INPUT');assert.equal(a.$('seniority').tagName,'INPUT');
+  a.fill('domain','Civil engineering');a.fill('seniority','Principal / 15+ years <img src=x onerror=alert(1)>');a.submit('Civil Engineer');
+  assert.match(a.$('result-content').textContent,/Principal \/ 15\+ years/);assert.equal(a.$('result-content').querySelector('img'),null);
+  a.$('language-btn').click();assert.equal(a.$('domain').value,'Civil engineering');assert.equal(a.$('seniority').value,'Principal / 15+ years <img src=x onerror=alert(1)>');
+  const input={objective:'Civil Engineer',domain:a.$('domain').value,seniority:a.$('seniority').value};const result=a.w.MiyarEngine.classify(input,a.w.MIYAR_DATA.roles);assert.equal(a.w.MiyarEngine.decisionRecord(result,input,'test').input.seniority,input.seniority);
+  a.fill('domain','Healthcare / AI governance');a.submit('مدير حوكمة الذكاء الاصطناعي');assert.deepEqual(a.errors,[]);
+ }finally{a.close();}
 });

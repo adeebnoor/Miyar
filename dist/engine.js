@@ -17,7 +17,8 @@
   }).filter(r=>r.found||r.exact).sort((a,b)=>Number(b.exact)-Number(a.exact)||a.role.id.localeCompare(b.role.id));
  }
  function classify(input,roles){
-  const objective=normalize(input.objective),domain=input.domain||'all';
+  const objective=normalize(input.objective),field=normalize(input.domain),known=roles.find(r=>[r.id,...names(r),...(alias[r.id]||[])].some(n=>normalize(n)===field));
+  const domain=!field||['all','engineering','الهندسة','الهندسه'].includes(field)?'all':known?.id||'other';
   const outside=(reason,reasonEn,candidates=[])=>({kind:'outside',reason,reasonEn,candidates});
   const ambiguous=(reason,reasonEn,candidates=[])=>({kind:'ambiguous',reason,reasonEn,candidates});
   if(domain==='other')return outside('المجال المختار غير مغطّى في عينة المهن الهندسية الحالية.','The selected field is outside the current engineering sample.');
@@ -46,6 +47,7 @@
   if(input.seniority==='leadership'){notes.push('المسمى المرجعي لا يثبت مرتبة قيادية؛ تحديد المستوى الإداري يحتاج مراجعة.');notesEn.push('The reference title does not establish management level; the level requires review.');}
   if(input.seniority==='junior'){notes.push('تحتاج المسؤوليات إلى تكييف لبداية المسار.');notesEn.push('Adapt responsibilities for an early-career role.');}
   if(input.seniority==='senior'){notes.push('مستوى الخبرة لا يغيّر الرمز المهني في هذه العينة.');notesEn.push('Experience level does not change the sample code.');}
+  if(String(input.seniority||'').trim()&&!['professional','leadership','junior','senior'].includes(input.seniority)){notes.push('المستوى المطلوب محفوظ بالنص الذي أدخلته ويحتاج مراجعة مختص؛ لا يغيّر الرمز المهني تلقائيًا.');notesEn.push('Your requested seniority is preserved as entered and requires specialist review; it does not automatically change the occupation code.');}
   if(String(input.constraints||'').trim()){notes.push('القيود مسجلة للمراجع؛ لم يتحقق المحرك التجريبي من استيفائها.');notesEn.push('Constraints are recorded for review; the demo has not verified they are met.');}
   return {kind:'match',role:top.role,groups:top.groups,evidenceCount:top.evidenceCount,basis,notes,notesEn,review:'pending'};
  }

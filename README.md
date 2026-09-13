@@ -1,92 +1,49 @@
 # معيار | MI’YĀR
 
-**تجربة عربية وإنجليزية لذكاء القوى العاملة وإنشاء المناصب.**  
-**An Arabic / English workforce intelligence and position-creation demo.**
+A bilingual workforce architecture and position-management prototype by Prof. Adeeb Noor and Ahmad Raza Khan, King Abdulaziz University.
 
-[الموقع / Live demo](https://adeebnoor.github.io/Miyar/) · [متطلبات رحلة المنصب / Workflow coverage](docs/position-workflow.md)
+[Open Miyar](https://adeebnoor.github.io/Miyar/) · [Architecture](docs/enterprise-architecture.md) · [Demo guide](docs/investor-demo.md) · [Checkpoint](docs/enterprise-progress.md)
 
-معيار يجمع احتياج الأعمال، والمرجع المهني، والوصف الوظيفي، وأدلة التقييم في تجربة عرض تفاعلية. مشروع بحثي — جامعة الملك عبدالعزيز. أ.د. أديب نور / أحمد رضا خان.
+The public application starts with the enterprise workspace. The original five-role experience remains accessible for continuity. **Field and Seniority accept free text** in matching and position design. User-authored values stay intact through language switching, saving and export.
 
-Miyar brings business needs, occupation references, job descriptions and evaluation evidence into an interactive presentation experience. Research project — King Abdulaziz University. Prof. Adeeb Noor / Ahmad Raza Khan.
+## Public browser workspace
 
-## تجربة العرض | Demo tour
+- 5,041 occupations within 5,656 hierarchy nodes, from the supplied January 2019 edition. Four missing-parent records are flagged.
+- 599 educational specializations and nine levels, edition 2020; leading zeros preserved.
+- Position design: business need, alternatives, scope, qualifications, RACI and competencies.
+- Local drafts, revision history, prior-version recovery and JSON import/export. Imported approvals and server identities are not trusted.
+- Complete package preview and portable HTML download; use the browser print command on downloaded HTML for PDF.
+- Dictionary skill extraction, CSV structure diagnostics, illustrative custom point calculation and paired pilot measurement.
+- Bilingual seven-slide presentation and **Demo readiness** service table.
 
-1. **التصنيف / Matching:** جرّب كفاءة التشغيل أو اعتمادية المعدات، وناقش أسباب الترشيح ورموزه. Try an operations or equipment scenario and inspect the suggestion and task evidence.
-2. **إنشاء منصب / Create a position:** حمّل المثال، ثم انتقل من طلب الأعمال إلى التحليل والوصف والتقييم. Load the example and walk through intake, analysis, description and evaluation.
-3. **حزمة المخرجات / Output package:** اطبع أو احفظ PDF من نافذة الطباعة، أو نزّل التقرير HTML والبيانات JSON. Print or save PDF through the print dialog, or download HTML and JSON.
-4. **الممارسات العالمية / Global practices:** قارِن التصميم بمراجع O*NET وESCO وSAP وKorn Ferry مع روابط المصادر. Inspect the sourced design comparison.
-5. **وضع العرض / Present:** سبع شرائح، مع تبديل اللغة وأزرار التنقل ولوحة المفاتيح. Seven slides with language switching, navigation buttons and keyboard controls.
+Local drafts stay in the current browser/device. Download JSON for backup; clearing browser data removes them. Local drafts cannot grant institutional approval.
 
-The interface, built-in scenarios, descriptions and presentation are bilingual. Arabic uses RTL; English uses LTR. Custom text remains in the language entered and is never automatically translated. Language preference is saved locally. Position drafts persist only after explicit Save; they can be reopened from the occupation and saved-position library. Unsaved changes and the session log clear on reload. JSON export provides a portable backup.
+## Enterprise server
 
-## ما ينفذه الديمو | What is implemented
+FastAPI/PostgreSQL implements tenant/department isolation, role-based access, four-stage approvals, immutable historical records, signed internal receipts, DOCX/XLSX/PDF exports, custom evaluation frameworks and HRIS exchange contracts.
 
-- Deterministic Arabic/English task matching against five engineering records.
-- Fixed title / occupation-code / education-code pairs transcribed from the supplied data.xlsx.
-- Human-review routing for insufficient, conflicting or out-of-sample evidence.
-- A four-step OD position workflow, live input-completeness chart and organization diagram.
-- Structured JD output, business-review recording and specialist-reported evaluation fields.
-- Separate occupation, education, Saudization and certification review records.
-- Self-contained downloadable HTML reports, printable output and JSON packages.
-- Sourced global-practice comparison and an audience presentation.
-- Automatic testing and deployment to GitHub Pages from main.
+These require a deployed server and organization accounts. Publishing GitHub Pages does not deploy the API. The connection screen does not authenticate with ChatGPT or external HR systems. External systems need authorized endpoints and credentials.
 
-## حدود النسخة | Scope and limitations
+Semantic retrieval uses a pinned multilingual MiniLM ONNX model and is disabled by default. A recorded development smoke run reached approximately 887 MiB peak RSS, exceeding the 512 MB free web-instance budget. No live E5/Gemini service or validated matching accuracy is claimed.
 
-هذه نسخة عرض، وليست نظام موارد بشرية معتمدًا. لا تستدعي نماذج الذكاء الاصطناعي ولا تمنح اعتمادًا مهنيًا أو نظاميًا.
+## Run and test
 
-This is a demonstration, not an approved HR system.
-
-- The supplied prototype uses E5 and Gemini. This static interface does **not** call either model and does not claim to measure their accuracy.
-- JD content is assembled from form values, not generated by an AI service.
-- Input completeness measures field presence; it is not quality, matching confidence or a job-evaluation score.
-- Korn Ferry’s publicly described factors inform evidence fields only. No proprietary guide charts, scoring rules, grade calculations or certification are included.
-- Entered reviews, scores and grades are **reported and unverified**. A position’s approval status remains pending.
-- No Saudization percentage or licensing applicability is inferred. Requirements need a source, check date and specialist review.
-- The five source records are a limited sample. Current occupation and education references still need verification before institutional use.
-- There is no backend, employee database, external analytics, HRIS integration, durable audit ledger or multi-user approval workflow.
-- The original private attachments and credentials are not distributed with this demo. User-entered form values are not sent to GitHub.
-
-## المراجع | References
-
-These are sources for design practices, not endorsements, integrations or product rankings. Reviewed September 12, 2026.
-
-- [O*NET Content Model](https://www.onetcenter.org/content.html): structured descriptions of work, skills, knowledge and experience.
-- [ESCO occupations](https://esco.ec.europa.eu/en/classification/occupation_main): multilingual occupational concepts, hierarchy and relevant skills.
-- [SAP SuccessFactors Position Management](https://learning.sap.com/courses/sap-successfactors-employee-central-position-management-academy/describing-sap-successfactors-employee-central-position-management_bcd65377-bc96-400d-9df9-c31c228a8ecf): positions and organization structure independent of employee assignments.
-- [Korn Ferry Architect](https://www.kornferry.com/capabilities/talent-suite/korn-ferry-architect): public factors of know-how, problem-solving and accountability.
-
-## تشغيل محلي | Run locally
-
-No build step or runtime dependencies are needed. Serve the dist directory over HTTP:
-
-~~~sh
+```sh
+npm ci --ignore-scripts
+npm test
 python -m http.server 8000 --directory dist
-~~~
+```
 
-Then open http://localhost:8000.
+For the API, use Python 3.12, install `server/requirements-lock.txt` and the native Pango libraries listed in the Dockerfile. Inject your database URL and secrets using `.env.example` as a reference.
 
-Run the behavior tests with Node.js:
+```sh
+python -m pytest server/tests -q
+python -m server.cli bootstrap --email your-admin@example.org
+python -m server.start
+```
 
-~~~sh
-node --test tests/*.test.cjs
-~~~
+Bootstrap prompts for a password if one is not supplied through the environment; no public passwords are seeded. Create distinct manager, OD, Rewards, Finance and final-authority accounts. Institutional grading requires an organization-approved custom framework.
 
-## النشر | Deployment
+GitHub Actions tests the API against PostgreSQL, including concurrent approvals, then tests the interface before deploying `dist`. The optional `render.yaml` is an evaluation deployment definition, not proof of an active service. Account for free database expiration and cold starts before a scheduled presentation.
 
-The GitHub Actions workflow tests the domain logic, uploads only dist, and publishes it to GitHub Pages. The repository's Pages source must be set to **GitHub Actions**. A successful deployment is visible in the Actions tab and the github-pages environment.
-
-Files use relative URLs and hash navigation so the site works at /Miyar/.
-
-The bundled IBM Plex Sans Arabic font is unmodified and distributed under the SIL Open Font License. See [dist/assets/OFL.txt](dist/assets/OFL.txt).
-
-
-## HR review update (13 September 2026)
-
-Search by Arabic/English title or occupation code, including Arabic/Persian digits. Direct lookup is labeled separately from task matching. Generic administrative terms alone cannot produce an engineering suggestion; ambiguous or uncovered needs are referred for review.
-
-Position creation now includes request type, hiring alternatives, success measures, advisory duplication/content checks, an in-page report preview and explicit local save/resume. Internal MJR draft IDs are not occupation codes. Export JSON to transfer a draft; imports require review again. Local revisions are not a central audit ledger.
-
-Install test dependencies with `npm ci --ignore-scripts`, then run all model and interface regression tests with `npm test`.
-
-See [HR review and Tafany comparison](docs/hr-product-review.md). The public site still uses only five engineering occupation records; it is not a complete Saudi occupation database or a production HRIS.
+The source editions do not establish current regulatory requirements. Reference counts are not market statistics; similarity is not calibrated confidence. Software tests do not establish novelty, ROI, legal compliance or patent protection. Original attachments, evaluation correspondence, credentials and organization data are not published. The font uses the [SIL Open Font License](dist/assets/OFL.txt).

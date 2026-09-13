@@ -1,0 +1,35 @@
+# Review-only Blueprint: the Render workspace must be selected by the owner.
+# Free database is an evaluation resource with expiry, not a durable production commitment.
+services:
+  - type: web
+    name: miyar-enterprise-api
+    runtime: docker
+    plan: free
+    region: frankfurt
+    healthCheckPath: /health
+    autoDeployTrigger: checksPass
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: miyar-enterprise-db
+          property: connectionString
+      - key: MIYAR_ENV
+        value: production
+      - key: MIYAR_JWT_SECRET
+        generateValue: true
+      - key: MIYAR_CORS_ORIGINS
+        value: https://adeebnoor.github.io
+      - key: MIYAR_ENABLE_EMBEDDINGS
+        value: "false"
+      - key: MIYAR_BOOTSTRAP_EMAIL
+        sync: false
+      - key: MIYAR_BOOTSTRAP_PASSWORD
+        sync: false
+      - key: MIYAR_SIGNING_KEY
+        sync: false
+# A separate long-running worker may run `python -m server.worker` on provisioned capacity.
+databases:
+  - name: miyar-enterprise-db
+    plan: free
+    region: frankfurt
+    ipAllowList: []
