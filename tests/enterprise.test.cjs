@@ -4,8 +4,8 @@ const ref=JSON.parse(fs.readFileSync(path.join(dir,'classifications/ssco-2019.js
 test('complete supplied occupation tree preserves source conflicts and education leading zeros',()=>{assert.equal(ref.nodes.length,5656);assert.equal(ref.nodes.filter(x=>x.level==='occupation').length,5041);assert.equal(new Set(ref.nodes.map(x=>x.code)).size,5656);assert.equal(C.search(ref.nodes,'٢١٤١٠١')[0].titleAr,'مهندس تخطيط مصانع');assert.equal(C.search(ref.nodes,'۲۱۴۱۱۶')[0].titleAr,'مهندس صناعي عام');assert.equal(ref.validation.missingParents.length,4);assert.equal(edu.fields.length,599);assert.ok(edu.fields.find(x=>x.code==='071903'));});
 test('bulk parser preserves quoted newlines, zero scope and duplicate roles',()=>{const rows=C.csv('title,department,occupationCode,directReports,budgetAmount,authority\r\n"مدير, نظام",IT,999999,0,0,يوصي\r\nمهندس برمجيات,IT,251204,0,0,يوصي\r\nمهندس برمجيات,IT,251204,0,0,يوصي\r\n');const r=C.diagnose(rows,ref.nodes,ref.validation.missingParents);assert.equal(r.titleCodeAlignmentPercent,66.7);assert.equal(r.duplicateGroups.length,1);assert.equal(r.scopeAssessableRows,3);assert.equal(r.titleScopeReviewRows,1);assert.throws(()=>C.csv('title,title\na,b'));assert.throws(()=>C.csv('title\n"unclosed'));});
 test('skill decomposition catches Arabic conjunctions without pretending model inference',()=>{const r=C.skills('البرمجة وتحليل النظم والتفكير النقدي وSQL',skills);assert.ok(r.some(x=>x.id==='onet:2.B.3.e'));assert.ok(r.some(x=>x.id==='onet:2.B.4.g'));assert.ok(r.some(x=>x.id==='onet:2.A.2.a'));assert.ok(r.some(x=>x.id==='miyar:sql'));});
-async function ui(locale='ar',options={}){const errors=[],vc=new VirtualConsole();vc.on('jsdomError',e=>errors.push(e));const dom=new JSDOM('<main id="enterprise"></main>',{url:'https://example.test/Miyar/'+(options.review?'?review=od':''),runScripts:'outside-only',pretendToBeVisual:true,virtualConsole:vc});const w=dom.window;w.structuredClone=structuredClone;w.confirm=()=>true;w.HTMLDialogElement.prototype.showModal=function(){this.open=true;};w.HTMLDialogElement.prototype.close=function(){this.open=false;this.dispatchEvent(new w.Event('close'));};w.eval(fs.readFileSync(path.join(dir,'enterprise-document.js'),'utf8'));w.AbortSignal=AbortSignal;w.MIYAR_CONFIG={apiBase:options.apiBase||''};w.fetch=options.fetch|| (async url=>({ok:true,json:async()=>JSON.parse(fs.readFileSync(path.join(dir,String(url))))}));w.eval(fs.readFileSync(path.join(dir,'enterprise-core.js'),'utf8'));w.eval(fs.readFileSync(path.join(dir,'enterprise-product.js'),'utf8'));w.eval(fs.readFileSync(path.join(dir,'enterprise.js'),'utf8'));await w.MiyarEnterprise.mount(w.document.getElementById('enterprise'),{lang:locale});const $=id=>w.document.getElementById('ent-'+id),tab=id=>w.document.querySelector('[data-ent-tab="'+id+'"]').click();return {w,$,tab,errors,dom};}
-test('all enterprise sections render in Arabic and English without duplicate IDs',async()=>{for(const lang of ['ar','en']){const a=await ui(lang);try{for(const tab of ['overview','review','tour','business','reference','create','workspace','intelligence','bulk','grading','readiness','evidence','market','connection']){a.tab(tab);const ids=[...a.w.document.querySelectorAll('[id]')].map(x=>x.id);assert.equal(new Set(ids).size,ids.length,tab);assert.ok(a.$('content').textContent.trim());}assert.deepEqual(a.errors,[]);}finally{a.dom.window.close();}}});
+async function ui(locale='ar',options={}){const errors=[],vc=new VirtualConsole();vc.on('jsdomError',e=>errors.push(e));const dom=new JSDOM('<main id="enterprise"></main>',{url:'https://example.test/Miyar/'+(options.review?'?review=od':''),runScripts:'outside-only',pretendToBeVisual:true,virtualConsole:vc});const w=dom.window;w.structuredClone=structuredClone;w.confirm=()=>true;w.HTMLDialogElement.prototype.showModal=function(){this.open=true;};w.HTMLDialogElement.prototype.close=function(){this.open=false;this.dispatchEvent(new w.Event('close'));};w.eval(fs.readFileSync(path.join(dir,'enterprise-document.js'),'utf8'));w.AbortSignal=AbortSignal;w.MIYAR_CONFIG={apiBase:options.apiBase||''};w.fetch=options.fetch|| (async url=>({ok:true,json:async()=>JSON.parse(fs.readFileSync(path.join(dir,String(url))))}));w.eval(fs.readFileSync(path.join(dir,'enterprise-core.js'),'utf8'));w.eval(fs.readFileSync(path.join(dir,'enterprise-product.js'),'utf8'));w.eval(fs.readFileSync(path.join(dir,'enterprise-service.js'),'utf8'));w.eval(fs.readFileSync(path.join(dir,'enterprise.js'),'utf8'));await w.MiyarEnterprise.mount(w.document.getElementById('enterprise'),{lang:locale});const $=id=>w.document.getElementById('ent-'+id),tab=id=>w.document.querySelector('[data-ent-tab="'+id+'"]').click();return {w,$,tab,errors,dom};}
+test('all enterprise sections render in Arabic and English without duplicate IDs',async()=>{for(const lang of ['ar','en']){const a=await ui(lang);try{for(const tab of ['overview','tour','reference','create','workspace','intelligence','bulk','grading','readiness','evidence','market','connection']){a.tab(tab);const ids=[...a.w.document.querySelectorAll('[id]')].map(x=>x.id);assert.equal(new Set(ids).size,ids.length,tab);assert.ok(a.$('content').textContent.trim());}assert.deepEqual(a.errors,[]);}finally{a.dom.window.close();}}});
 test('reference search flows into a local draft and restores history without granting approval',async()=>{const a=await ui();try{a.tab('reference');a.$('query').value='٢٥١٢٠٤';a.$('search').click();a.w.document.querySelector('[data-code="251204"]').click();a.$('use-reference').click();assert.equal(a.w.document.querySelector('[data-field="occupationCode"]').value,'251204');a.$('sample').click();a.$('save').click();await new Promise(r=>setImmediate(r));let rows=JSON.parse(a.w.localStorage.getItem(C.KEY));assert.equal(rows.length,1);assert.equal(rows[0].state,'draft');a.tab('workspace');await new Promise(r=>setImmediate(r));a.w.document.querySelector('[data-position]').click();await new Promise(r=>setImmediate(r));assert.equal(a.$('approve'),null);assert.equal(a.$('submit-position'),null);a.$('edit-position').click();let x=a.w.document.querySelector('[data-field="title"]');x.value='<img src=x onerror=alert(1)> Updated';x.dispatchEvent(new a.w.Event('input'));a.$('save').click();await new Promise(r=>setImmediate(r));rows=JSON.parse(a.w.localStorage.getItem(C.KEY));assert.equal(rows[0].revision,2);assert.equal(rows[0].versions.length,2);a.tab('workspace');await new Promise(r=>setImmediate(r));assert.equal(a.w.document.querySelector('img'),null);assert.deepEqual(a.errors,[]);}finally{a.dom.window.close();}});
 test('pilot comparison uses paired denominators and distinguishes missing timing',async()=>{const a=await ui('en');try{const r=a.w.MiyarEnterprise.pilotMetrics([{caseId:'1',expectedCode:'251204',miyarCode:'251204',baselineCode:'251104',humanMinutes:'10',miyarMinutes:'4'},{caseId:'2',expectedCode:'251104',miyarCode:'251204',baselineCode:'251104',humanMinutes:'',miyarMinutes:''}]);assert.equal(r.miyarAccuracy,50);assert.equal(r.baselineAccuracy,50);assert.equal(r.timedCases,1);assert.equal(r.timeSavedPercent,60);assert.throws(()=>a.w.MiyarEnterprise.pilotMetrics([{caseId:'1',expectedCode:'a',miyarCode:'a',baselineCode:'a',humanMinutes:'0',miyarMinutes:'1'}]));}finally{a.dom.window.close();}});
 
@@ -34,9 +34,9 @@ test('complete deployed script bundle opens the enterprise workspace and all loc
   w.HTMLDialogElement.prototype.showModal=function(){this.open=true;};w.HTMLDialogElement.prototype.close=function(){this.open=false;this.dispatchEvent(new w.Event('close'));};
   for(const x of w.document.querySelectorAll('link[href],script[src]')){const target=x.getAttribute('src')||x.getAttribute('href');assert.ok(fs.existsSync(path.join(dir,target)),target);if(x.tagName==='SCRIPT')w.eval(fs.readFileSync(path.join(dir,target),'utf8'));}
   await new Promise(r=>setImmediate(r));assert.equal(w.document.getElementById('view-enterprise').hidden,false);assert.ok(w.document.getElementById('enterprise-heading'));
-  w.document.querySelector('[data-ent-tab="readiness"]').click();assert.match(w.document.getElementById('ent-content').textContent,/متاحة محليًا/);
+  w.document.querySelector('[data-enterprise-open="readiness"]').click();assert.match(w.document.getElementById('ent-content').textContent,/متاحة محليًا/);
   w.document.getElementById('language-btn').click();await new Promise(r=>setImmediate(r));assert.match(w.document.getElementById('ent-content').textContent,/Available locally/);
-  w.document.getElementById('present-btn').click();assert.ok(w.document.getElementById('presentation').open);for(let i=0;i<6;i++)w.document.getElementById('next-slide').click();assert.match(w.document.getElementById('presentation-content').textContent,/partner/i);
+  assert.equal(w.document.getElementById('present-btn'),null);w.document.getElementById('service-new').click();assert.ok(w.document.querySelector('[data-field="title"]'));assert.equal(w.document.querySelector('[data-field="title"]').value,'');
   assert.ok(fs.statSync(path.join(dir,'assets/arabic.ttf')).size>200000);assert.deepEqual(errors,[]);
  }finally{dom.window.close();}
 });
@@ -51,6 +51,7 @@ test('hosted login uses its configured address and password change keeps only th
   if(route.endsWith('/me'))return response({name:'Test manager',role:'line_manager',organization:{name:'Test organization'}});
   if(route.endsWith('/departments'))return response([{id:'test-dept',name:'Test department'}]);
   if(route.endsWith('/settings'))return response({});
+  if(route.startsWith('/api/v1/positions?'))return response({items:[],total:0});
   if(route.endsWith('/organization/taxonomy/export'))return response(ref);
   if(route.endsWith('/integrations/status'))return response({connectors:[],outboundWebhookConfigured:false});
   if(route.endsWith('/auth/password'))return response({accessToken:'replacement-test-token'});
@@ -61,7 +62,7 @@ test('hosted login uses its configured address and password change keeps only th
  try{
   a.tab('connection');assert.equal(a.$('api-url').value,base);assert.equal(a.$('api-url').closest('details').open,false);
   a.$('email').value='manager@example.test';a.$('password').value='test-only-password';a.$('login').dispatchEvent(new a.w.Event('submit',{cancelable:true}));await settle();
-  assert.ok(a.$('logout'));assert.ok(a.$('password-form'));
+  assert.ok(a.w.document.getElementById('svc-new'));a.tab('connection');assert.ok(a.$('logout'));assert.ok(a.$('password-form'));
   a.$('current-password').value='test-only-password';a.$('new-password').value='new-test-only-password';a.$('confirm-password').value='different-password';
   a.$('password-form').dispatchEvent(new a.w.Event('submit',{cancelable:true}));await settle();assert.equal(requests.filter(r=>r.route.endsWith('/auth/password')).length,0);
   a.$('confirm-password').value='new-test-only-password';a.$('password-form').dispatchEvent(new a.w.Event('submit',{cancelable:true}));await settle();
@@ -200,12 +201,11 @@ test('decision import control opens an unapproved draft and new requirements sur
  }finally{a.dom.window.close();}
 });
 
-test('innovation-center deep link renders requirements and its actions enter real product sections',async()=>{
+test('earlier review links open the working service and real actions lead into request creation',async()=>{
  const a=await ui('en',{review:true});try{
-  assert.match(a.$('content').textContent,/INNOVATION CENTER REVIEW/);assert.match(a.$('content').textContent,/071501/);
-  assert.ok(a.w.document.querySelector('a[href="https://adeebnoor.github.io/"]'));
-  a.w.document.getElementById('mx-review-import').click();assert.ok(a.$('draft-import'));a.tab('review');a.w.document.getElementById('mx-review-create').click();assert.ok(a.w.document.querySelector('[data-field="certifications"]'));
-  await a.w.MiyarEnterprise.mount(a.w.document.getElementById('enterprise'),{lang:'ar'});a.tab('review');assert.match(a.$('content').textContent,/مركز الابتكار/);assert.deepEqual(a.errors,[]);
+  assert.match(a.$('content').textContent,/Start your position request/);assert.match(a.$('content').textContent,/No saved requests yet/);assert.doesNotMatch(a.$('content').textContent,/INNOVATION CENTER|INVESTOR/);
+  a.w.document.getElementById('svc-new').click();assert.ok(a.w.document.querySelector('[data-field="certifications"]'));assert.equal(a.w.document.querySelector('[data-field="title"]').value,'');assert.equal(a.w.location.hash,'#enterprise/create');
+  await a.w.MiyarEnterprise.mount(a.w.document.getElementById('enterprise'),{lang:'ar'});a.tab('overview');assert.match(a.$('content').textContent,/ابدأ طلب منصبك/);assert.deepEqual(a.errors,[]);
  }finally{a.dom.window.close();}
 });
 
@@ -237,5 +237,51 @@ test('authorized external report configuration renders a usable specialist form 
   a.$('external-score').value='412';a.$('external-band').value='Grade from test report';a.$('report-confirmed').checked=true;
   for(const field of a.w.document.querySelectorAll('[data-report]'))field.value=field.dataset.report==='evaluationDate'?'2026-09-01':'Evidence from synthetic report';
   a.$('external-grade').dispatchEvent(new a.w.Event('submit',{cancelable:true}));await settle();const sent=JSON.parse(requests.find(x=>x.route.endsWith('/evaluation')).body);assert.equal(sent.answers.score,412);assert.equal(sent.evidence.reportConfirmed,true);assert.match(a.$('grade-result').textContent,/Specialist result recorded/);assert.deepEqual(a.errors,[]);
+ }finally{a.dom.window.close();}
+});
+
+test('service dashboard reflects saved requests and save-and-open reaches the editable request record',async()=>{
+ const a=await ui('en'),settle=async()=>{for(let i=0;i<4;i++)await new Promise(r=>setImmediate(r));};
+ try{
+  assert.equal(a.w.localStorage.getItem(C.KEY),null);assert.match(a.$('content').textContent,/No saved requests yet/);
+  a.w.document.getElementById('svc-new').click();const title=a.w.document.querySelector('[data-field="title"]');title.value='Service operations analyst';title.dispatchEvent(new a.w.Event('input'));
+  a.$('save-open').click();await settle();assert.match(a.$('position-detail').textContent,/Service operations analyst/);assert.ok(a.$('edit-position'));assert.equal(a.$('approve'),null);
+  a.tab('overview');assert.equal(a.w.document.querySelector('[data-svc-state="draft"] strong').textContent,'1');assert.equal(a.w.document.querySelectorAll('[data-svc-position]').length,1);
+  a.w.document.querySelector('[data-svc-position]').click();await settle();a.$('edit-position').click();assert.equal(a.w.document.querySelector('[data-field="title"]').value,'Service operations analyst');
+  a.tab('overview');a.w.document.getElementById('svc-query').value='214401';a.w.document.getElementById('svc-search').dispatchEvent(new a.w.Event('submit',{cancelable:true}));assert.match(a.$('directory').textContent,/214401/);
+  assert.deepEqual(a.errors,[]);
+ }finally{a.dom.window.close();}
+});
+
+test('service dashboard imports a saved JSON file and route history preserves an unsaved form',async()=>{
+ const a=await ui('en'),settle=()=>new Promise(r=>setTimeout(r,20));
+ try{
+  const payload={schema:'miyar-position-draft/1.0',content:{title:'Imported service draft',field:'Digital health',seniority:'Principal'}};
+  Object.defineProperty(a.w.document.getElementById('svc-import-file'),'files',{value:[{size:250,text:async()=>JSON.stringify(payload)}]});a.w.document.getElementById('svc-import').click();await settle();assert.equal(a.w.location.hash,'#enterprise/create');
+  a.tab('overview');assert.match(a.$('content').textContent,/Imported service draft/);assert.ok(a.w.document.getElementById('svc-resume'));
+  a.w.history.back();await settle();assert.ok(a.w.document.querySelector('[data-field="title"]'));assert.equal(a.w.document.querySelector('[data-field="field"]').value,'Digital health');
+  await a.w.MiyarEnterprise.mount(a.w.document.getElementById('enterprise'),{lang:'ar'});assert.equal(a.w.document.querySelector('[data-field="seniority"]').value,'Principal');assert.deepEqual(a.errors,[]);
+ }finally{a.dom.window.close();}
+});
+
+test('signing in retains the working draft and dashboard counts come from scoped server records',async()=>{
+ const base='https://miyar.example.test',response=x=>({ok:true,status:200,json:async()=>x});
+ const fetch=async(url,options={})=>{
+  if(!String(url).startsWith(base))return response(JSON.parse(fs.readFileSync(path.join(dir,String(url)))));
+  const u=new URL(url),route=u.pathname;
+  if(route.endsWith('/auth/login'))return response({accessToken:'test-token'});
+  if(route.endsWith('/me'))return response({id:'test-od',name:'Test OD',role:'od_specialist',organization:{name:'Scoped test organization'}});
+  if(route.endsWith('/departments'))return response([{id:'test-dept',name:'Test department'}]);
+  if(route.endsWith('/settings'))return response({});
+  if(route.endsWith('/organization/taxonomy/export'))return response(ref);
+  if(route.endsWith('/positions'))return response({items:u.searchParams.get('state')?[]:[{id:'remote-1',title:'Server position',state:'draft',revision:2,internalCode:'MJR-TEST'}],total:({'draft':2,'in_review':3,'active':1})[u.searchParams.get('state')]||6});
+  throw Error('Unexpected route '+route);
+ };
+ const a=await ui('en',{apiBase:base,fetch}),settle=async()=>{for(let i=0;i<6;i++)await new Promise(r=>setImmediate(r));};
+ try{
+  a.w.document.getElementById('svc-new').click();const title=a.w.document.querySelector('[data-field="title"]');title.value='Work in progress';title.dispatchEvent(new a.w.Event('input'));a.w.confirm=()=>false;
+  a.tab('connection');a.$('email').value='test@example.test';a.$('password').value='test-only-password';a.$('login').dispatchEvent(new a.w.Event('submit',{cancelable:true}));await settle();
+  assert.ok(a.w.document.getElementById('svc-resume'));assert.match(a.$('content').textContent,/Scoped test organization/);assert.equal(a.w.document.querySelector('[data-svc-state="draft"] strong').textContent,'2');assert.equal(a.w.document.querySelector('[data-svc-state="in_review"] strong').textContent,'3');assert.match(a.$('content').textContent,/Server position/);
+  a.w.document.getElementById('svc-resume').click();assert.equal(a.w.document.querySelector('[data-field="title"]').value,'Work in progress');assert.deepEqual(a.errors,[]);
  }finally{a.dom.window.close();}
 });

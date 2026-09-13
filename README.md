@@ -4,7 +4,7 @@ A bilingual workforce architecture and position-management prototype by Prof. Ad
 
 [Open Miyar](https://adeebnoor.github.io/Miyar/) · [Enterprise server](https://miyar-enterprise-api.onrender.com/) · [Architecture](docs/enterprise-architecture.md) · [Demo guide](docs/investor-demo.md) · [Product review](docs/product-investor-review.md) · [First login and operations](docs/render-activation.md) · [Checkpoint](docs/enterprise-progress.md)
 
-The public application opens with a buyer-focused introduction and a four-step guided position journey. The original five-role experience remains grouped under earlier examples for continuity. **Field and Seniority accept free text** in matching and position design. User-authored values stay intact through language switching, saving and export.
+The application opens as a working position-management service: create a request, import an existing draft, resume work, and inspect saved requests. Dashboard counts come from local drafts or the signed-in account’s scoped server records. **Field and Seniority accept free text**; values survive language changes, saving and export.
 
 ## Public browser workspace
 
@@ -15,8 +15,9 @@ The public application opens with a buyer-focused introduction and a four-step g
 - Local drafts, revision history, prior-version recovery and JSON import/export. Imported approvals and server identities are not trusted.
 - Complete package preview and portable HTML download; use the browser print command on downloaded HTML for PDF.
 - Dictionary skill extraction, CSV structure diagnostics, illustrative custom point calculation and paired pilot measurement.
-- **Value & pilot**: transparent effort scenarios, first-year cost assumptions, a downloadable four-week pilot plan and a credible comparison with alternatives.
-- Bilingual investor presentation and **Service readiness** with an explicit public server check.
+- A task dashboard, direct tool URLs, save-and-open continuation, and a user guide.
+- Sign-in preserves an open draft; local drafts can be opened for explicit saving to the organization.
+- Service status provides a public server check; institutional operations require the appropriate account roles.
 - Organization administrators can inspect accounts, roles and department scope, and deactivate accounts through the existing permission checks.
 
 Local drafts stay in the current browser/device. Download JSON for backup; clearing browser data removes them. Local drafts cannot grant institutional approval.
@@ -50,3 +51,9 @@ The Render Blueprint generates the bootstrap password and signing/session keys, 
 GitHub Actions tests the API against PostgreSQL, including concurrent approvals, then tests the interface before deploying `dist`. Release 4.2.0 passed 55 interface tests and 24 server tests locally; the PostgreSQL concurrency case runs in CI, for 25 server cases there. The owner activated the Blueprint in My Workspace on 13 September 2026. Live checks confirmed PostgreSQL health, the signing public key, UI delivery and cross-origin access from GitHub Pages. First login and organization account/framework setup remain necessary for the live approval demonstration. Account for cold starts and the free database expiration on 13 October 2026 before a scheduled presentation.
 
 The source editions do not establish current regulatory requirements. Reference counts are not market statistics; similarity is not calibrated confidence. Software tests do not establish novelty, ROI, legal compliance or patent protection. Original attachments, evaluation correspondence, credentials and organization data are not published. The font uses the [SIL Open Font License](dist/assets/OFL.txt).
+
+## Service interface — 4.4
+
+The primary link is https://adeebnoor.github.io/Miyar/. Earlier review links now open the service dashboard. Investor and innovation-center content is removed from primary navigation. New request creation begins with an empty form. The dashboard shows actual saved records and clear local-versus-organization storage context; it does not seed example data.
+
+Local verification passed 63 JavaScript tests and the three deployment tests. The release workflow also gates publication on the full PostgreSQL API suite. Public-URL Render cloning currently lacks an authenticated Git-provider connection, so a successful GitHub push does not trigger a backend deploy; deploy the tested commit explicitly and verify `/health`. No paid resources are introduced.
