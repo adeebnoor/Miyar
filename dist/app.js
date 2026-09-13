@@ -98,9 +98,10 @@
    '<div class="od-toolbar"><p>'+b('المنصب موقع محدد في الهيكل؛ المهنة وصف مرجعي للعمل.','A position is a specific place in the organization; an occupation is a reference definition of work.')+'</p><div class="action-row">'+button('od-example',b('تحميل مثال','Load example'),'light','spark')+button('od-clear',b('نموذج فارغ','Blank form'),'outline','reset')+'</div></div><div class="od-layout"><section class="panel od-workspace"><nav class="od-stepper" aria-label="'+b('خطوات إنشاء المنصب','Position creation steps')+'">'+odSteps.map((s,i)=>'<button class="od-step '+(i===odStep?'active':'')+'" data-od-step="'+i+'" '+(i===odStep?'aria-current="step"':'')+'><span>0'+(i+1)+'</span><strong>'+b(...s)+'</strong></button>').join('')+'</nav><div id="od-body" class="od-body"></div></section><aside id="od-summary" class="od-summary" aria-label="'+b('ملخص جاهزية المنصب','Position readiness summary')+'"></aside></div>';
   $('od-example').onclick=()=>{odInput=P.sample(lang);odSample=true;odStep=0;renderPosition();};
   $('od-clear').onclick=()=>{odInput=P.blank();odSample=false;odStep=0;renderPosition();};
-  document.querySelectorAll('[data-od-step]').forEach(x=>x.onclick=()=>{odStep=Number(x.dataset.odStep);renderPosition();});
+  document.querySelectorAll('[data-od-step]').forEach(x=>x.onclick=()=>moveOdStep(Number(x.dataset.odStep)));
   renderPositionBody();
  }
+ function moveOdStep(step){odStep=step;renderPosition();const panel=document.querySelector('.od-workspace');panel.scrollIntoView({behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth',block:'start'});const title=document.querySelector('.od-section-heading h2');title.tabIndex=-1;title.focus({preventScroll:true});}
  function renderPositionBody(){
   const descriptions=[
    ['عرّف حاجة الأعمال والموقع التنظيمي والمسؤوليات الأولية.','Define the business need, organizational placement and initial responsibilities.'],
@@ -125,12 +126,12 @@
   $('od-body').innerHTML=body;
   document.querySelectorAll('[data-od-field]').forEach(el=>el.addEventListener('input',()=>{odInput[el.dataset.odField]=el.value;odSample=false;el.removeAttribute('aria-invalid');updatePositionSummary();}));
   if($('od-business-reviewed'))$('od-business-reviewed').onchange=e=>{odInput.businessReviewed=e.target.checked;odSample=false;updatePositionSummary();};
-  if($('od-prev'))$('od-prev').onclick=()=>{odStep--;renderPosition();};
+  if($('od-prev'))$('od-prev').onclick=()=>moveOdStep(odStep-1);
   if($('od-next'))$('od-next').onclick=()=>{
    const required=P.fields.filter(f=>f.step===odStep&&f.required);
    const missing=required.find(f=>!String(odInput[f.id]||'').trim());
    if(missing){$('od-error').textContent=b('أكمل الحقل الأساسي: ','Complete the core field: ')+b(missing.ar,missing.en);$('od-error').hidden=false;$('od-'+missing.id).setAttribute('aria-invalid','true');$('od-'+missing.id).focus();return;}
-   odStep++;renderPosition();
+   moveOdStep(odStep+1);
   };
   if($('od-preview'))$('od-preview').onclick=printPackage;
   updatePositionSummary();
@@ -241,6 +242,7 @@
  function closePresentation(){$('presentation').close();document.body.style.overflow='';}
  function nextSlide(){if(slideIndex<slideMarkup().length-1){slideIndex++;renderSlide();}else{closePresentation();nav('demo');}}
  function bindShell(){
+  document.querySelectorAll('.nav-link').forEach(el=>el.onclick=e=>{e.preventDefault();nav(el.dataset.view);});
   document.querySelector('.skip-link').onclick=e=>{e.preventDefault();$('main').focus();$('main').scrollIntoView();};
   $('language-btn').onclick=switchLanguage;$('presentation-language').onclick=switchLanguage;
   $('present-btn').onclick=()=>{slideIndex=0;renderSlide();$('presentation').showModal();document.body.style.overflow='hidden';};
