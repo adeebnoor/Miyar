@@ -11,7 +11,7 @@ function mount(host,{t,lang,icon,switchLanguage,example}){
  const previewTabs=[['role',t('الوصف','Description')],['kpi',t('المؤشرات','KPIs')],['raci',t('المسؤوليات','RACI')],['approval',t('الاعتماد','Approvals')]];
  host.innerHTML=`
  <header class="lp-header"><div class="lp-wrap lp-header-inner">${brand}
-  <nav class="lp-nav" aria-label="${t('التنقل الرئيسي','Main navigation')}"><a href="#home/governance" data-lp-scroll="governance">${t('الحوكمة والاعتماد','Governance')}</a><a href="#home/capabilities" data-lp-scroll="capabilities">${t('قدرات معيار','Capabilities')}</a><a href="#enterprise/overview">${t('مساحة العمل','Workspace')}</a></nav>
+  <nav class="lp-nav" aria-label="${t('التنقل الرئيسي','Main navigation')}"><a href="#home/governance" data-lp-scroll="governance">${t('الحوكمة والاعتماد','Governance')}</a><a href="#home/capabilities" data-lp-scroll="capabilities">${t('قدرات معيار','Capabilities')}</a><a href="pitch.html?lang=${lang}" data-lp-pitch>${t('العرض التعريفي','Pitch deck')}</a><a href="#enterprise/overview">${t('مساحة العمل','Workspace')}</a></nav>
   <div class="lp-header-actions"><button type="button" id="lp-language" lang="${lang==='ar'?'en':'ar'}" aria-label="${t('Switch to English','التبديل إلى العربية')}">${t('English','العربية')}</button><a class="lp-signin" href="#enterprise/connection">${t('دخول المؤسسة','Organization sign in')}</a></div>
  </div></header>
  <main id="landing-main" tabindex="-1">
