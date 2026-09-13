@@ -10,7 +10,12 @@ def test_hosted_ui_resolves_assets_without_exposing_server_files(tmp_path,monkey
     monkeypatch.delenv('MIYAR_ENV',raising=False)
     app=create_app('sqlite:///'+str(tmp_path/'web.db'),'deployment-test-secret-not-for-production')
     with TestClient(app) as c:
-        assert c.get('/health').json()['status']=='ok'
+        health=c.get('/health').json()
+        assert health['status']=='ok'
+        assert health['version']=='4.2.0'
+        assert health['services']['approvals'] is True
+        assert {item['format'] for item in health['services']['exports']}=={'DOCX','XLSX','PDF'}
+        assert set(health['services'])=={'version','storage','approvals','semanticEnabled','semanticModelReady','signingConfigured','exports','externalConnectors'}
         page=c.get('/');assert page.status_code==200;assert './config.js' in page.text
         config=c.get('/config.js');assert 'window.location.origin' in config.text
         assert config.headers['cache-control']=='no-store'

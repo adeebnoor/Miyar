@@ -4,8 +4,8 @@ const ref=JSON.parse(fs.readFileSync(path.join(dir,'classifications/ssco-2019.js
 test('complete supplied occupation tree preserves source conflicts and education leading zeros',()=>{assert.equal(ref.nodes.length,5656);assert.equal(ref.nodes.filter(x=>x.level==='occupation').length,5041);assert.equal(new Set(ref.nodes.map(x=>x.code)).size,5656);assert.equal(C.search(ref.nodes,'٢١٤١٠١')[0].titleAr,'مهندس تخطيط مصانع');assert.equal(C.search(ref.nodes,'۲۱۴۱۱۶')[0].titleAr,'مهندس صناعي عام');assert.equal(ref.validation.missingParents.length,4);assert.equal(edu.fields.length,599);assert.ok(edu.fields.find(x=>x.code==='071903'));});
 test('bulk parser preserves quoted newlines, zero scope and duplicate roles',()=>{const rows=C.csv('title,department,occupationCode,directReports,budgetAmount,authority\r\n"مدير, نظام",IT,999999,0,0,يوصي\r\nمهندس برمجيات,IT,251204,0,0,يوصي\r\nمهندس برمجيات,IT,251204,0,0,يوصي\r\n');const r=C.diagnose(rows,ref.nodes,ref.validation.missingParents);assert.equal(r.titleCodeAlignmentPercent,66.7);assert.equal(r.duplicateGroups.length,1);assert.equal(r.scopeAssessableRows,3);assert.equal(r.titleScopeReviewRows,1);assert.throws(()=>C.csv('title,title\na,b'));assert.throws(()=>C.csv('title\n"unclosed'));});
 test('skill decomposition catches Arabic conjunctions without pretending model inference',()=>{const r=C.skills('البرمجة وتحليل النظم والتفكير النقدي وSQL',skills);assert.ok(r.some(x=>x.id==='onet:2.B.3.e'));assert.ok(r.some(x=>x.id==='onet:2.B.4.g'));assert.ok(r.some(x=>x.id==='onet:2.A.2.a'));assert.ok(r.some(x=>x.id==='miyar:sql'));});
-async function ui(locale='ar',options={}){const errors=[],vc=new VirtualConsole();vc.on('jsdomError',e=>errors.push(e));const dom=new JSDOM('<main id="enterprise"></main>',{url:'https://example.test/Miyar/',runScripts:'outside-only',pretendToBeVisual:true,virtualConsole:vc});const w=dom.window;w.structuredClone=structuredClone;w.confirm=()=>true;w.HTMLDialogElement.prototype.showModal=function(){this.open=true;};w.HTMLDialogElement.prototype.close=function(){this.open=false;this.dispatchEvent(new w.Event('close'));};w.eval(fs.readFileSync(path.join(dir,'enterprise-document.js'),'utf8'));w.AbortSignal=AbortSignal;w.MIYAR_CONFIG={apiBase:options.apiBase||''};w.fetch=options.fetch|| (async url=>({ok:true,json:async()=>JSON.parse(fs.readFileSync(path.join(dir,String(url))))}));w.eval(fs.readFileSync(path.join(dir,'enterprise-core.js'),'utf8'));w.eval(fs.readFileSync(path.join(dir,'enterprise.js'),'utf8'));await w.MiyarEnterprise.mount(w.document.getElementById('enterprise'),{lang:locale});const $=id=>w.document.getElementById('ent-'+id),tab=id=>w.document.querySelector('[data-ent-tab="'+id+'"]').click();return {w,$,tab,errors,dom};}
-test('all enterprise sections render in Arabic and English without duplicate IDs',async()=>{for(const lang of ['ar','en']){const a=await ui(lang);try{for(const tab of ['overview','reference','create','workspace','intelligence','bulk','grading','readiness','evidence','market','connection']){a.tab(tab);const ids=[...a.w.document.querySelectorAll('[id]')].map(x=>x.id);assert.equal(new Set(ids).size,ids.length,tab);assert.ok(a.$('content').textContent.trim());}assert.deepEqual(a.errors,[]);}finally{a.dom.window.close();}}});
+async function ui(locale='ar',options={}){const errors=[],vc=new VirtualConsole();vc.on('jsdomError',e=>errors.push(e));const dom=new JSDOM('<main id="enterprise"></main>',{url:'https://example.test/Miyar/',runScripts:'outside-only',pretendToBeVisual:true,virtualConsole:vc});const w=dom.window;w.structuredClone=structuredClone;w.confirm=()=>true;w.HTMLDialogElement.prototype.showModal=function(){this.open=true;};w.HTMLDialogElement.prototype.close=function(){this.open=false;this.dispatchEvent(new w.Event('close'));};w.eval(fs.readFileSync(path.join(dir,'enterprise-document.js'),'utf8'));w.AbortSignal=AbortSignal;w.MIYAR_CONFIG={apiBase:options.apiBase||''};w.fetch=options.fetch|| (async url=>({ok:true,json:async()=>JSON.parse(fs.readFileSync(path.join(dir,String(url))))}));w.eval(fs.readFileSync(path.join(dir,'enterprise-core.js'),'utf8'));w.eval(fs.readFileSync(path.join(dir,'enterprise-product.js'),'utf8'));w.eval(fs.readFileSync(path.join(dir,'enterprise.js'),'utf8'));await w.MiyarEnterprise.mount(w.document.getElementById('enterprise'),{lang:locale});const $=id=>w.document.getElementById('ent-'+id),tab=id=>w.document.querySelector('[data-ent-tab="'+id+'"]').click();return {w,$,tab,errors,dom};}
+test('all enterprise sections render in Arabic and English without duplicate IDs',async()=>{for(const lang of ['ar','en']){const a=await ui(lang);try{for(const tab of ['overview','tour','business','reference','create','workspace','intelligence','bulk','grading','readiness','evidence','market','connection']){a.tab(tab);const ids=[...a.w.document.querySelectorAll('[id]')].map(x=>x.id);assert.equal(new Set(ids).size,ids.length,tab);assert.ok(a.$('content').textContent.trim());}assert.deepEqual(a.errors,[]);}finally{a.dom.window.close();}}});
 test('reference search flows into a local draft and restores history without granting approval',async()=>{const a=await ui();try{a.tab('reference');a.$('query').value='٢٥١٢٠٤';a.$('search').click();a.w.document.querySelector('[data-code="251204"]').click();a.$('use-reference').click();assert.equal(a.w.document.querySelector('[data-field="occupationCode"]').value,'251204');a.$('sample').click();a.$('save').click();await new Promise(r=>setImmediate(r));let rows=JSON.parse(a.w.localStorage.getItem(C.KEY));assert.equal(rows.length,1);assert.equal(rows[0].state,'draft');a.tab('workspace');await new Promise(r=>setImmediate(r));a.w.document.querySelector('[data-position]').click();await new Promise(r=>setImmediate(r));assert.equal(a.$('approve'),null);assert.equal(a.$('submit-position'),null);a.$('edit-position').click();let x=a.w.document.querySelector('[data-field="title"]');x.value='<img src=x onerror=alert(1)> Updated';x.dispatchEvent(new a.w.Event('input'));a.$('save').click();await new Promise(r=>setImmediate(r));rows=JSON.parse(a.w.localStorage.getItem(C.KEY));assert.equal(rows[0].revision,2);assert.equal(rows[0].versions.length,2);a.tab('workspace');await new Promise(r=>setImmediate(r));assert.equal(a.w.document.querySelector('img'),null);assert.deepEqual(a.errors,[]);}finally{a.dom.window.close();}});
 test('pilot comparison uses paired denominators and distinguishes missing timing',async()=>{const a=await ui('en');try{const r=a.w.MiyarEnterprise.pilotMetrics([{caseId:'1',expectedCode:'251204',miyarCode:'251204',baselineCode:'251104',humanMinutes:'10',miyarMinutes:'4'},{caseId:'2',expectedCode:'251104',miyarCode:'251204',baselineCode:'251104',humanMinutes:'',miyarMinutes:''}]);assert.equal(r.miyarAccuracy,50);assert.equal(r.baselineAccuracy,50);assert.equal(r.timedCases,1);assert.equal(r.timeSavedPercent,60);assert.throws(()=>a.w.MiyarEnterprise.pilotMetrics([{caseId:'1',expectedCode:'a',miyarCode:'a',baselineCode:'a',humanMinutes:'0',miyarMinutes:'1'}]));}finally{a.dom.window.close();}});
 
@@ -67,5 +67,109 @@ test('hosted login uses its configured address and password change keeps only th
   a.$('confirm-password').value='new-test-only-password';a.$('password-form').dispatchEvent(new a.w.Event('submit',{cancelable:true}));await settle();
   assert.equal(a.$('current-password').value,'');assert.match(a.$('message').textContent,/Other sessions were revoked/);
   a.$('logout').click();await settle();const logout=requests.find(r=>r.route.endsWith('/auth/logout-all'));assert.equal(logout.headers.Authorization,'Bearer replacement-test-token');assert.ok(a.$('login'));assert.deepEqual(a.errors,[]);
+ }finally{a.dom.window.close();}
+});
+
+test('guided tour creates no approval or saved data and hands an editable example to the real form',async()=>{
+ for(const locale of ['ar','en']){
+  const a=await ui(locale);try{
+   a.tab('tour');
+   for(let i=0;i<3;i++)a.w.document.getElementById('mx-next').click();
+   assert.equal(a.w.document.querySelector('[data-mx-step="3"]').getAttribute('aria-current'),'step');
+   assert.equal(a.w.localStorage.getItem(C.KEY),null);assert.equal(a.$('approve'),null);
+   a.w.document.getElementById('mx-next').click();
+   assert.equal(a.w.document.querySelector('[data-field="occupationCode"]').value,'251204');
+   assert.equal(a.$('save').textContent,locale==='ar'?'حفظ المسودة محليًا':'Save local draft');
+   assert.equal(a.w.localStorage.getItem(C.KEY),null);
+   a.w.confirm=()=>false;a.tab('tour');a.w.document.getElementById('mx-example').click();
+   assert.ok(a.w.document.getElementById('mx-example'));assert.deepEqual(a.errors,[]);
+  }finally{a.dom.window.close();}
+ }
+});
+
+test('editable matrices preserve free text through language changes, preview and local save',async()=>{
+ const a=await ui('en');try{
+  a.tab('create');a.$('sample').click();
+  const cell=a.w.document.querySelector('[data-matrix-key="raci"][data-matrix-field="R"]');
+  cell.value='Developer | vendor <script> & فريق';cell.dispatchEvent(new a.w.Event('input'));
+  a.w.document.querySelector('[data-matrix-add="skillRequirements"]').click();
+  const skill=a.w.document.querySelector('[data-matrix-key="skillRequirements"][data-matrix-row="1"][data-matrix-field="name"]');
+  skill.value='Digital twins';skill.dispatchEvent(new a.w.Event('input'));
+  await a.w.MiyarEnterprise.mount(a.w.document.getElementById('enterprise'),{lang:'ar'});
+  assert.equal(a.w.document.querySelector('[data-matrix-key="raci"][data-matrix-field="R"]').value,'Developer | vendor <script> & فريق');
+  a.$('preview-draft').click();await new Promise(r=>setImmediate(r));
+  assert.match(a.w.document.querySelector('dialog').textContent,/Developer \| vendor <script> & فريق/);
+  assert.equal(a.w.document.querySelector('dialog script'),null);a.$('close-report').click();
+  a.$('save').click();await new Promise(r=>setImmediate(r));
+  const row=JSON.parse(a.w.localStorage.getItem(C.KEY))[0];
+  assert.equal(row.content.raci[0].R,'Developer | vendor <script> & فريق');
+  assert.equal(row.content.skillRequirements[1].name,'Digital twins');assert.equal(row.state,'draft');assert.deepEqual(a.errors,[]);
+ }finally{a.dom.window.close();}
+});
+
+test('local register pages and filters the full saved collection',async()=>{
+ const a=await ui('en'),settle=()=>new Promise(r=>setImmediate(r));
+ try{
+  const rows=Array.from({length:45},(_,i)=>({id:'LOCAL-'+i,title:'Position '+String(i).padStart(2,'0'),state:'draft',revision:1,content:{title:'Position '+i}}));
+  a.w.localStorage.setItem(C.KEY,JSON.stringify(rows));a.tab('workspace');await settle();
+  assert.equal(a.w.document.querySelectorAll('[data-position]').length,20);
+  a.$('positions-next').click();await settle();assert.equal(a.w.document.querySelector('[data-position]').dataset.position,'LOCAL-20');
+  a.$('positions-next').click();await settle();assert.equal(a.w.document.querySelectorAll('[data-position]').length,5);assert.ok(a.$('positions-next').disabled);
+  a.$('register-query').value='Position 44';a.$('register-search').dispatchEvent(new a.w.Event('submit',{cancelable:true}));await settle();
+  assert.equal(a.w.document.querySelectorAll('[data-position]').length,1);assert.ok(a.$('positions-prev').disabled);
+  await a.w.MiyarEnterprise.mount(a.w.document.getElementById('enterprise'),{lang:'ar'});await settle();
+  assert.equal(a.w.document.querySelectorAll('[data-position]').length,1,'Changing language reloads the selected register page');
+  await a.w.MiyarEnterprise.mount(a.w.document.getElementById('enterprise'),{lang:'en'});await settle();
+  a.$('register-state').value='active';a.$('register-search').dispatchEvent(new a.w.Event('submit',{cancelable:true}));await settle();
+  assert.equal(a.w.document.querySelectorAll('[data-position]').length,0);assert.match(a.$('position-list').textContent,/No matching/);assert.deepEqual(a.errors,[]);
+ }finally{a.dom.window.close();}
+});
+
+test('department selection survives navigation and language changes and server search uses offsets',async()=>{
+ const base='https://miyar.example.test',requests=[],response=value=>({ok:true,status:200,json:async()=>value});
+ const fetch=async(url,options={})=>{
+  if(!String(url).startsWith(base))return response(JSON.parse(fs.readFileSync(path.join(dir,String(url)))));
+  const u=new URL(url),route=u.pathname;requests.push({route,query:u.search,...options});
+  if(route.endsWith('/auth/login'))return response({accessToken:'test-token'});
+  if(route.endsWith('/me'))return response({id:'test-od',name:'Test OD',role:'od_specialist',organization:{name:'Test org'}});
+  if(route.endsWith('/departments'))return response([{id:'one',name:'Department one'},{id:'two',name:'Department two'}]);
+  if(route.endsWith('/settings'))return response({});
+  if(route.endsWith('/organization/taxonomy/export'))return response(ref);
+  if(route.endsWith('/integrations/status'))return response({connectors:[],outboundWebhookConfigured:false});
+  if(route.endsWith('/analytics'))return response({positions:105,activeHeadcount:0,annualPositionCost:0,states:{in_review:0}});
+  if(route.endsWith('/positions')&&options.method==='POST')return response({id:'created',internalCode:'MJR-TEST',revision:1,departmentId:JSON.parse(options.body).departmentId});
+  if(route.endsWith('/positions'))return response({total:105,items:[{id:'page-'+u.searchParams.get('offset'),title:'Example',state:'draft',revision:1}]});
+  throw Error('Unexpected route '+route);
+ };
+ const a=await ui('en',{apiBase:base,fetch}),settle=async()=>{for(let i=0;i<5;i++)await new Promise(r=>setImmediate(r));};
+ try{
+  a.tab('connection');a.$('email').value='test@example.test';a.$('password').value='test-only-password';a.$('login').dispatchEvent(new a.w.Event('submit',{cancelable:true}));await settle();
+  a.tab('create');a.$('sample').click();a.$('department').value='two';a.$('department').dispatchEvent(new a.w.Event('change'));
+  a.tab('overview');a.tab('create');await a.w.MiyarEnterprise.mount(a.w.document.getElementById('enterprise'),{lang:'ar'});
+  assert.equal(a.$('department').value,'two');
+  a.$('save').click();await settle();const sent=JSON.parse(requests.find(r=>r.route.endsWith('/positions')&&r.method==='POST').body);
+  assert.equal(sent.departmentId,'two');assert.equal(sent.content.department,'Department two');
+  a.tab('workspace');await settle();a.$('positions-next').click();await settle();
+  assert.ok(requests.some(r=>r.query.includes('offset=20')));
+  a.$('register-query').value='مهندس برمجيات';a.$('register-search').dispatchEvent(new a.w.Event('submit',{cancelable:true}));await settle();
+  const last=requests.filter(r=>r.route.endsWith('/positions')).at(-1);assert.equal(new URLSearchParams(last.query).get('offset'),'0');assert.equal(new URLSearchParams(last.query).get('q'),'مهندس برمجيات');assert.deepEqual(a.errors,[]);
+ }finally{a.dom.window.close();}
+});
+
+test('public readiness distinguishes configured services from sign-in and clears a failed status check',async()=>{
+ const base='https://miyar.example.test';let healthy=true;
+ const fetch=async url=>{
+  if(!String(url).startsWith(base))return {ok:true,json:async()=>JSON.parse(fs.readFileSync(path.join(dir,String(url))))};
+  return {ok:healthy,status:healthy?200:503,json:async()=>({status:'ok',version:'4.2.0',services:{approvals:true,exports:[{format:'PDF',available:true}],signingConfigured:true,semanticEnabled:false}})};
+ };
+ const a=await ui('en',{apiBase:base,fetch}),settle=async()=>{for(let i=0;i<3;i++)await new Promise(r=>setImmediate(r));};
+ try{
+  a.tab('readiness');assert.match(a.$('content').textContent,/Not checked in this session/);
+  a.$('check-service').click();await settle();
+  assert.match(a.$('content').textContent,/Server configured · sign in to use/);assert.match(a.$('content').textContent,/Not enabled on the server/);
+  const exportRow=[...a.$('content').querySelectorAll('tr')].find(row=>row.textContent.includes('Organization exports'));
+  assert.match(exportRow.textContent,/Not enabled on the server/,'One available format must not mark the entire export suite ready');
+  healthy=false;a.$('check-service').click();await settle();
+  assert.match(a.$('health-status').textContent,/did not succeed/);assert.doesNotMatch(a.$('content').textContent,/Server configured · sign in to use/);assert.deepEqual(a.errors,[]);
  }finally{a.dom.window.close();}
 });

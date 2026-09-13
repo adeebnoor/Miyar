@@ -1,6 +1,6 @@
 # Enterprise implementation checkpoint
 
-Updated 13 September 2026, release 4.1.1.
+Updated 13 September 2026, release 4.2.0.
 
 The continuation preserves all six enterprise axes and the source editions (occupations 2019, education 2020).
 
@@ -13,3 +13,9 @@ See the architecture document for evidence boundaries and the demo guide for the
 Release 4.1.1 passed 47 interface tests and 25 server tests in GitHub Actions (run 34760611202), including PostgreSQL concurrency checks. This continuation adds same-origin UI hosting, private generated bootstrap credentials, a password-change flow with session revocation and rate limiting, and a database-aware health check. The complete suite remains a mandatory deployment gate.
 
 The published Arabic interface was inspected interactively, including unrestricted input, the package dialog and draft persistence. The earlier three-page Arabic PDF was visually inspected. After activation, live checks confirmed PostgreSQL health, the Ed25519 public key, same-origin UI/configuration/font, GitHub Pages CORS, and rejection of unauthenticated position access. No runtime errors appeared in the queried logs. The bootstrap account was created without printing its password. The owner must complete first login privately and configure distinct reviewers and an approved framework before demonstrating the authenticated institutional approval flow on this live instance.
+
+## Product review continuation — 4.2.0
+
+The buyer-oriented introduction, four-step tour, effort scenario calculator, downloadable pilot plan and revised investor story explain a proposed adoption path without invented commercial evidence. The UI now provides editable RACI/competency grids, register search/status/pagination, persistent department selection, common bilingual errors and administrator account visibility. Public health data and the readiness screen distinguish configured, authenticated and disabled services.
+
+55 interface tests and 24 server tests passed locally; the remaining PostgreSQL concurrency test is mandatory in CI. Local browser preview was blocked in this session, so visual verification follows publication on the public site. The live institutional workflow still needs private first login, distinct reviewers and an approved framework. See [the current audit](product-investor-review.md); the five-record HR review is historical.

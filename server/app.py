@@ -51,7 +51,7 @@ def create_app(db_url=None,jwt_secret=None,catalog=None):
     engine,Session=database(url);Base.metadata.create_all(engine)
     from .audit import protect
     protect(engine);references=catalog or Catalog()
-    app=FastAPI(title='Miyar Enterprise Workforce API',version='4.1.1',description='Tenant-scoped positions, revision-bound approvals, versioned classification references and explicit integration boundaries.')
+    app=FastAPI(title='Miyar Enterprise Workforce API',version='4.2.0',description='Tenant-scoped positions, revision-bound approvals, versioned classification references and explicit integration boundaries.')
     app.state.sessions=Session;app.state.catalog=references;app.state.secret=secret
     origins=[x.strip() for x in os.getenv('MIYAR_CORS_ORIGINS','https://adeebnoor.github.io').split(',') if x.strip()]
     app.add_middleware(CORSMiddleware,allow_origins=origins,allow_credentials=False,allow_methods=['GET','POST','PATCH'],allow_headers=['Authorization','Content-Type','Idempotency-Key'])
@@ -128,7 +128,7 @@ def create_app(db_url=None,jwt_secret=None,catalog=None):
         result['occupationRelease']=selected.occupations['id'];return result
     def snapshot(db,user,p,reason):
         db.add(PositionVersion(position_id=p.id,revision=p.revision,title=p.title,content=copy.deepcopy(p.content),actor_id=user.id,reason=reason))
-    def present(p):return {'id':p.id,'internalCode':p.internal_code,'title':p.title,'departmentId':p.department_id,'state':p.state,'revision':p.revision,'activeRevision':p.active_revision,'content':p.content,'workflow':p.workflow,'approvalStage':p.approval_stage,'createdAt':p.created_at,'updatedAt':p.updated_at}
+    def present(p):return {'id':p.id,'internalCode':p.internal_code,'title':p.title,'departmentId':p.department_id,'state':p.state,'createdBy':p.created_by,'revision':p.revision,'activeRevision':p.active_revision,'content':p.content,'workflow':p.workflow,'approvalStage':p.approval_stage,'createdAt':p.created_at,'updatedAt':p.updated_at}
     def revise(db,user,p,value,reason,restored=None):
         if p.state=='in_review':raise HTTPException(409,'Return or withdraw the request before editing its reviewed content')
         old={'title':p.title,'revision':p.revision};p.content=content(value,db,user);p.title=p.content['title'];p.revision+=1;p.state='draft';p.approval_stage=0;p.workflow=[];p.updated_at=now();snapshot(db,user,p,reason)
@@ -138,7 +138,7 @@ def create_app(db_url=None,jwt_secret=None,catalog=None):
         try:
             with engine.connect() as connection:connection.execute(select(1))
         except SQLAlchemyError:return JSONResponse({'status':'unavailable','database':'unreachable'},status_code=503)
-        return {'status':'ok','version':app.version,'taxonomy':references.occupations['id'],'occupations':len(references.roles),'semanticModelReady':references.model is not None,'storage':'postgresql' if engine.dialect.name=='postgresql' else 'local-development-sqlite'}
+        return {'status':'ok','version':app.version,'taxonomy':references.occupations['id'],'occupations':len(references.roles),'semanticModelReady':references.model is not None,'storage':'postgresql' if engine.dialect.name=='postgresql' else 'local-development-sqlite','services':service_capabilities()}
     @app.post('/api/v1/auth/login')
     def login(body:Login,request:Request,db=Depends(session)):
         email=body.email.strip().lower();key=digest({'email':email,'ip':request.client.host if request.client else ''});ts=int(time.time());window=db.get(LoginWindow,key)
@@ -173,14 +173,16 @@ def create_app(db_url=None,jwt_secret=None,catalog=None):
     @app.get('/api/v1/me')
     def me(user=Depends(current),db=Depends(session)):
         org=organization(db,user);return {'id':user.id,'name':user.name,'email':user.email,'role':user.role,'departmentId':user.department_id,'organization':{'id':org.id,'name':org.name},'capabilities':{'approveAs':user.role if user.role in ['od_specialist','total_rewards','finance','chro'] else None,'configure':user.role=='admin'}}
-    @app.get('/api/v1/capabilities')
-    def capabilities(user=Depends(current)):
+    def service_capabilities():
         from importlib.util import find_spec
         from .exports import public_key
         signing=False
         try:public_key();signing=True
         except (ValueError,TypeError):pass
         return {'version':app.version,'storage':engine.dialect.name,'approvals':True,'semanticEnabled':os.getenv('MIYAR_ENABLE_EMBEDDINGS')=='true','semanticModelReady':references.model is not None,'signingConfigured':signing,'exports':[{'format':kind,'available':find_spec(module) is not None} for kind,module in [('DOCX','docx'),('XLSX','openpyxl'),('PDF','weasyprint')]],'externalConnectors':'Require organization-authorized endpoint configuration'}
+    @app.get('/api/v1/capabilities')
+    def capabilities(user=Depends(current)):
+        return service_capabilities()
     @app.get('/api/v1/departments')
     def departments(user=Depends(current),db=Depends(session)):
         query=select(Department).where(Department.org_id==user.org_id)

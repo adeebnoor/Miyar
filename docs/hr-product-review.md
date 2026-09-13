@@ -1,4 +1,6 @@
-# HR product review — 13 September 2026
+# Historical HR product review — initial five-record version
+
+**Historical checkpoint:** this review predates the expanded corpus and enterprise API. Its five-record coverage and missing enterprise features do not describe the current application. See the [4.2 product review](product-investor-review.md) and [architecture](enterprise-architecture.md) for current behavior.
 
 Live demo: https://adeebnoor.github.io/Miyar/
 

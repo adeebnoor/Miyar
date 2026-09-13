@@ -33,6 +33,15 @@ function importDraft(payload){
  if(JSON.stringify(content).length>80000)throw Error('Position content exceeds 80 KB');
  return content;
 }
-root.MiyarEnterpriseCore={normalize,search,skills,csv,diagnose,customGrade,required,read,save,importDraft,KEY};
+function parseMatrix(text,keys){
+ const lines=String(text).split('\n').filter(line=>line.trim());
+ if(lines.length>100)throw Error('Matrix has more than 100 rows');
+ return lines.map(line=>{
+  const values=line.split('|');
+  if(values.length>keys.length)throw Error('Matrix row has extra columns');
+  return Object.fromEntries(keys.map((key,i)=>[key,values[i]?.trim()||'']));
+ });
+}
+root.MiyarEnterpriseCore={normalize,search,skills,csv,diagnose,customGrade,required,read,save,importDraft,parseMatrix,KEY};
 if(typeof module!=='undefined')module.exports=root.MiyarEnterpriseCore;
 })(typeof window!=='undefined'?window:globalThis);

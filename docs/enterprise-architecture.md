@@ -1,6 +1,6 @@
 # Enterprise architecture and technical evidence
 
-Release 4.1.1, 13 September 2026. This document describes executable behavior and its limits.
+Release 4.2.0, 13 September 2026. This document describes executable behavior and its limits.
 
 ## Six development axes
 
@@ -11,7 +11,7 @@ Release 4.1.1, 13 September 2026. This document describes executable behavior an
 | Evaluation | Custom weights/bands/evidence; evaluation locked after Rewards approval; grade included in exports | Organization-approved framework; proprietary vendor calculators absent |
 | Integration | OpenAPI; canonical draft import; idempotency; approved-version exports; signed outbox/retries | Authorized vendor endpoints; no live Qiwa/GOSI connection |
 | Market intelligence | Sourced global skill-trend context; paired pilot comparison | No live market feed or salary-survey claim |
-| UX/security/exports | Bilingual input, local revisions/import/preview, readiness table, HTML/JSON and server DOCX/XLSX/PDF | Live public UI, database health and signing key checked; authenticated live export/approval demonstration follows first login |
+| UX/security/exports | Bilingual input, editable matrices, paginated register, local revisions/import/preview, public service checks, HTML/JSON and server DOCX/XLSX/PDF | Live public UI, database health and signing key checked; authenticated live export/approval demonstration follows first login |
 
 ## Corpus and mapper
 
@@ -52,3 +52,11 @@ Tests cover explicit behaviors: hierarchy, Arabic numerals, free text, local per
 Pilot measurement uses expert code labels and paired timings with explicit denominators and missing-time handling. No accuracy, savings or ROI is prefilled. Independent evaluation cases, expert agreement, threshold calibration and a Saudi/GCC partner pilot are still needed.
 
 The implementation addresses concrete mapper/rule/fallback/audit enablement and narrows claims to observable behavior. Prior-art comparison, legal claim drafting and filing decisions remain outside this implementation record. No software check closes them.
+
+## Product and service availability in 4.2
+
+The public workspace includes a four-step instructional tour and an assumption-based effort calculator with a locally generated pilot plan. These do not create approvals, transmit leads or assert measured savings. See the [product audit](product-investor-review.md).
+
+`/health` tests database connectivity and exposes non-secret service configuration: available export dependencies, signing configuration and semantic model enablement. It returns no organization data or credentials. Configuration is not an end-to-end approval or export check. The protected capabilities endpoint remains available after authentication.
+
+Position responses include the creator ID so the interface can hide self-approval; server authorization remains authoritative. Register queries use the existing title, state, limit and offset parameters. Department changes to existing positions are not offered because the update API does not implement reassignment.
