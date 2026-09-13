@@ -7,11 +7,11 @@ Release 4.1.1, 13 September 2026. This document describes executable behavior an
 | Axis | Implemented | Dependency or outstanding evidence |
 | --- | --- | --- |
 | AI/NLP and classification | Versioned tree; free-text Field/Seniority; dictionary skills; multilingual retrieval; thresholds; deterministic rules; approved-library fallback | Model hosting, reviewed skill crosswalks and held-out expert labels |
-| Governance | Tenant/department scope; OD → Rewards → Finance → CHRO; revision locks; return/withdraw/restore; active revision retained | Hosted PostgreSQL and separate reviewer accounts |
+| Governance | Tenant/department scope; OD → Rewards → Finance → CHRO; revision locks; return/withdraw/restore; active revision retained | PostgreSQL is live; distinct reviewer accounts and organization setup remain necessary |
 | Evaluation | Custom weights/bands/evidence; evaluation locked after Rewards approval; grade included in exports | Organization-approved framework; proprietary vendor calculators absent |
 | Integration | OpenAPI; canonical draft import; idempotency; approved-version exports; signed outbox/retries | Authorized vendor endpoints; no live Qiwa/GOSI connection |
 | Market intelligence | Sourced global skill-trend context; paired pilot comparison | No live market feed or salary-survey claim |
-| UX/security/exports | Bilingual input, local revisions/import/preview, readiness table, HTML/JSON and server DOCX/XLSX/PDF | Public UI checked interactively; live server verification follows activation |
+| UX/security/exports | Bilingual input, local revisions/import/preview, readiness table, HTML/JSON and server DOCX/XLSX/PDF | Live public UI, database health and signing key checked; authenticated live export/approval demonstration follows first login |
 
 ## Corpus and mapper
 

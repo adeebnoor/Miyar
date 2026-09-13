@@ -2,7 +2,7 @@
 
 A bilingual workforce architecture and position-management prototype by Prof. Adeeb Noor and Ahmad Raza Khan, King Abdulaziz University.
 
-[Open Miyar](https://adeebnoor.github.io/Miyar/) · [Architecture](docs/enterprise-architecture.md) · [Demo guide](docs/investor-demo.md) · [Render activation](docs/render-activation.md) · [Checkpoint](docs/enterprise-progress.md)
+[Open Miyar](https://adeebnoor.github.io/Miyar/) · [Enterprise server](https://miyar-enterprise-api.onrender.com/) · [Architecture](docs/enterprise-architecture.md) · [Demo guide](docs/investor-demo.md) · [First login and operations](docs/render-activation.md) · [Checkpoint](docs/enterprise-progress.md)
 
 The public application starts with the enterprise workspace. The original five-role experience remains accessible for continuity. **Field and Seniority accept free text** in matching and position design. User-authored values stay intact through language switching, saving and export.
 
@@ -22,7 +22,7 @@ Local drafts stay in the current browser/device. Download JSON for backup; clear
 
 FastAPI/PostgreSQL implements tenant/department isolation, role-based access, four-stage approvals, immutable historical records, signed internal receipts, DOCX/XLSX/PDF exports, custom evaluation frameworks and HRIS exchange contracts.
 
-These require a deployed server and organization accounts. Publishing GitHub Pages does not deploy the API. The connection screen does not authenticate with ChatGPT or external HR systems. External systems need authorized endpoints and credentials.
+The enterprise server is live on Render and GitHub Pages is configured to connect to it automatically. Institutional operations require organization accounts; the public references and local drafts remain available without login. The connection screen does not authenticate with ChatGPT or external HR systems. External systems need authorized endpoints and credentials.
 
 Semantic retrieval uses a pinned multilingual MiniLM ONNX model and is disabled by default. A recorded development smoke run reached approximately 887 MiB peak RSS, exceeding the 512 MB free web-instance budget. No live E5/Gemini service or validated matching accuracy is claimed.
 
@@ -44,6 +44,6 @@ python -m server.start
 
 The Render Blueprint generates the bootstrap password and signing/session keys, then serves the UI and API from the same origin. Get the initial password privately from the service environment and change it inside Miyar. Existing accounts are not reset on redeploy. The local CLI prompts for a password if one is not supplied through the environment; no public passwords are seeded. Create distinct manager, OD, Rewards, Finance and final-authority accounts. Institutional grading requires an organization-approved custom framework.
 
-GitHub Actions tests the API against PostgreSQL, including concurrent approvals, then tests the interface before deploying `dist`. The `render.yaml` is ready for evaluation deployment. The owner confirmed My Workspace and its PostgreSQL database is available; applying the Blueprint is still required to launch the Docker service and wire its internal database URL. Account for free database expiration and cold starts before a scheduled presentation.
+GitHub Actions tests the API against PostgreSQL, including concurrent approvals, then tests the interface before deploying `dist`. Release 4.1.1 passed 47 interface tests and 25 server tests. The owner activated the Blueprint in My Workspace on 13 September 2026. Live checks confirmed PostgreSQL health, the signing public key, UI delivery and cross-origin access from GitHub Pages. First login and organization account/framework setup remain necessary for the live approval demonstration. Account for cold starts and the free database expiration on 13 October 2026 before a scheduled presentation.
 
 The source editions do not establish current regulatory requirements. Reference counts are not market statistics; similarity is not calibrated confidence. Software tests do not establish novelty, ROI, legal compliance or patent protection. Original attachments, evaluation correspondence, credentials and organization data are not published. The font uses the [SIL Open Font License](dist/assets/OFL.txt).
