@@ -12,10 +12,10 @@ def test_hosted_ui_resolves_assets_without_exposing_server_files(tmp_path,monkey
     with TestClient(app) as c:
         health=c.get('/health').json()
         assert health['status']=='ok'
-        assert health['version']=='4.4.0'
+        assert health['version']=='4.5.0'
         assert health['services']['approvals'] is True
         assert {item['format'] for item in health['services']['exports']}=={'DOCX','XLSX','PDF'}
-        assert set(health['services'])=={'version','storage','approvals','semanticEnabled','semanticModelReady','signingConfigured','exports','externalConnectors'}
+        assert set(health['services'])=={'version','storage','approvals','semanticEnabled','semanticModelReady','signingConfigured','kpiGenerationEnabled','exports','externalConnectors'}
         page=c.get('/');assert page.status_code==200;assert './config.js' in page.text
         config=c.get('/config.js');assert 'window.location.origin' in config.text
         assert config.headers['cache-control']=='no-store'

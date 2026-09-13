@@ -28,6 +28,7 @@ class ChangePosition(Input):revision:int=Field(ge=1);content:dict;reason:str=Fie
 class RevisionRequest(Input):revision:int=Field(ge=1);reason:str=Field(min_length=3,max_length=1000)
 class RestoreRequest(RevisionRequest):restoreRevision:int=Field(ge=1)
 class ApprovalRequest(Input):revision:int=Field(ge=1);decision:Literal['approve','return','reject'];comment:str=Field(min_length=3,max_length=2000);evidence:dict=Field(default_factory=dict)
+class PublicPDF(Input):content:dict;lang:Literal['ar','en']='ar'
 class GradeRequest(Input):revision:int=Field(ge=1);answers:dict;evidence:dict
 class AnalyzeRequest(Input):
     text:str=Field(min_length=3,max_length=12000)
@@ -40,7 +41,7 @@ class FrameworkRequest(Input):framework:dict;reason:str=Field(min_length=3,max_l
 class WorkflowRequest(Input):steps:list[dict];reason:str=Field(min_length=3,max_length=1000)
 class BrandingRequest(Input):nameAr:str=Field(max_length=200);nameEn:str=Field(max_length=200);color:str=Field(pattern=r'^#[0-9a-fA-F]{6}$');footer:str=Field(max_length=500)
 
-CONTENT_FIELDS=set(CORE)|{'field','seniority','requestType','department','manager','effectiveDate','experience','certifications','occupationCode','occupationRelease','educationLevel','educationFieldCode','constraints','saudization','saudizationSource','saudizationDate','license','licenseSource','licenseDate','headcount','annualCost','directReports','raci','skillRequirements','mappingJustification','provisional','provisionalParent','sourceDecisionId','sourceDecisionInput','importNotes'}
+CONTENT_FIELDS=set(CORE)|{'field','seniority','requestType','department','manager','effectiveDate','experience','certifications','occupationCode','occupationRelease','educationLevel','educationFieldCode','constraints','saudization','saudizationSource','saudizationDate','license','licenseSource','licenseDate','headcount','annualCost','directReports','raci','skillRequirements','mappingJustification','provisional','provisionalParent','sourceDecisionId','sourceDecisionInput','importNotes','kpis','performanceBasis','raciBasis','salaryMin','salaryMax','salaryCurrency','salaryPeriod','salarySource','salaryGrade','evaluationSummary'}
 
 def create_app(db_url=None,jwt_secret=None,catalog=None):
     secret=jwt_secret or os.getenv('MIYAR_JWT_SECRET','');url=db_url or os.getenv('DATABASE_URL','sqlite:///./.runtime/miyar.db')
@@ -51,7 +52,7 @@ def create_app(db_url=None,jwt_secret=None,catalog=None):
     engine,Session=database(url);Base.metadata.create_all(engine)
     from .audit import protect
     protect(engine);references=catalog or Catalog()
-    app=FastAPI(title='Miyar Enterprise Workforce API',version='4.4.0',description='Tenant-scoped positions, revision-bound approvals, versioned classification references and explicit integration boundaries.')
+    app=FastAPI(title='Miyar Enterprise Workforce API',version='4.5.0',description='Tenant-scoped positions, revision-bound approvals, versioned classification references and explicit integration boundaries.')
     app.state.sessions=Session;app.state.catalog=references;app.state.secret=secret
     origins=[x.strip() for x in os.getenv('MIYAR_CORS_ORIGINS','https://adeebnoor.github.io').split(',') if x.strip()]
     app.add_middleware(CORSMiddleware,allow_origins=origins,allow_credentials=False,allow_methods=['GET','POST','PATCH'],allow_headers=['Authorization','Content-Type','Idempotency-Key'])
@@ -106,11 +107,11 @@ def create_app(db_url=None,jwt_secret=None,catalog=None):
         if extra:raise HTTPException(422,{'unsupportedFields':sorted(extra)})
         result=copy.deepcopy(value)
         for key,v in result.items():
-            if key in {'raci','skillRequirements'}:
+            if key in {'raci','skillRequirements','kpis'}:
                 if not isinstance(v,list) or len(v)>100:raise HTTPException(422,'Invalid matrix')
-                allowed={'responsibility','R','A','C','I'} if key=='raci' else {'name','type','level','evidence'}
+                allowed={'responsibility','R','A','C','I'} if key=='raci' else {'outcome','metric','target','frequency','deliverable'} if key=='kpis' else {'name','type','level','evidence'}
                 if any(not isinstance(row,dict) or set(row)-allowed or any(not isinstance(cell,str) or len(cell)>4000 for cell in row.values()) for row in v):raise HTTPException(422,'Matrix entries must contain named text fields')
-            elif key in {'headcount','annualCost','directReports'}:
+            elif key in {'headcount','annualCost','directReports','salaryMin','salaryMax'}:
                 if not isinstance(v,(int,float)) or isinstance(v,bool) or not 0<=v<=1e12:raise HTTPException(422,'Invalid numeric scope')
             elif key=='provisional':
                 if not isinstance(v,bool):raise HTTPException(422,'Invalid provisional flag')
@@ -125,7 +126,10 @@ def create_app(db_url=None,jwt_secret=None,catalog=None):
         if result.get('headcount',1)<=0 or int(result.get('headcount',1))!=result.get('headcount',1):raise HTTPException(422,'Headcount must be positive')
         if 'directReports' in result and int(result['directReports'])!=result['directReports']:raise HTTPException(422,'Direct reports must be a whole number')
         if result.get('provisional') and result.get('occupationCode'):raise HTTPException(422,'A provisional internal role cannot carry a final occupation code')
-        try:validate_regulatory(result)
+        try:
+            validate_regulatory(result)
+            from .domain import validate_salary
+            validate_salary(result)
         except (ValueError,TypeError) as e:raise HTTPException(422,str(e))
         result['occupationRelease']=selected.occupations['id'];return result
     def snapshot(db,user,p,reason):
@@ -135,6 +139,38 @@ def create_app(db_url=None,jwt_secret=None,catalog=None):
         if p.state=='in_review':raise HTTPException(409,'Return or withdraw the request before editing its reviewed content')
         old={'title':p.title,'revision':p.revision};p.content=content(value,db,user);p.title=p.content['title'];p.revision+=1;p.state='draft';p.approval_stage=0;p.workflow=[];p.updated_at=now();snapshot(db,user,p,reason)
         audit(db,user,'position.restored' if restored else 'position.changed',{'old':old,'newTitle':p.title,'newRevision':p.revision,'reason':reason,'restoredFromRevision':restored},p)
+    # Public drafting exports never read organizational records or accept approval claims.
+    # Bound concurrent rendering and keep the payload in memory only.
+    from threading import BoundedSemaphore, Lock
+    from collections import OrderedDict
+    pdf_slot=BoundedSemaphore(1);pdf_limits=OrderedDict();pdf_lock=Lock()
+    @app.post('/api/v1/public/position-pdf')
+    def public_position_pdf(body:PublicPDF,request:Request):
+        from .exports import pdf
+        from fastapi.responses import Response
+        ip=request.client.host if request.client else 'unknown';stamp=time.monotonic()
+        with pdf_lock:
+            recent=[x for x in pdf_limits.get(ip,[]) if stamp-x<60]
+            if len(recent)>=6:raise HTTPException(429,'Please wait a minute before exporting another PDF')
+            pdf_limits[ip]=recent+[stamp];pdf_limits.move_to_end(ip)
+            while len(pdf_limits)>2000:pdf_limits.popitem(last=False)
+        value=content(body.content)
+        if sum(len(value.get(k,[])) for k in ['raci','kpis','skillRequirements'])>60:raise HTTPException(422,'PDF exports support up to 60 matrix rows')
+        if not pdf_slot.acquire(blocking=False):raise HTTPException(429,'The PDF service is busy. Try again shortly')
+        try:
+            card={'id':'local-draft','internalCode':'DRAFT-'+digest(value)[:10].upper(),'revision':1,'content':value,'approved':False,'approvals':[],'evaluation':None,'lang':body.lang}
+            result=pdf(card,{'nameAr':'معيار | بطاقة الوصف الوظيفي','nameEn':'MIYAR | POSITION DESCRIPTION','color':'#146954'})
+            return Response(result,media_type='application/pdf',headers={'Content-Disposition':'attachment; filename="Miyar-Position.pdf"','Cache-Control':'no-store'})
+        finally:pdf_slot.release()
+    @app.post('/api/v1/performance/kpis')
+    def generate_performance(body:PublicPDF,user=Depends(current),db=Depends(session)):
+        require(user,'line_manager','od_specialist','admin')
+        value=content(body.content,db,user)
+        from .performance import generate_kpis
+        try:result=generate_kpis(value,body.lang)
+        except ValueError as error:raise HTTPException(422,str(error))
+        audit(db,user,'performance.suggested',{'method':'configured-ai','count':len(result),'model':os.getenv('MIYAR_KPI_MODEL')});db.commit()
+        return {'kpis':result,'status':'human-review-required'}
     @app.get('/health')
     def health():
         try:
@@ -181,7 +217,7 @@ def create_app(db_url=None,jwt_secret=None,catalog=None):
         signing=False
         try:public_key();signing=True
         except (ValueError,TypeError):pass
-        return {'version':app.version,'storage':engine.dialect.name,'approvals':True,'semanticEnabled':os.getenv('MIYAR_ENABLE_EMBEDDINGS')=='true','semanticModelReady':references.model is not None,'signingConfigured':signing,'exports':[{'format':kind,'available':find_spec(module) is not None} for kind,module in [('DOCX','docx'),('XLSX','openpyxl'),('PDF','weasyprint')]],'externalConnectors':'Require organization-authorized endpoint configuration'}
+        return {'version':app.version,'storage':engine.dialect.name,'approvals':True,'kpiGenerationEnabled':bool(os.getenv('MIYAR_KPI_ENDPOINT') and os.getenv('MIYAR_KPI_MODEL') and os.getenv('MIYAR_KPI_API_KEY')),'semanticEnabled':os.getenv('MIYAR_ENABLE_EMBEDDINGS')=='true','semanticModelReady':references.model is not None,'signingConfigured':signing,'exports':[{'format':kind,'available':find_spec(module) is not None} for kind,module in [('DOCX','docx'),('XLSX','openpyxl'),('PDF','weasyprint')]],'externalConnectors':'Require organization-authorized endpoint configuration'}
     @app.get('/api/v1/capabilities')
     def capabilities(user=Depends(current)):
         return service_capabilities()

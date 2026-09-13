@@ -4,6 +4,26 @@ from decimal import Decimal
 from datetime import date
 from urllib.parse import urlsplit
 
+def validate_salary(value):
+    minimum,maximum=value.get('salaryMin'),value.get('salaryMax')
+    if minimum is None and maximum is None:return
+    if any(isinstance(v,bool) or not isinstance(v,(int,float)) or not math.isfinite(v) for v in (minimum,maximum)) or minimum<0 or maximum<minimum or maximum>1e12:raise ValueError('Enter a valid minimum and maximum salary')
+    if value.get('salaryPeriod','monthly') not in ('monthly','annual'):raise ValueError('Choose monthly or annual salary')
+    if not re.fullmatch(r'[A-Z]{3}',value.get('salaryCurrency','SAR')):raise ValueError('Use a three-letter currency code')
+
+def compensation_result(framework,band,evidence):
+    if 'salaryMin' in band or 'salaryMax' in band:
+        c={k:band.get(k) for k in ('salaryMin','salaryMax')}
+        c.update(salaryCurrency=framework.get('currency','SAR'),salaryPeriod=framework.get('salaryPeriod','monthly'),salarySource='Organization framework '+str(framework.get('id'))+' v'+str(framework.get('version')))
+    else:c=copy.deepcopy(evidence.get('compensation',{}))
+    if not isinstance(c,dict):raise ValueError('Invalid salary proposal')
+    if c:
+        if set(c)-{'salaryMin','salaryMax','salaryCurrency','salaryPeriod','salarySource'}:raise ValueError('Invalid salary proposal fields')
+        validate_salary(c)
+        if not isinstance(c.get('salarySource'),str) or not c['salarySource'].strip() or len(c['salarySource'])>1000:raise ValueError('Provide the salary range source or rationale')
+        c.update(grade=band['id'],status='proposal-for-review')
+    return c or None
+
 def valid_date(value,verification=True):
     if not isinstance(value,str) or not re.fullmatch(r'\d{4}-\d{2}-\d{2}',value):raise ValueError('Use a valid ISO date')
     parsed=date.fromisoformat(value)
@@ -85,7 +105,7 @@ def validate_framework(framework):
     ordered=sorted(bands,key=lambda x:x['min']);previous=-1
     for band in ordered:
         if not isinstance(band.get('min'),int) or not isinstance(band.get('max'),int) or band['min']!=previous+1 or band['max']<band['min']:raise ValueError('Bands must cover consecutive integer points without overlaps')
-        if 'salaryMin' in band and (band['salaryMin']<0 or band.get('salaryMax',-1)<band['salaryMin']):raise ValueError('Invalid salary range')
+        validate_salary({**band,'salaryCurrency':f.get('currency','SAR'),'salaryPeriod':f.get('salaryPeriod','monthly')})
         previous=band['max']
     if previous!=1000:raise ValueError('Bands must cover 0–1000 custom points')
     f['bands']=ordered;return f
@@ -100,4 +120,4 @@ def grade(framework,answers,evidence):
         weighted=Decimal(str(level['points']))*Decimal(str(factor['weight']))/10;score+=weighted
         breakdown.append({'factor':factor['id'],'level':level['id'],'weightedPoints':float(weighted),'evidence':evidence[factor['id']]})
     rounded=int(score.quantize(Decimal('1')));band=next(x for x in f['bands'] if x['min']<=rounded<=x['max'])
-    return {'points':rounded,'band':band,'breakdown':breakdown,'frameworkId':f.get('id'),'frameworkVersion':f.get('version'),'method':f['method'],'illustrative':f.get('illustrative',False),'status':'specialist-review-required','currency':f.get('currency'),'computedBy':'configured-point-factor-formula','warning':f.get('notice')}
+    return {'points':rounded,'compensation':compensation_result(f,band,evidence),'band':band,'breakdown':breakdown,'frameworkId':f.get('id'),'frameworkVersion':f.get('version'),'method':f['method'],'illustrative':f.get('illustrative',False),'status':'specialist-review-required','currency':f.get('currency'),'computedBy':'configured-point-factor-formula','warning':f.get('notice')}

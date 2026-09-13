@@ -13,7 +13,7 @@ The application opens as a working position-management service: create a request
 - Position design: business need, alternatives, scope, qualifications, and directly editable RACI and competency tables.
 - A searchable position register with status filters and pagination; department selection survives navigation and language changes.
 - Local drafts, revision history, prior-version recovery and JSON import/export. Imported approvals and server identities are not trusted.
-- Complete package preview and portable HTML download; use the browser print command on downloaded HTML for PDF.
+- Complete package preview, HTML and direct bilingual PDF downloads, including four unsigned digital-signature fields.
 - Dictionary skill extraction, CSV structure diagnostics, illustrative custom point calculation and paired pilot measurement.
 - A task dashboard, direct tool URLs, save-and-open continuation, and a user guide.
 - Sign-in preserves an open draft; local drafts can be opened for explicit saving to the organization.
@@ -57,3 +57,12 @@ The source editions do not establish current regulatory requirements. Reference 
 The primary link is https://adeebnoor.github.io/Miyar/. Earlier review links now open the service dashboard. Investor and innovation-center content is removed from primary navigation. New request creation begins with an empty form. The dashboard shows actual saved records and clear local-versus-organization storage context; it does not seed example data.
 
 Local verification passed 63 JavaScript tests and the three deployment tests. The release workflow also gates publication on the full PostgreSQL API suite. Public-URL Render cloning currently lacks an authenticated Git-provider connection, so a successful GitHub push does not trigger a backend deploy; deploy the tested commit explicitly and verify `/health`. No paid resources are introduced.
+
+## Refinements — 4.5
+
+- Direct PDF from the public position form and saved local requests; the existing Render server renders a draft in memory. No sign-in or external PDF provider is required. Blank PDF signature fields do not constitute signed approvals. Institutional exports retain the server approval record and internal receipt.
+- Editable 3–5 KPI suggestions tied to success outcomes, preserving explicit numerical targets; editable RACI suggestions from the entered duties and stakeholders. Changes to source inputs prompt re-review. Local generation uses documented rules, not a generative model.
+- Optional organization AI endpoint: set `MIYAR_KPI_ENDPOINT` (HTTPS chat-completions endpoint), `MIYAR_KPI_MODEL`, and `MIYAR_KPI_API_KEY` on the server. Authenticated author roles can request a bounded JSON proposal; schema validation and human review remain required. No provider, credentials or paid resource is added by this release.
+- SSCO-based alerts for engineering, accounting and health roles link to the relevant professional authority. They do not query individual license records or infer definitive legal eligibility. The authority reference was checked on 13 September 2026.
+- Optional salary range, currency, period and source are linked to a calculated grade and preserved in the draft. Total Rewards evaluations use an organization-configured band where provided or an explicit reviewer proposal, attached to the evaluation revision. No market salary defaults are invented.
+- PDF, HTML, JSON, DOCX and XLSX include the added performance and compensation data. Public PDF requests cannot claim organizational approval.
