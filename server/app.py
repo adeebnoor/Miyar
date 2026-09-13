@@ -5,10 +5,13 @@ from typing import Annotated,Literal
 from fastapi import FastAPI,Depends,HTTPException,UploadFile,File,Request,Header,Query
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
+from fastapi.responses import Response
+from fastapi.staticfiles import StaticFiles
+from pathlib import Path
 from fastapi.security import HTTPAuthorizationCredentials
 from pydantic import BaseModel,Field,ConfigDict
 from sqlalchemy import select,func
-from sqlalchemy.exc import IntegrityError
+from sqlalchemy.exc import IntegrityError,SQLAlchemyError
 from sqlalchemy.orm.exc import StaleDataError
 from .models import Base,Organization,Department,User,Position,PositionVersion,AuditEvent,Approval,OutboxEvent,Evaluation,LoginWindow,TaxonomyRelease,IntegrationReceipt,database,uid,now
 from .security import bearer,actor,require,position_for,scoped_positions,password_hash,verify_password,issue_token,hasher
@@ -17,6 +20,7 @@ from .taxonomy import Catalog,read_rows,bulk_diagnosis
 
 class Input(BaseModel):model_config=ConfigDict(extra='forbid',allow_inf_nan=False)
 class Login(Input):email:str=Field(min_length=3,max_length=254);password:str=Field(min_length=1,max_length=256)
+class PasswordChange(Input):currentPassword:str=Field(min_length=1,max_length=256);newPassword:str=Field(min_length=12,max_length=256)
 class NewUser(Input):email:str=Field(min_length=3,max_length=254);name:str=Field(min_length=1,max_length=200);password:str=Field(min_length=12,max_length=256);role:str;departmentId:str|None=None
 class NewDepartment(Input):name:str=Field(min_length=1,max_length=200)
 class NewPosition(Input):departmentId:str;content:dict;reason:str=Field(min_length=3,max_length=1000)
@@ -47,7 +51,7 @@ def create_app(db_url=None,jwt_secret=None,catalog=None):
     engine,Session=database(url);Base.metadata.create_all(engine)
     from .audit import protect
     protect(engine);references=catalog or Catalog()
-    app=FastAPI(title='Miyar Enterprise Workforce API',version='4.1.0',description='Tenant-scoped positions, revision-bound approvals, versioned classification references and explicit integration boundaries.')
+    app=FastAPI(title='Miyar Enterprise Workforce API',version='4.1.1',description='Tenant-scoped positions, revision-bound approvals, versioned classification references and explicit integration boundaries.')
     app.state.sessions=Session;app.state.catalog=references;app.state.secret=secret
     origins=[x.strip() for x in os.getenv('MIYAR_CORS_ORIGINS','https://adeebnoor.github.io').split(',') if x.strip()]
     app.add_middleware(CORSMiddleware,allow_origins=origins,allow_credentials=False,allow_methods=['GET','POST','PATCH'],allow_headers=['Authorization','Content-Type','Idempotency-Key'])
@@ -130,7 +134,11 @@ def create_app(db_url=None,jwt_secret=None,catalog=None):
         old={'title':p.title,'revision':p.revision};p.content=content(value,db,user);p.title=p.content['title'];p.revision+=1;p.state='draft';p.approval_stage=0;p.workflow=[];p.updated_at=now();snapshot(db,user,p,reason)
         audit(db,user,'position.restored' if restored else 'position.changed',{'old':old,'newTitle':p.title,'newRevision':p.revision,'reason':reason,'restoredFromRevision':restored},p)
     @app.get('/health')
-    def health():return {'status':'ok','version':'4.1.0','taxonomy':references.occupations['id'],'occupations':len(references.roles),'semanticModelReady':references.model is not None,'storage':'postgresql' if engine.dialect.name=='postgresql' else 'local-development-sqlite'}
+    def health():
+        try:
+            with engine.connect() as connection:connection.execute(select(1))
+        except SQLAlchemyError:return JSONResponse({'status':'unavailable','database':'unreachable'},status_code=503)
+        return {'status':'ok','version':app.version,'taxonomy':references.occupations['id'],'occupations':len(references.roles),'semanticModelReady':references.model is not None,'storage':'postgresql' if engine.dialect.name=='postgresql' else 'local-development-sqlite'}
     @app.post('/api/v1/auth/login')
     def login(body:Login,request:Request,db=Depends(session)):
         email=body.email.strip().lower();key=digest({'email':email,'ip':request.client.host if request.client else ''});ts=int(time.time());window=db.get(LoginWindow,key)
@@ -148,6 +156,20 @@ def create_app(db_url=None,jwt_secret=None,catalog=None):
     @app.post('/api/v1/auth/logout-all')
     def logout(user=Depends(current),db=Depends(session)):
         user.session_version+=1;audit(db,user,'auth.sessions-revoked',{});db.commit();return {'revoked':True}
+    @app.post('/api/v1/auth/password')
+    def change_password(body:PasswordChange,user=Depends(current),db=Depends(session)):
+        user=db.scalar(select(User).where(User.id==user.id).with_for_update().execution_options(populate_existing=True))
+        key=digest({'action':'password-change','userId':user.id});ts=int(time.time());window=db.get(LoginWindow,key)
+        if window and ts-window.started<900 and window.failures>=5:raise HTTPException(429,'Too many failed attempts; try again in 15 minutes')
+        if not verify_password(body.currentPassword,user.password_hash):
+            if not window:window=LoginWindow(key=key,started=ts,failures=0);db.add(window)
+            if ts-window.started>=900:window.started=ts;window.failures=0
+            window.failures+=1;db.commit();raise HTTPException(422,'Current password is incorrect')
+        if body.currentPassword==body.newPassword:raise HTTPException(422,'Choose a different new password')
+        if window:db.delete(window)
+        user.password_hash=password_hash(body.newPassword);user.session_version+=1
+        audit(db,user,'auth.password-changed',{'otherSessionsRevoked':True});db.commit()
+        return {'accessToken':issue_token(user,secret),'tokenType':'Bearer','expiresIn':1800}
     @app.get('/api/v1/me')
     def me(user=Depends(current),db=Depends(session)):
         org=organization(db,user);return {'id':user.id,'name':user.name,'email':user.email,'role':user.role,'departmentId':user.department_id,'organization':{'id':org.id,'name':org.name},'capabilities':{'approveAs':user.role if user.role in ['od_specialist','total_rewards','finance','chro'] else None,'configure':user.role=='admin'}}
@@ -360,4 +382,9 @@ def create_app(db_url=None,jwt_secret=None,catalog=None):
         require(user,'admin');return [{'id':x.id,'eventType':x.event_type,'status':x.status,'attempts':x.attempts,'createdAt':x.created_at,'lastError':x.last_error} for x in db.scalars(select(OutboxEvent).where(OutboxEvent.org_id==user.org_id).order_by(OutboxEvent.created_at.desc()).limit(100))]
     from .enterprise import install
     install(app,session,current,organization,audit,present,content,department,snapshot,revise)
+    if os.getenv('MIYAR_SERVE_UI')=='true':
+        @app.get('/config.js',include_in_schema=False)
+        def browser_configuration():
+            return Response('window.MIYAR_CONFIG = {apiBase: window.location.origin};',media_type='application/javascript',headers={'Cache-Control':'no-store'})
+        app.mount('/',StaticFiles(directory=Path(__file__).resolve().parent.parent/'dist',html=True),name='website')
     return app

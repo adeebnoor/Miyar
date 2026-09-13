@@ -5,7 +5,7 @@ WORKDIR /app
 COPY server/requirements-lock.txt server/requirements-lock.txt
 RUN pip install --no-cache-dir -r server/requirements-lock.txt
 COPY server server
-COPY dist/classifications dist/classifications
+COPY dist dist
 RUN useradd --create-home --uid 10001 miyar && mkdir -p /app/.runtime /app/.model-cache && chown -R miyar:miyar /app
 USER miyar
 EXPOSE 8000

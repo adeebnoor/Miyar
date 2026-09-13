@@ -1,8 +1,10 @@
-# Review-only Blueprint: the Render workspace must be selected by the owner.
+# Owner confirmed My Workspace for this deployment on 13 September 2026.
 # Free database is an evaluation resource with expiry, not a durable production commitment.
 services:
   - type: web
     name: miyar-enterprise-api
+    repo: https://github.com/adeebnoor/Miyar
+    branch: main
     runtime: docker
     plan: free
     region: frankfurt
@@ -21,15 +23,18 @@ services:
         value: https://adeebnoor.github.io
       - key: MIYAR_ENABLE_EMBEDDINGS
         value: "false"
+      - key: MIYAR_SERVE_UI
+        value: "true"
       - key: MIYAR_BOOTSTRAP_EMAIL
-        sync: false
+        value: admin@miyar.example
       - key: MIYAR_BOOTSTRAP_PASSWORD
-        sync: false
+        generateValue: true
       - key: MIYAR_SIGNING_KEY
-        sync: false
+        generateValue: true
 # A separate long-running worker may run `python -m server.worker` on provisioned capacity.
 databases:
   - name: miyar-enterprise-db
     plan: free
     region: frankfurt
+    postgresMajorVersion: "17"
     ipAllowList: []

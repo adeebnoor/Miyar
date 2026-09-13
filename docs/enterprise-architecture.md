@@ -1,6 +1,6 @@
 # Enterprise architecture and technical evidence
 
-Release 4.1, 13 September 2026. This document describes executable behavior and its limits.
+Release 4.1.1, 13 September 2026. This document describes executable behavior and its limits.
 
 ## Six development axes
 
@@ -11,7 +11,7 @@ Release 4.1, 13 September 2026. This document describes executable behavior and 
 | Evaluation | Custom weights/bands/evidence; evaluation locked after Rewards approval; grade included in exports | Organization-approved framework; proprietary vendor calculators absent |
 | Integration | OpenAPI; canonical draft import; idempotency; approved-version exports; signed outbox/retries | Authorized vendor endpoints; no live Qiwa/GOSI connection |
 | Market intelligence | Sourced global skill-trend context; paired pilot comparison | No live market feed or salary-survey claim |
-| UX/security/exports | Bilingual input, local revisions/import/preview, readiness table, HTML/JSON and server DOCX/XLSX/PDF | Browser visual verification and live server verification remain separate gates |
+| UX/security/exports | Bilingual input, local revisions/import/preview, readiness table, HTML/JSON and server DOCX/XLSX/PDF | Public UI checked interactively; live server verification follows activation |
 
 ## Corpus and mapper
 
