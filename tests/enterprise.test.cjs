@@ -320,3 +320,17 @@ test('license mapping checks known SSCO records, including Arabic digits, and av
  assert.throws(()=>C.importDraft({content:{title:'Test',kpis:[{metric:42}]}}));
  const r=C.kpis({successMeasures:'Reduce processing time by 20% within 90 days'},'en');assert.equal(r.length,3);assert.match(r[0].metric,/Median working days/);assert.equal(r[0].target,'Reduce processing time by 20% within 90 days');
 });
+test('direct PDF buttons send validated drafts and download PDF in both languages',async()=>{
+ for(const lang of ['ar','en']){
+  const base='https://miyar.example.test',requests=[],fetch=async(url,options)=>{
+   if(String(url).startsWith(base)){requests.push({url,body:JSON.parse(options.body)});return {ok:true,blob:async()=>new Blob(['%PDF-test'],{type:'application/pdf'})};}
+   return {ok:true,json:async()=>JSON.parse(fs.readFileSync(path.join(dir,String(url))))};
+  };
+  const a=await ui(lang,{apiBase:base,fetch});try{
+   const downloads=[];a.w.URL.createObjectURL=()=> 'blob:pdf-test';a.w.URL.revokeObjectURL=()=>{};a.w.HTMLAnchorElement.prototype.click=function(){downloads.push(this.download);};
+   a.tab('create');a.$('sample').click();a.$('generate-kpis').click();a.$('pdf-draft').click();
+   for(let i=0;i<5;i++)await new Promise(r=>setImmediate(r));
+   assert.equal(requests.length,1);assert.equal(requests[0].url,base+'/api/v1/public/position-pdf');assert.equal(requests[0].body.lang,lang);assert.equal(requests[0].body.content.kpis.length,3);assert.equal(requests[0].body.approved,undefined);assert.equal(downloads[0],'Miyar-Position.pdf');assert.equal(a.$('pdf-draft').disabled,false);assert.deepEqual(a.errors,[]);
+  }finally{a.dom.window.close();}
+ }
+});
