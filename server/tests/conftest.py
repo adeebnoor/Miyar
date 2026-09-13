@@ -44,7 +44,7 @@ def submit(c,auth,p):
 def decide(c,auth,p,role,evidence,decision='approve'):
     return c.post('/api/v1/positions/'+p['id']+'/decisions',headers=auth(role),json={'revision':p['revision'],'decision':decision,'comment':'Reviewed evidence for test','evidence':evidence})
 def activate(c,auth,p):
-    submit(c,auth,p);r=decide(c,auth,p,'od_specialist',{'scopeReviewed':True,'mappingReviewed':True});assert r.status_code==200,r.text
+    submit(c,auth,p);r=decide(c,auth,p,'od_specialist',{'scopeReviewed':True,'mappingReviewed':True,'businessValidated':True,'roleNotPerson':True,'businessReviewer':'Department reviewer for test','businessReviewDate':'2026-09-01'});assert r.status_code==200,r.text
     r=c.post('/api/v1/positions/'+p['id']+'/evaluation',headers=auth('total_rewards'),json={'revision':p['revision'],'answers':{'knowledge':'2','complexity':'2','impact':'2'},'evidence':{k:'Specific test scope evidence' for k in ['knowledge','complexity','impact']}});assert r.status_code==200,r.text
     r=decide(c,auth,p,'total_rewards',{'payFrameworkReviewed':True});assert r.status_code==200,r.text
     r=decide(c,auth,p,'finance',{'vacancyConfirmed':True,'budgetConfirmed':True,'approvedAnnualBudget':240000,'approvedHeadcount':1});assert r.status_code==200,r.text

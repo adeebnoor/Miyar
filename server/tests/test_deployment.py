@@ -12,7 +12,7 @@ def test_hosted_ui_resolves_assets_without_exposing_server_files(tmp_path,monkey
     with TestClient(app) as c:
         health=c.get('/health').json()
         assert health['status']=='ok'
-        assert health['version']=='4.2.0'
+        assert health['version']=='4.3.0'
         assert health['services']['approvals'] is True
         assert {item['format'] for item in health['services']['exports']}=={'DOCX','XLSX','PDF'}
         assert set(health['services'])=={'version','storage','approvals','semanticEnabled','semanticModelReady','signingConfigured','exports','externalConnectors'}

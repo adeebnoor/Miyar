@@ -1,6 +1,33 @@
 """Pure governance and evaluation rules; no proprietary grading tables."""
 import copy,hashlib,json,math,re,unicodedata
 from decimal import Decimal
+from datetime import date
+from urllib.parse import urlsplit
+
+def valid_date(value,verification=True):
+    if not isinstance(value,str) or not re.fullmatch(r'\d{4}-\d{2}-\d{2}',value):raise ValueError('Use a valid ISO date')
+    parsed=date.fromisoformat(value)
+    if parsed<date(1900,1,1) or (verification and parsed>date.today()):raise ValueError('Verification dates cannot be in the future')
+    return value
+
+def validate_regulatory(content):
+    for key in ['saudizationSource','licenseSource']:
+        if content.get(key):
+            u=urlsplit(content[key])
+            if u.scheme not in ['https','http'] or not u.hostname or u.username or u.password:raise ValueError('Use a valid HTTP or HTTPS source URL')
+    for key in ['saudizationDate','licenseDate','effectiveDate']:
+        if content.get(key):valid_date(content[key],key!='effectiveDate')
+
+def external_evaluation(framework,answers,evidence):
+    if set(answers)!={'score','band'}:raise ValueError('Record the report score and grade')
+    value=answers['score']
+    if isinstance(value,bool) or not isinstance(value,(int,float)) or not math.isfinite(value) or not 0<=value<=1e7:raise ValueError('Invalid external report score')
+    band=answers['band']
+    if not isinstance(band,str) or not band.strip() or len(band)>80:raise ValueError('Enter the grade from the report')
+    keys=['reportReference','assessor','evaluationDate','rationale','knowledge','problemSolving','accountability']
+    if any(not isinstance(evidence.get(k),str) or not evidence[k].strip() or len(evidence[k])>4000 for k in keys) or evidence.get('reportConfirmed') is not True:raise ValueError('Provide the external report, assessor, date and evaluation rationale, and confirm authorized use')
+    valid_date(evidence['evaluationDate'])
+    return {'points':value,'band':{'id':band.strip()},'breakdown':[], 'frameworkId':framework['id'],'frameworkVersion':framework.get('version',1),'method':'external-korn-ferry-record','illustrative':False,'status':'specialist-report-recorded','computedBy':'external-specialist-report','externalReport':{k:evidence[k] for k in keys},'authorization':{k:framework[k] for k in ['licenseReference','approvedBy','approvedOn']},'warning':'Score and grade were supplied by the organization specialist from an external report. Miyar does not calculate or independently certify Korn Ferry results.'}
 
 ROLES={'line_manager','od_specialist','total_rewards','finance','chro','admin','integration'}
 DEFAULT_WORKFLOW=[{'role':'od_specialist','nameAr':'التطوير التنظيمي','nameEn':'Organization Development'}, {'role':'total_rewards','nameAr':'التعويضات والمزايا','nameEn':'Total Rewards'}, {'role':'finance','nameAr':'المالية وتخطيط القوى العاملة','nameEn':'Finance & Workforce Planning'}, {'role':'chro','nameAr':'صاحب الصلاحية','nameEn':'Final authority'}]
@@ -34,6 +61,11 @@ def validate_workflow(steps):
 
 def validate_framework(framework):
     f=copy.deepcopy(framework);method=f.get('method')
+    if method=='external-korn-ferry-record':
+        keys=['id','name','licenseReference','approvedBy','approvedOn']
+        if any(not isinstance(f.get(k),str) or not f[k].strip() or len(f[k])>500 for k in keys) or f.get('authorizedUseConfirmed') is not True:raise ValueError('External evaluation requires an organization authorization reference and approval')
+        valid_date(f['approvedOn'])
+        return {**{k:f[k].strip() for k in keys},'method':method,'version':f.get('version',1),'authorizedUseConfirmed':True,'illustrative':False}
     if method not in ['custom','korn-ferry-licensed','mercer-ipe-licensed']:raise ValueError('Unknown methodology')
     if method!='custom':
         raise ValueError('Korn Ferry and Mercer calculators require an authorized vendor implementation. Import a validated organization custom framework; generic weighted points cannot be labeled Hay or IPE.')
@@ -60,6 +92,7 @@ def validate_framework(framework):
 
 def grade(framework,answers,evidence):
     f=validate_framework(framework);breakdown=[];score=Decimal(0)
+    if f['method']=='external-korn-ferry-record':return external_evaluation(f,answers,evidence)
     if set(answers)!={x['id'] for x in f['factors']}:raise ValueError('Answer every configured factor')
     for factor in f['factors']:
         level=next((x for x in factor['levels'] if x['id']==str(answers[factor['id']])),None)

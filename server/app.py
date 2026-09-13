@@ -15,7 +15,7 @@ from sqlalchemy.exc import IntegrityError,SQLAlchemyError
 from sqlalchemy.orm.exc import StaleDataError
 from .models import Base,Organization,Department,User,Position,PositionVersion,AuditEvent,Approval,OutboxEvent,Evaluation,LoginWindow,TaxonomyRelease,IntegrationReceipt,database,uid,now
 from .security import bearer,actor,require,position_for,scoped_positions,password_hash,verify_password,issue_token,hasher
-from .domain import DEFAULT_WORKFLOW,DEFAULT_FRAMEWORK,ROLES,CORE,normalized,canonical,digest,required_content,validate_workflow,validate_framework,grade
+from .domain import DEFAULT_WORKFLOW,DEFAULT_FRAMEWORK,ROLES,CORE,normalized,canonical,digest,required_content,validate_workflow,validate_framework,validate_regulatory,valid_date,grade
 from .taxonomy import Catalog,read_rows,bulk_diagnosis
 
 class Input(BaseModel):model_config=ConfigDict(extra='forbid',allow_inf_nan=False)
@@ -40,7 +40,7 @@ class FrameworkRequest(Input):framework:dict;reason:str=Field(min_length=3,max_l
 class WorkflowRequest(Input):steps:list[dict];reason:str=Field(min_length=3,max_length=1000)
 class BrandingRequest(Input):nameAr:str=Field(max_length=200);nameEn:str=Field(max_length=200);color:str=Field(pattern=r'^#[0-9a-fA-F]{6}$');footer:str=Field(max_length=500)
 
-CONTENT_FIELDS=set(CORE)|{'field','seniority','requestType','department','manager','effectiveDate','experience','certifications','occupationCode','occupationRelease','educationLevel','educationFieldCode','constraints','saudization','saudizationSource','saudizationDate','license','licenseSource','licenseDate','headcount','annualCost','directReports','raci','skillRequirements','mappingJustification','provisional','provisionalParent'}
+CONTENT_FIELDS=set(CORE)|{'field','seniority','requestType','department','manager','effectiveDate','experience','certifications','occupationCode','occupationRelease','educationLevel','educationFieldCode','constraints','saudization','saudizationSource','saudizationDate','license','licenseSource','licenseDate','headcount','annualCost','directReports','raci','skillRequirements','mappingJustification','provisional','provisionalParent','sourceDecisionId','sourceDecisionInput','importNotes'}
 
 def create_app(db_url=None,jwt_secret=None,catalog=None):
     secret=jwt_secret or os.getenv('MIYAR_JWT_SECRET','');url=db_url or os.getenv('DATABASE_URL','sqlite:///./.runtime/miyar.db')
@@ -51,7 +51,7 @@ def create_app(db_url=None,jwt_secret=None,catalog=None):
     engine,Session=database(url);Base.metadata.create_all(engine)
     from .audit import protect
     protect(engine);references=catalog or Catalog()
-    app=FastAPI(title='Miyar Enterprise Workforce API',version='4.2.0',description='Tenant-scoped positions, revision-bound approvals, versioned classification references and explicit integration boundaries.')
+    app=FastAPI(title='Miyar Enterprise Workforce API',version='4.3.0',description='Tenant-scoped positions, revision-bound approvals, versioned classification references and explicit integration boundaries.')
     app.state.sessions=Session;app.state.catalog=references;app.state.secret=secret
     origins=[x.strip() for x in os.getenv('MIYAR_CORS_ORIGINS','https://adeebnoor.github.io').split(',') if x.strip()]
     app.add_middleware(CORSMiddleware,allow_origins=origins,allow_credentials=False,allow_methods=['GET','POST','PATCH'],allow_headers=['Authorization','Content-Type','Idempotency-Key'])
@@ -125,6 +125,8 @@ def create_app(db_url=None,jwt_secret=None,catalog=None):
         if result.get('headcount',1)<=0 or int(result.get('headcount',1))!=result.get('headcount',1):raise HTTPException(422,'Headcount must be positive')
         if 'directReports' in result and int(result['directReports'])!=result['directReports']:raise HTTPException(422,'Direct reports must be a whole number')
         if result.get('provisional') and result.get('occupationCode'):raise HTTPException(422,'A provisional internal role cannot carry a final occupation code')
+        try:validate_regulatory(result)
+        except (ValueError,TypeError) as e:raise HTTPException(422,str(e))
         result['occupationRelease']=selected.occupations['id'];return result
     def snapshot(db,user,p,reason):
         db.add(PositionVersion(position_id=p.id,revision=p.revision,title=p.title,content=copy.deepcopy(p.content),actor_id=user.id,reason=reason))
@@ -282,6 +284,13 @@ def create_app(db_url=None,jwt_secret=None,catalog=None):
         if body.decision=='approve':
             if expected=='od_specialist':
                 if evidence.get('scopeReviewed') is not True or evidence.get('mappingReviewed') is not True:raise HTTPException(422,'OD must review scope and occupation mapping')
+                if evidence.get('businessValidated') is not True or evidence.get('roleNotPerson') is not True or not isinstance(evidence.get('businessReviewer'),str) or not 1<=len(evidence['businessReviewer'].strip())<=160:raise HTTPException(422,'Record department consultation and confirm the description defines the role')
+                try:valid_date(evidence.get('businessReviewDate'))
+                except ValueError:raise HTTPException(422,'Use a valid department review date')
+                if any(p.content.get(k) for k in ['certifications','saudization','license']):
+                    if evidence.get('regulatoryReviewed') is not True:raise HTTPException(422,'Review the recorded certificates and regulatory requirements')
+                    for prefix in ['saudization','license']:
+                        if p.content.get(prefix) and not (p.content.get(prefix+'Source') and p.content.get(prefix+'Date')):raise HTTPException(422,'Recorded regulatory requirements need a source URL and verification date')
                 if p.content.get('occupationCode') in reference_for(db,user,p.content.get('occupationRelease')).flagged:raise HTTPException(422,'Source parent is missing. Import a corrected verified edition or use a provisional internal role before approval.')
                 rule=p.policy_snapshot.get('rules',{}).get(p.content.get('occupationCode'),{})
                 if rule.get('minimumEducationLevel') and (not str(p.content.get('educationLevel','')).isdigit() or int(p.content['educationLevel'])<int(rule['minimumEducationLevel'])):raise HTTPException(422,'Education level fails the organization policy captured at submission')

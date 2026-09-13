@@ -24,8 +24,8 @@ def test_all_stages_budget_and_duplicate_approval(env):
     assert decide(c,auth,p,'chro',{}).status_code==403
     assert decide(c,auth,p,'admin',{}).status_code==403
     assert decide(c,auth,p,'od_specialist',{}).status_code==422
-    assert decide(c,auth,p,'od_specialist',{'scopeReviewed':True,'mappingReviewed':True}).status_code==200
-    assert decide(c,auth,p,'od_specialist',{'scopeReviewed':True,'mappingReviewed':True}).status_code==403
+    assert decide(c,auth,p,'od_specialist',{'scopeReviewed':True,'mappingReviewed':True,'businessValidated':True,'roleNotPerson':True,'businessReviewer':'Department reviewer for test','businessReviewDate':'2026-09-01'}).status_code==200
+    assert decide(c,auth,p,'od_specialist',{'scopeReviewed':True,'mappingReviewed':True,'businessValidated':True,'roleNotPerson':True,'businessReviewer':'Department reviewer for test','businessReviewDate':'2026-09-01'}).status_code==403
     assert decide(c,auth,p,'total_rewards',{'payFrameworkReviewed':True}).status_code==422
     assert c.post('/api/v1/positions/'+p['id']+'/evaluation',headers=auth('total_rewards'),json={'revision':1,'answers':{'knowledge':'2','complexity':'2','impact':'2'},'evidence':dict.fromkeys(['knowledge','complexity','impact'],'Scoped role evidence')}).status_code==200
     assert decide(c,auth,p,'total_rewards',{'payFrameworkReviewed':True}).status_code==200
@@ -38,7 +38,7 @@ def test_all_stages_budget_and_duplicate_approval(env):
 def test_requester_cannot_self_approve_even_after_role_change(env):
     app,c,auth,create=env;p=create();submit(c,auth,p)
     with app.state.sessions() as db:u=db.get(User,'org-a-line_manager');u.role='od_specialist';db.commit()
-    assert decide(c,auth,p,'line_manager',{'scopeReviewed':True,'mappingReviewed':True}).status_code==403
+    assert decide(c,auth,p,'line_manager',{'scopeReviewed':True,'mappingReviewed':True,'businessValidated':True,'roleNotPerson':True,'businessReviewer':'Department reviewer for test','businessReviewDate':'2026-09-01'}).status_code==403
 
 def test_active_revision_survives_amendment_and_restore(env):
     app,c,auth,create=env;p=activate(c,auth,create());url='/api/v1/positions/'+p['id'];new={**p['content'],'title':'Revised title','annualCost':999999}
@@ -101,7 +101,7 @@ def test_concurrent_approvals_advance_one_stage_only(env):
     if not os.getenv('MIYAR_TEST_POSTGRES_URL'):pytest.skip('Row-lock concurrency gate runs against PostgreSQL in CI')
     from concurrent.futures import ThreadPoolExecutor
     app,c,auth,create=env;p=create();submit(c,auth,p)
-    def approve():return decide(c,auth,p,'od_specialist',{'scopeReviewed':True,'mappingReviewed':True}).status_code
+    def approve():return decide(c,auth,p,'od_specialist',{'scopeReviewed':True,'mappingReviewed':True,'businessValidated':True,'roleNotPerson':True,'businessReviewer':'Department reviewer for test','businessReviewDate':'2026-09-01'}).status_code
     with ThreadPoolExecutor(max_workers=2) as pool:statuses=list(pool.map(lambda _:approve(),range(2)))
     assert statuses.count(200)==1;assert all(s in [200,403,409] for s in statuses)
     assert c.get('/api/v1/positions/'+p['id'],headers=auth()).json()['approvalStage']==1
@@ -113,8 +113,8 @@ def test_organization_rules_are_enforced_at_approval_and_snapshotted(env):
     p=create(educationLevel='6');submit(c,auth,p)
     # A later policy change cannot erase the requirements already submitted for review.
     assert c.post('/api/v1/settings/decision-policy',headers=auth('admin'),json={'policy':{**policy,'rules':{}}}).status_code==200
-    assert decide(c,auth,p,'od_specialist',{'scopeReviewed':True,'mappingReviewed':True}).status_code==422
-    assert decide(c,auth,p,'od_specialist',{'scopeReviewed':True,'mappingReviewed':True,'licenseVerifiedByOD':True}).status_code==200
+    assert decide(c,auth,p,'od_specialist',{'scopeReviewed':True,'mappingReviewed':True,'businessValidated':True,'roleNotPerson':True,'businessReviewer':'Department reviewer for test','businessReviewDate':'2026-09-01'}).status_code==422
+    assert decide(c,auth,p,'od_specialist',{'scopeReviewed':True,'mappingReviewed':True,'businessValidated':True,'roleNotPerson':True,'businessReviewer':'Department reviewer for test','businessReviewDate':'2026-09-01','licenseVerifiedByOD':True}).status_code==200
 
 def test_free_text_field_seniority_roundtrip_and_exports(env):
     app,c,auth,create=env
@@ -130,7 +130,7 @@ def test_free_text_field_seniority_roundtrip_and_exports(env):
 
 def test_approved_evaluation_is_locked_after_rewards_stage(env):
     app,c,auth,create=env;p=create();submit(c,auth,p)
-    decide(c,auth,p,'od_specialist',{'scopeReviewed':True,'mappingReviewed':True})
+    decide(c,auth,p,'od_specialist',{'scopeReviewed':True,'mappingReviewed':True,'businessValidated':True,'roleNotPerson':True,'businessReviewer':'Department reviewer for test','businessReviewDate':'2026-09-01'})
     url='/api/v1/positions/'+p['id']+'/evaluation';body={'revision':1,'answers':dict.fromkeys(['knowledge','complexity','impact'],'2'),'evidence':dict.fromkeys(['knowledge','complexity','impact'],'Reviewed scope')}
     assert c.post(url,headers=auth('total_rewards'),json=body).status_code==200
     assert decide(c,auth,p,'total_rewards',{'payFrameworkReviewed':True}).status_code==200

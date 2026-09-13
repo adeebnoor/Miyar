@@ -35,7 +35,7 @@ def install(app,session,current,organization,audit,present,content,department,sn
         approved=p.active_revision==rev
         approvals=[];evaluation_id=None
         for a in db.scalars(select(Approval).where(Approval.position_id==id,Approval.revision==rev,Approval.decision=='approve').order_by(Approval.stage)):
-            actor=db.get(User,a.actor_id);approvals.append({'id':a.id,'actorId':a.actor_id,'actorName':actor.name,'role':a.role,'createdAt':a.created_at,'evidenceDigest':digest(a.evidence)})
+            actor=db.get(User,a.actor_id);approvals.append({'id':a.id,'actorId':a.actor_id,'actorName':actor.name,'role':a.role,'createdAt':a.created_at,'decision':a.decision,'comment':a.comment,'evidence':copy.deepcopy(a.evidence),'evidenceDigest':digest(a.evidence)})
             if a.role=='total_rewards':evaluation_id=a.evidence.get('evaluationId')
         evaluation=db.get(Evaluation,evaluation_id) if evaluation_id else db.scalar(select(Evaluation).where(Evaluation.position_id==id,Evaluation.revision==rev).order_by(Evaluation.created_at.desc()).limit(1))
         return {'id':p.id,'internalCode':p.internal_code,'revision':rev,'content':v.content,'approved':approved,'approvals':approvals,'evaluation':{'id':evaluation.id,'result':evaluation.result,'createdAt':evaluation.created_at} if evaluation else None,'lang':lang}

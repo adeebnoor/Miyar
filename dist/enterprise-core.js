@@ -14,7 +14,7 @@ function importDraft(payload){
  if(!payload||typeof payload!=='object'||Array.isArray(payload))throw Error('Invalid position package');
  const source=payload.content;
  if(!source||typeof source!=='object'||Array.isArray(source))throw Error('Package must contain position content');
- const fields=new Set([...required,'field','seniority','requestType','department','manager','effectiveDate','certifications','occupationCode','occupationRelease','educationLevel','educationFieldCode','constraints','saudization','saudizationSource','saudizationDate','license','licenseSource','licenseDate','headcount','annualCost','directReports','raci','skillRequirements','mappingJustification','provisional','provisionalParent']);
+ const fields=new Set([...required,'field','seniority','requestType','department','manager','effectiveDate','certifications','occupationCode','occupationRelease','educationLevel','educationFieldCode','constraints','saudization','saudizationSource','saudizationDate','license','licenseSource','licenseDate','headcount','annualCost','directReports','raci','skillRequirements','mappingJustification','provisional','provisionalParent','sourceDecisionId','sourceDecisionInput','importNotes']);
  const content={};
  for(const [key,value] of Object.entries(source)){
   if(!fields.has(key))continue;
@@ -30,8 +30,39 @@ function importDraft(payload){
  }
  if(!content.title?.trim()||content.title.length>300)throw Error('A position title is required');
  if(content.provisional&&content.occupationCode)throw Error('A provisional role cannot carry a final occupation code');
+ validateReferences(content);
  if(JSON.stringify(content).length>80000)throw Error('Position content exceeds 80 KB');
  return content;
+}
+function validateReferences(content){
+ for(const key of ['saudizationSource','licenseSource'])if(content[key]){
+  let url;try{url=new URL(content[key]);}catch{throw Error('Use a valid HTTP or HTTPS source URL');}
+  if(!['http:','https:'].includes(url.protocol)||url.username||url.password)throw Error('Use a valid HTTP or HTTPS source URL');
+ }
+ for(const key of ['saudizationDate','licenseDate','effectiveDate'])if(content[key]){
+  const value=content[key],parsed=new Date(value+'T00:00:00Z');
+  if(!/^\d{4}-\d{2}-\d{2}$/.test(value)||Number.isNaN(parsed.getTime())||parsed.toISOString().slice(0,10)!==value||value<'1900-01-01'||(key!=='effectiveDate'&&value>new Date().toISOString().slice(0,10)))throw Error('Use a valid date; verification dates cannot be in the future');
+ }
+}
+function importDecision(payload,reference,education){
+ if(payload?.schema!=='miyar-demo-decision/2.1'||payload.outcome!=='match'||!payload.input||typeof payload.input!=='object'||Array.isArray(payload.input)||!payload.role)throw Error('Choose a matched Miyar decision in schema 2.1');
+ const take=value=>{if(value===undefined||value===null)return '';if(typeof value!=='string'||value.length>4000)throw Error('Invalid decision text');return value;};
+ const input=Object.fromEntries(['objective','field','domain','seniority','constraints'].map(k=>[k,take(payload.input[k])]));
+ const sourceInput=JSON.stringify(input);if(sourceInput.length>4000)throw Error('Decision input exceeds the supported import size');
+ const requested=normalize(take(payload.role.saudiCode)).replace(/ /g,''),occupation=reference.nodes.find(x=>x.level==='occupation'&&x.code===requested);
+ const title=take(payload.locale==='en'?payload.role.titleEn||payload.role.title:payload.role.title||payload.role.titleEn);
+ const notices=['Imported lookup requires job analysis and fresh institutional review.'];
+ const content={title,field:input.field||(input.domain==='all'?'':input.domain),seniority:input.seniority,constraints:input.constraints,requestType:'proposed-role',occupationRelease:reference.id,sourceDecisionId:take(payload.id),sourceDecisionInput:sourceInput};
+ if(occupation)content.occupationCode=occupation.code;else notices.push('Occupation '+requested+' was not found in the selected edition; select a reference before submission.');
+ if(payload.basis==='tasks')content.responsibilities=input.objective;
+ const oldEducation=normalize(take(payload.role.educationCode)).replace(/ /g,'');
+ if(oldEducation){
+  const candidates=education.fields.filter(x=>x.code===oldEducation||x.code.replace(/^0+/,'')===oldEducation.replace(/^0+/,''));
+  if(candidates.length===1){content.educationFieldCode=candidates[0].code;if(candidates[0].code!==oldEducation)notices.push('Education code '+oldEducation+' was mapped to the unique reference '+candidates[0].code+'; the original input remains in your decision file.');}
+  else notices.push('Education code '+oldEducation+' could not be mapped uniquely; select the specialization manually.');
+ }
+ content.importNotes=notices.join('\n');
+ return {content:importDraft({content}),notices};
 }
 function parseMatrix(text,keys){
  const lines=String(text).split('\n').filter(line=>line.trim());
@@ -42,6 +73,6 @@ function parseMatrix(text,keys){
   return Object.fromEntries(keys.map((key,i)=>[key,values[i]?.trim()||'']));
  });
 }
-root.MiyarEnterpriseCore={normalize,search,skills,csv,diagnose,customGrade,required,read,save,importDraft,parseMatrix,KEY};
+root.MiyarEnterpriseCore={normalize,search,skills,csv,diagnose,customGrade,required,read,save,importDraft,importDecision,validateReferences,parseMatrix,KEY};
 if(typeof module!=='undefined')module.exports=root.MiyarEnterpriseCore;
 })(typeof window!=='undefined'?window:globalThis);

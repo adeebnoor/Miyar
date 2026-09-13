@@ -4,8 +4,8 @@ const ref=JSON.parse(fs.readFileSync(path.join(dir,'classifications/ssco-2019.js
 test('complete supplied occupation tree preserves source conflicts and education leading zeros',()=>{assert.equal(ref.nodes.length,5656);assert.equal(ref.nodes.filter(x=>x.level==='occupation').length,5041);assert.equal(new Set(ref.nodes.map(x=>x.code)).size,5656);assert.equal(C.search(ref.nodes,'٢١٤١٠١')[0].titleAr,'مهندس تخطيط مصانع');assert.equal(C.search(ref.nodes,'۲۱۴۱۱۶')[0].titleAr,'مهندس صناعي عام');assert.equal(ref.validation.missingParents.length,4);assert.equal(edu.fields.length,599);assert.ok(edu.fields.find(x=>x.code==='071903'));});
 test('bulk parser preserves quoted newlines, zero scope and duplicate roles',()=>{const rows=C.csv('title,department,occupationCode,directReports,budgetAmount,authority\r\n"مدير, نظام",IT,999999,0,0,يوصي\r\nمهندس برمجيات,IT,251204,0,0,يوصي\r\nمهندس برمجيات,IT,251204,0,0,يوصي\r\n');const r=C.diagnose(rows,ref.nodes,ref.validation.missingParents);assert.equal(r.titleCodeAlignmentPercent,66.7);assert.equal(r.duplicateGroups.length,1);assert.equal(r.scopeAssessableRows,3);assert.equal(r.titleScopeReviewRows,1);assert.throws(()=>C.csv('title,title\na,b'));assert.throws(()=>C.csv('title\n"unclosed'));});
 test('skill decomposition catches Arabic conjunctions without pretending model inference',()=>{const r=C.skills('البرمجة وتحليل النظم والتفكير النقدي وSQL',skills);assert.ok(r.some(x=>x.id==='onet:2.B.3.e'));assert.ok(r.some(x=>x.id==='onet:2.B.4.g'));assert.ok(r.some(x=>x.id==='onet:2.A.2.a'));assert.ok(r.some(x=>x.id==='miyar:sql'));});
-async function ui(locale='ar',options={}){const errors=[],vc=new VirtualConsole();vc.on('jsdomError',e=>errors.push(e));const dom=new JSDOM('<main id="enterprise"></main>',{url:'https://example.test/Miyar/',runScripts:'outside-only',pretendToBeVisual:true,virtualConsole:vc});const w=dom.window;w.structuredClone=structuredClone;w.confirm=()=>true;w.HTMLDialogElement.prototype.showModal=function(){this.open=true;};w.HTMLDialogElement.prototype.close=function(){this.open=false;this.dispatchEvent(new w.Event('close'));};w.eval(fs.readFileSync(path.join(dir,'enterprise-document.js'),'utf8'));w.AbortSignal=AbortSignal;w.MIYAR_CONFIG={apiBase:options.apiBase||''};w.fetch=options.fetch|| (async url=>({ok:true,json:async()=>JSON.parse(fs.readFileSync(path.join(dir,String(url))))}));w.eval(fs.readFileSync(path.join(dir,'enterprise-core.js'),'utf8'));w.eval(fs.readFileSync(path.join(dir,'enterprise-product.js'),'utf8'));w.eval(fs.readFileSync(path.join(dir,'enterprise.js'),'utf8'));await w.MiyarEnterprise.mount(w.document.getElementById('enterprise'),{lang:locale});const $=id=>w.document.getElementById('ent-'+id),tab=id=>w.document.querySelector('[data-ent-tab="'+id+'"]').click();return {w,$,tab,errors,dom};}
-test('all enterprise sections render in Arabic and English without duplicate IDs',async()=>{for(const lang of ['ar','en']){const a=await ui(lang);try{for(const tab of ['overview','tour','business','reference','create','workspace','intelligence','bulk','grading','readiness','evidence','market','connection']){a.tab(tab);const ids=[...a.w.document.querySelectorAll('[id]')].map(x=>x.id);assert.equal(new Set(ids).size,ids.length,tab);assert.ok(a.$('content').textContent.trim());}assert.deepEqual(a.errors,[]);}finally{a.dom.window.close();}}});
+async function ui(locale='ar',options={}){const errors=[],vc=new VirtualConsole();vc.on('jsdomError',e=>errors.push(e));const dom=new JSDOM('<main id="enterprise"></main>',{url:'https://example.test/Miyar/'+(options.review?'?review=od':''),runScripts:'outside-only',pretendToBeVisual:true,virtualConsole:vc});const w=dom.window;w.structuredClone=structuredClone;w.confirm=()=>true;w.HTMLDialogElement.prototype.showModal=function(){this.open=true;};w.HTMLDialogElement.prototype.close=function(){this.open=false;this.dispatchEvent(new w.Event('close'));};w.eval(fs.readFileSync(path.join(dir,'enterprise-document.js'),'utf8'));w.AbortSignal=AbortSignal;w.MIYAR_CONFIG={apiBase:options.apiBase||''};w.fetch=options.fetch|| (async url=>({ok:true,json:async()=>JSON.parse(fs.readFileSync(path.join(dir,String(url))))}));w.eval(fs.readFileSync(path.join(dir,'enterprise-core.js'),'utf8'));w.eval(fs.readFileSync(path.join(dir,'enterprise-product.js'),'utf8'));w.eval(fs.readFileSync(path.join(dir,'enterprise.js'),'utf8'));await w.MiyarEnterprise.mount(w.document.getElementById('enterprise'),{lang:locale});const $=id=>w.document.getElementById('ent-'+id),tab=id=>w.document.querySelector('[data-ent-tab="'+id+'"]').click();return {w,$,tab,errors,dom};}
+test('all enterprise sections render in Arabic and English without duplicate IDs',async()=>{for(const lang of ['ar','en']){const a=await ui(lang);try{for(const tab of ['overview','review','tour','business','reference','create','workspace','intelligence','bulk','grading','readiness','evidence','market','connection']){a.tab(tab);const ids=[...a.w.document.querySelectorAll('[id]')].map(x=>x.id);assert.equal(new Set(ids).size,ids.length,tab);assert.ok(a.$('content').textContent.trim());}assert.deepEqual(a.errors,[]);}finally{a.dom.window.close();}}});
 test('reference search flows into a local draft and restores history without granting approval',async()=>{const a=await ui();try{a.tab('reference');a.$('query').value='٢٥١٢٠٤';a.$('search').click();a.w.document.querySelector('[data-code="251204"]').click();a.$('use-reference').click();assert.equal(a.w.document.querySelector('[data-field="occupationCode"]').value,'251204');a.$('sample').click();a.$('save').click();await new Promise(r=>setImmediate(r));let rows=JSON.parse(a.w.localStorage.getItem(C.KEY));assert.equal(rows.length,1);assert.equal(rows[0].state,'draft');a.tab('workspace');await new Promise(r=>setImmediate(r));a.w.document.querySelector('[data-position]').click();await new Promise(r=>setImmediate(r));assert.equal(a.$('approve'),null);assert.equal(a.$('submit-position'),null);a.$('edit-position').click();let x=a.w.document.querySelector('[data-field="title"]');x.value='<img src=x onerror=alert(1)> Updated';x.dispatchEvent(new a.w.Event('input'));a.$('save').click();await new Promise(r=>setImmediate(r));rows=JSON.parse(a.w.localStorage.getItem(C.KEY));assert.equal(rows[0].revision,2);assert.equal(rows[0].versions.length,2);a.tab('workspace');await new Promise(r=>setImmediate(r));assert.equal(a.w.document.querySelector('img'),null);assert.deepEqual(a.errors,[]);}finally{a.dom.window.close();}});
 test('pilot comparison uses paired denominators and distinguishes missing timing',async()=>{const a=await ui('en');try{const r=a.w.MiyarEnterprise.pilotMetrics([{caseId:'1',expectedCode:'251204',miyarCode:'251204',baselineCode:'251104',humanMinutes:'10',miyarMinutes:'4'},{caseId:'2',expectedCode:'251104',miyarCode:'251204',baselineCode:'251104',humanMinutes:'',miyarMinutes:''}]);assert.equal(r.miyarAccuracy,50);assert.equal(r.baselineAccuracy,50);assert.equal(r.timedCases,1);assert.equal(r.timeSavedPercent,60);assert.throws(()=>a.w.MiyarEnterprise.pilotMetrics([{caseId:'1',expectedCode:'a',miyarCode:'a',baselineCode:'a',humanMinutes:'0',miyarMinutes:'1'}]));}finally{a.dom.window.close();}});
 
@@ -171,5 +171,71 @@ test('public readiness distinguishes configured services from sign-in and clears
   assert.match(exportRow.textContent,/Not enabled on the server/,'One available format must not mark the entire export suite ready');
   healthy=false;a.$('check-service').click();await settle();
   assert.match(a.$('health-status').textContent,/did not succeed/);assert.doesNotMatch(a.$('content').textContent,/Server configured · sign in to use/);assert.deepEqual(a.errors,[]);
+ }finally{a.dom.window.close();}
+});
+
+test('legacy title decisions preserve input provenance and restore uniquely matching education zeros without inventing job analysis',()=>{
+ const payload={schema:'miyar-demo-decision/2.1',id:'synthetic-reference-214401',locale:'en',outcome:'match',basis:'title',input:{objective:'Mechanical Engineer',domain:'all',seniority:'professional',constraints:''},role:{title:'مهندس ميكانيكي',titleEn:'Mechanical Engineer',saudiCode:'214401',educationCode:'71501'},reviewStatus:'approved',approvals:[{role:'chro'}]};
+ const result=C.importDecision(payload,ref,edu);
+ assert.equal(result.content.occupationCode,'214401');assert.equal(result.content.educationFieldCode,'071501');assert.equal(result.content.field,'');assert.equal(result.content.seniority,'professional');assert.equal(result.content.responsibilities,undefined);assert.equal(result.content.approvals,undefined);assert.equal(result.content.state,undefined);
+ assert.equal(JSON.parse(result.content.sourceDecisionInput).domain,'all');assert.match(result.content.importNotes,/71501.*071501/);
+ const ambiguous=C.importDecision(payload,ref,{fields:[{code:'071501'},{code:'0071501'}]});assert.equal(ambiguous.content.educationFieldCode,undefined);
+ assert.throws(()=>C.importDecision({...payload,input:'invalid'},ref,edu));assert.throws(()=>C.importDecision({...payload,outcome:'unmatched'},ref,edu));
+});
+
+test('regulatory draft validation rejects unsafe source schemes and invalid dates while retaining a future effective date',()=>{
+ for(const extra of [{licenseSource:'javascript:alert(1)'},{saudizationSource:'https://name:password@example.test'},{licenseDate:'2026-02-30'},{saudizationDate:'2999-01-01'}])assert.throws(()=>C.importDraft({content:{title:'Test',...extra}}));
+ const c=C.importDraft({content:{title:'Test',licenseSource:'https://example.test/policy',licenseDate:'2026-09-01',effectiveDate:'2027-01-01',directReports:0}});
+ const html=require('../dist/enterprise-document.js').html(c,'en');assert.match(html,/2027-01-01/);assert.match(html,/https:\/\/example.test\/policy/);assert.match(html,/Direct reports/);
+});
+
+test('decision import control opens an unapproved draft and new requirements survive save, language switch and package preview',async()=>{
+ const a=await ui('en');try{
+  const input={schema:'miyar-demo-decision/2.1',id:'synthetic-decision',locale:'en',outcome:'match',basis:'title',input:{objective:'Mechanical Engineer',domain:'all',seniority:'Principal / 12+ years'},role:{titleEn:'Mechanical Engineer',saudiCode:'214401',educationCode:'71501'}};
+  a.tab('workspace');Object.defineProperty(a.$('draft-import'),'files',{value:[{size:700,text:async()=>JSON.stringify(input)}]});a.$('import-draft').click();await new Promise(r=>setImmediate(r));
+  assert.equal(a.w.document.querySelector('[data-field="educationFieldCode"]').value,'071501');assert.match(a.$('content').textContent,/Imported draft provenance/);
+  for(const [key,value] of Object.entries({certifications:'Recorded test certificate',saudization:'Review under source policy',saudizationSource:'https://example.test/policy',saudizationDate:'2026-09-01',license:'Recorded test requirement',licenseSource:'https://example.test/license',licenseDate:'2026-09-01',effectiveDate:'2027-01-01'})){const x=a.w.document.querySelector('[data-field="'+key+'"]');assert.ok(x,key);x.value=value;x.dispatchEvent(new a.w.Event('input'));}
+  a.$('save').click();await new Promise(r=>setImmediate(r));const saved=JSON.parse(a.w.localStorage.getItem(C.KEY))[0];assert.equal(saved.state,'draft');assert.equal(saved.content.educationFieldCode,'071501');assert.equal(saved.content.seniority,'Principal / 12+ years');assert.equal(saved.content.licenseDate,'2026-09-01');
+  await a.w.MiyarEnterprise.mount(a.w.document.getElementById('enterprise'),{lang:'ar'});assert.equal(a.w.document.querySelector('[data-field="certifications"]').value,'Recorded test certificate');a.$('preview-draft').click();assert.match(a.w.document.querySelector('dialog').textContent,/Recorded test certificate/);assert.match(a.w.document.querySelector('dialog').textContent,/071501/);assert.deepEqual(a.errors,[]);
+ }finally{a.dom.window.close();}
+});
+
+test('innovation-center deep link renders requirements and its actions enter real product sections',async()=>{
+ const a=await ui('en',{review:true});try{
+  assert.match(a.$('content').textContent,/INNOVATION CENTER REVIEW/);assert.match(a.$('content').textContent,/071501/);
+  assert.ok(a.w.document.querySelector('a[href="https://adeebnoor.github.io/"]'));
+  a.w.document.getElementById('mx-review-import').click();assert.ok(a.$('draft-import'));a.tab('review');a.w.document.getElementById('mx-review-create').click();assert.ok(a.w.document.querySelector('[data-field="certifications"]'));
+  await a.w.MiyarEnterprise.mount(a.w.document.getElementById('enterprise'),{lang:'ar'});a.tab('review');assert.match(a.$('content').textContent,/مركز الابتكار/);assert.deepEqual(a.errors,[]);
+ }finally{a.dom.window.close();}
+});
+
+test('authorized external report configuration renders a usable specialist form and submits supplied results without client grading',async()=>{
+ const base='https://miyar.example.test',requests=[],response=value=>({ok:true,status:200,json:async()=>value});
+ const f={id:'org-external',name:'Authorized test report',method:'external-korn-ferry-record',version:1};
+ const p={id:'test-position',title:'Test position',content:{title:'Test position'},state:'in_review',revision:1,createdBy:'another-user',approvalStage:0,workflow:[{role:'total_rewards'}],internalCode:'MJR-TEST'};
+ const fetch=async(url,options={})=>{
+  if(!String(url).startsWith(base))return response(JSON.parse(fs.readFileSync(path.join(dir,String(url)))));
+  const route=new URL(url).pathname;requests.push({route,...options});
+  if(route.endsWith('/auth/login'))return response({accessToken:'test-token'});
+  if(route.endsWith('/me'))return response({id:'reviewer',name:'Test reviewer',role:'total_rewards',organization:{name:'Test org'}});
+  if(route.endsWith('/departments'))return response([]);
+  if(route.endsWith('/settings'))return response({framework:f});
+  if(route.endsWith('/organization/taxonomy/export'))return response(ref);
+  if(route.endsWith('/integrations/status'))return response({connectors:[]});
+  if(route.endsWith('/analytics'))return response({positions:1,activeHeadcount:0,annualPositionCost:0,states:{in_review:1}});
+  if(route.endsWith('/positions'))return response({items:[p],total:1});
+  if(route.endsWith('/versions')||route.endsWith('/approvals')||route.endsWith('/evaluations'))return response([]);
+  if(route.endsWith('/evaluation'))return response({result:{points:412,band:{id:'Grade from test report'}}});
+  if(route.endsWith('/test-position'))return response(p);
+  throw Error('Unexpected '+route);
+ };
+ const a=await ui('en',{apiBase:base,fetch}),settle=async()=>{for(let i=0;i<5;i++)await new Promise(r=>setImmediate(r));};
+ try{
+  a.tab('connection');a.$('email').value='test@example.test';a.$('password').value='test-only-password';a.$('login').dispatchEvent(new a.w.Event('submit',{cancelable:true}));await settle();
+  a.tab('grading');assert.ok(a.$('external-workspace'));a.$('external-workspace').click();await settle();a.w.document.querySelector('[data-position]').click();await settle();
+  assert.ok(a.$('external-grade'));assert.equal(a.w.document.querySelector('[data-factor]'),null);
+  a.$('external-score').value='412';a.$('external-band').value='Grade from test report';a.$('report-confirmed').checked=true;
+  for(const field of a.w.document.querySelectorAll('[data-report]'))field.value=field.dataset.report==='evaluationDate'?'2026-09-01':'Evidence from synthetic report';
+  a.$('external-grade').dispatchEvent(new a.w.Event('submit',{cancelable:true}));await settle();const sent=JSON.parse(requests.find(x=>x.route.endsWith('/evaluation')).body);assert.equal(sent.answers.score,412);assert.equal(sent.evidence.reportConfirmed,true);assert.match(a.$('grade-result').textContent,/Specialist result recorded/);assert.deepEqual(a.errors,[]);
  }finally{a.dom.window.close();}
 });

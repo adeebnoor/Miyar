@@ -3,6 +3,7 @@ import base64,html,io,os
 from .domain import canonical,digest
 
 LABELS={'field':('المجال الوظيفي','Field'),'seniority':('المستوى المطلوب','Seniority'),'headcount':('العدد المطلوب','Requested headcount'),'annualCost':('التكلفة السنوية الإجمالية - ر.س','Total annual cost - SAR'),'manager':('المدير المباشر','Reporting manager'),'title':('المسمى الوظيفي','Job title'),'businessNeed':('المبرر التجاري','Business need'),'alternatives':('البدائل المدروسة','Alternatives considered'),'successMeasures':('مؤشرات النجاح','Success measures'),'purpose':('هدف المنصب','Position purpose'),'responsibilities':('المسؤوليات','Responsibilities'),'team':('الفريق ونطاق الإشراف','Team and supervision'),'budget':('نطاق الميزانية','Budget scope'),'authority':('الصلاحيات','Decision authority'),'impact':('نطاق الأثر','Impact'),'stakeholders':('أصحاب العلاقة','Stakeholders'),'qualifications':('المؤهلات','Qualifications'),'experience':('الخبرة','Experience'),'skills':('المهارات','Skills'),'behaviors':('الجدارات السلوكية','Behaviors'),'occupationCode':('رمز المهنة','Occupation code'),'occupationRelease':('إصدار التصنيف','Classification edition'),'educationLevel':('المستوى التعليمي','Education level'),'educationFieldCode':('رمز التخصص التعليمي','Education field code'),'constraints':('المحددات','Constraints')}
+LABELS.update({'department': ('الإدارة', 'Department'), 'directReports': ('عدد المرؤوسين', 'Direct reports'), 'certifications': ('الشهادات المطلوبة', 'Required certifications'), 'saudization': ('متطلب التوطين المدخل', 'Recorded Saudization requirement'), 'saudizationSource': ('مصدر متطلب التوطين', 'Saudization source URL'), 'saudizationDate': ('تاريخ التحقق من التوطين', 'Saudization check date'), 'license': ('متطلب الترخيص المهني المدخل', 'Recorded professional licensing requirement'), 'licenseSource': ('مصدر الترخيص المهني', 'Licensing source URL'), 'licenseDate': ('تاريخ التحقق من الترخيص', 'Licensing check date'), 'effectiveDate': ('تاريخ السريان المقترح', 'Proposed effective date'), 'sourceDecisionId': ('مرجع القرار المستورد', 'Imported decision reference'), 'sourceDecisionInput': ('مدخلات القرار الأصلي', 'Original decision inputs'), 'importNotes': ('ملاحظات الاستيراد', 'Import review notes')})
 
 def signing_key():
     from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
@@ -22,6 +23,23 @@ def safe_cell(value):
     return str(value if value is not None else '')
 def matrices(card):
     return [('RACI',['Responsibility / المسؤولية','R — Responsible','A — Accountable','C — Consulted','I — Informed'],[[r.get(k,'') for k in ['responsibility','R','A','C','I']] for r in card['content'].get('raci',[])]),('Skills',['Skill / المهارة','Type / النوع','Required level / المستوى','Evidence / الدليل'],[[r.get(k,'') for k in ['name','type','level','evidence']] for r in card['content'].get('skillRequirements',[])])]
+def evaluation_lines(card):
+    ar=card['lang']=='ar';rows=[]
+    for approval in card.get('approvals',[]):
+        if approval.get('role')=='od_specialist' and approval.get('decision')=='approve':
+            evidence=approval.get('evidence',{})
+            rows += [('مراجع الإدارة' if ar else 'Department reviewer',evidence.get('businessReviewer','')),('تاريخ مراجعة الإدارة' if ar else 'Department review date',evidence.get('businessReviewDate','')),('التحقق من وصف المنصب' if ar else 'Role-based description confirmed',str(evidence.get('roleNotPerson',False)))]
+    if not card.get('evaluation'):return rows
+    e=card['evaluation']['result']
+    rows += [('طريقة التقييم' if ar else 'Evaluation method',e.get('method','custom'))]
+    if e.get('externalReport'):
+        labels={'reportReference':('مرجع تقرير المختص','Specialist report reference'),'assessor':('المقيّم الخارجي','External assessor'),'evaluationDate':('تاريخ التقييم','Evaluation date'),'rationale':('مبررات التقييم','Evaluation rationale'),'knowledge':('دليل المعرفة','Knowledge evidence'),'problemSolving':('دليل حل المشكلات','Problem-solving evidence'),'accountability':('دليل المساءلة','Accountability evidence')}
+        rows += [(labels[k][0 if ar else 1],v) for k,v in e['externalReport'].items() if k in labels]
+        rows.append(('أساس النتيجة' if ar else 'Result basis','نتيجة أدخلها مختص الجهة من تقرير خارجي؛ لم يحسبها معيار ولم يتحقق من ترخيصها مستقلًا.' if ar else 'Recorded by the organization specialist from an external report; not calculated or independently license-verified by Miyar.'))
+    else:
+        rows += [(('مبرر العامل ' if ar else 'Factor rationale ')+str(x['factor']),str(x.get('evidence',''))) for x in e.get('breakdown',[])]
+    return rows
+
 def xlsx(card):
     from openpyxl import Workbook
     from openpyxl.styles import Font,PatternFill,Alignment,Border,Side
@@ -30,6 +48,7 @@ def xlsx(card):
     metadata=[['Internal code',card['internalCode']],['Revision',card['revision']],['State','Approved' if card['approved'] else 'Draft — not approved'],['Source',card['content'].get('occupationRelease','')]]
     if card.get('evaluation'):
         e=card['evaluation']['result'];metadata.extend([['Evaluation points',e['points']],['Evaluation band',e['band']['id']],['Framework',str(e['frameworkId'])+' / '+str(e['frameworkVersion'])]])
+    metadata.extend(evaluation_lines(card))
     for name,headers,rows in [('Position',['Field / الحقل','Value / القيمة'],metadata+[[v[1]+' / '+v[0],card['content'].get(k,'')] for k,v in LABELS.items()]),*matrices(card)]:
         s=w.create_sheet(name);s.sheet_view.rightToLeft=card['lang']=='ar';s.append(headers)
         for row in rows:
@@ -63,9 +82,10 @@ def docx(card,brand):
     para('بطاقة الوصف الوظيفي' if ar else 'Job description','Title');para(card['content']['title'],'Heading 1')
     para(f"{card['internalCode']} • v{card['revision']} • "+(('معتمد' if ar else 'Approved') if card['approved'] else ('مسودة غير معتمدة' if ar else 'Unapproved draft')))
     for k,label in LABELS.items():
-        if k!='title' and card['content'].get(k):para(label[0 if ar else 1],'Heading 2');para(card['content'][k])
+        if k!='title' and card['content'].get(k) is not None and card['content'].get(k)!='':para(label[0 if ar else 1],'Heading 2');para(card['content'][k])
     if card.get('evaluation'):
         e=card['evaluation']['result'];para('التقييم الوظيفي' if ar else 'Job evaluation','Heading 2');para(str(e['points'])+' / '+e['band']['id']+' | '+str(e['frameworkId'])+' v'+str(e['frameworkVersion']))
+    for title,value in evaluation_lines(card):para(title,'Heading 2');para(value)
     for name,headers,rows in matrices(card):
         para(name,'Heading 2');table=d.add_table(rows=1,cols=len(headers));table.style='Light Shading Accent 1'
         for i,h in enumerate(headers):table.rows[0].cells[i].text=h
@@ -85,9 +105,10 @@ def docx(card,brand):
 def pdf(card,brand):
     from weasyprint import HTML
     ar=card['lang']=='ar';esc=lambda v:html.escape(str(v));color=brand.get('color','#146954')
-    fields=''.join('<section><h2>'+esc(label[0 if ar else 1])+'</h2><p>'+esc(card['content'][k]).replace('\n','<br>')+'</p></section>' for k,label in LABELS.items() if k!='title' and card['content'].get(k))
+    fields=''.join('<section><h2>'+esc(label[0 if ar else 1])+'</h2><p>'+esc(card['content'][k]).replace('\n','<br>')+'</p></section>' for k,label in LABELS.items() if k!='title' and card['content'].get(k) is not None and card['content'].get(k)!='')
     if card.get('evaluation'):
         e=card['evaluation']['result'];fields+='<section><h2>'+('التقييم الوظيفي' if ar else 'Job evaluation')+'</h2><p>'+esc(str(e['points'])+' / '+e['band']['id']+' | '+str(e['frameworkId'])+' v'+str(e['frameworkVersion']))+'</p></section>'
+    fields+=''.join('<section><h2>'+esc(title)+'</h2><p>'+esc(value).replace('\n','<br>')+'</p></section>' for title,value in evaluation_lines(card))
     for name,headers,rows in matrices(card):
         if rows:fields+='<section><h2>'+esc(name)+'</h2><table><thead><tr>'+''.join('<th>'+esc(h)+'</th>' for h in headers)+'</tr></thead><tbody>'+''.join('<tr>'+''.join('<td>'+esc(v)+'</td>' for v in row)+'</tr>' for row in rows)+'</tbody></table></section>'
     approvals=''.join('<tr><td>'+esc(a['actorName'])+'</td><td>'+esc(a['role'])+'</td><td dir="ltr">'+esc(a['createdAt'][:19])+'</td></tr>' for a in card['approvals'])
