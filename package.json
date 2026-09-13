@@ -1,6 +1,6 @@
 {
   "name": "miyar-demo",
-  "version": "4.4.0",
+  "version": "4.5.0",
   "private": true,
   "description": "Bilingual workforce architecture with versioned references and a tenant-scoped enterprise API",
   "scripts": {

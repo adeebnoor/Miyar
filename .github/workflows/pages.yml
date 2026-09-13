@@ -3,15 +3,15 @@ name: Test and deploy Miyar to GitHub Pages
 on:
   push:
     branches: [main]
+  pull_request:
+    branches: [main]
   workflow_dispatch:
 
 permissions:
   contents: read
-  pages: write
-  id-token: write
 
 concurrency:
-  group: pages
+  group: pages-${{ github.ref }}
   cancel-in-progress: false
 
 jobs:
@@ -44,15 +44,10 @@ jobs:
         env:
           MIYAR_TEST_POSTGRES_URL: postgresql+psycopg://miyar_test:ephemeral-ci-only@localhost:5432/miyar_test
         run: python -m pytest server/tests -q --disable-warnings
-  deploy:
-    needs: server-test
+  ui-test:
     runs-on: ubuntu-latest
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
       - name: Set up Node
         uses: actions/setup-node@v4
         with:
@@ -62,6 +57,20 @@ jobs:
         run: npm ci --ignore-scripts --no-audit --no-fund
       - name: Test classification, position workflow and interface
         run: npm test
+  deploy:
+    if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+    needs: [server-test, ui-test]
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
       - name: Configure Pages
         uses: actions/configure-pages@v5
       - name: Upload website

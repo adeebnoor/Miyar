@@ -14,14 +14,14 @@ function importDraft(payload){
  if(!payload||typeof payload!=='object'||Array.isArray(payload))throw Error('Invalid position package');
  const source=payload.content;
  if(!source||typeof source!=='object'||Array.isArray(source))throw Error('Package must contain position content');
- const fields=new Set([...required,'field','seniority','requestType','department','manager','effectiveDate','certifications','occupationCode','occupationRelease','educationLevel','educationFieldCode','constraints','saudization','saudizationSource','saudizationDate','license','licenseSource','licenseDate','headcount','annualCost','directReports','raci','skillRequirements','mappingJustification','provisional','provisionalParent','sourceDecisionId','sourceDecisionInput','importNotes']);
+ const fields=new Set([...required,'field','seniority','requestType','department','manager','effectiveDate','certifications','occupationCode','occupationRelease','educationLevel','educationFieldCode','constraints','saudization','saudizationSource','saudizationDate','license','licenseSource','licenseDate','headcount','annualCost','directReports','raci','skillRequirements','mappingJustification','provisional','provisionalParent','sourceDecisionId','sourceDecisionInput','importNotes','kpis','performanceBasis','raciBasis','salaryMin','salaryMax','salaryCurrency','salaryPeriod','salarySource','salaryGrade','evaluationSummary']);
  const content={};
  for(const [key,value] of Object.entries(source)){
   if(!fields.has(key))continue;
-  if(['raci','skillRequirements'].includes(key)){
-   const allowed=key==='raci'?['responsibility','R','A','C','I']:['name','type','level','evidence'];
+  if(['raci','skillRequirements','kpis'].includes(key)){
+   const allowed=key==='raci'?['responsibility','R','A','C','I']:key==='kpis'?['outcome','metric','target','frequency','deliverable']:['name','type','level','evidence'];
    if(!Array.isArray(value)||value.length>100||value.some(r=>!r||typeof r!=='object'||Array.isArray(r)||Object.entries(r).some(([k,v])=>!allowed.includes(k)||typeof v!=='string'||v.length>4000)))throw Error('Invalid matrix entries');
-  }else if(['headcount','annualCost','directReports'].includes(key)){
+  }else if(['headcount','annualCost','directReports','salaryMin','salaryMax'].includes(key)){
    if(typeof value!=='number'||!Number.isFinite(value)||value<0||value>1e12||(['headcount','directReports'].includes(key)&&!Number.isInteger(value))||(key==='headcount'&&value<1))throw Error('Invalid numeric scope');
   }else if(key==='provisional'){
    if(typeof value!=='boolean')throw Error('Invalid provisional flag');
@@ -31,6 +31,7 @@ function importDraft(payload){
  if(!content.title?.trim()||content.title.length>300)throw Error('A position title is required');
  if(content.provisional&&content.occupationCode)throw Error('A provisional role cannot carry a final occupation code');
  validateReferences(content);
+ validateSalary(content);
  if(JSON.stringify(content).length>80000)throw Error('Position content exceeds 80 KB');
  return content;
 }
@@ -73,6 +74,50 @@ function parseMatrix(text,keys){
   return Object.fromEntries(keys.map((key,i)=>[key,values[i]?.trim()||'']));
  });
 }
-root.MiyarEnterpriseCore={normalize,search,skills,csv,diagnose,customGrade,required,read,save,importDraft,importDecision,validateReferences,parseMatrix,KEY};
+function validateSalary(c){
+ const hasMin=c.salaryMin!==undefined,hasMax=c.salaryMax!==undefined;
+ if(hasMin!==hasMax||(hasMin&&(!Number.isFinite(c.salaryMin)||!Number.isFinite(c.salaryMax)||c.salaryMin<0||c.salaryMax<c.salaryMin||c.salaryMax>1e12)))throw Error('Enter a valid minimum and maximum salary');
+ if(c.salaryPeriod&&!['monthly','annual'].includes(c.salaryPeriod))throw Error('Choose monthly or annual salary');
+ if(c.salaryCurrency&&!/^[A-Z]{3}$/.test(c.salaryCurrency))throw Error('Use a three-letter currency code');
+}
+function sentences(value){return [...new Set(String(value||'').split(/[\n;؛]+/).map(s=>s.replace(/^[-•\d]+[.)\s]+/,'').trim()).filter(Boolean))];}
+function kpis(c,locale='ar'){
+ const ar=locale==='ar',t=(a,b)=>ar?a:b,source=sentences(c.successMeasures);
+ if(!source.length)throw Error(t('أدخل مخرجات النجاح أولًا.','Enter success measures first.'));
+ const frequency=t('شهريًا؛ اعتماد الهدف خلال أول 30 يومًا','Monthly; confirm target within the first 30 days');
+ const types=[
+  [t('إنجاز المخرجات في موعدها','On-time delivery'),t('المخرجات المقبولة في موعدها ÷ المخرجات المستحقة × 100','Accepted outputs delivered on time / outputs due × 100'),t('≥ 95% — هدف مقترح','≥ 95% — proposed target'),t('سجل التسليم وتاريخ قبول كل مخرج','Delivery register with acceptance dates')],
+  [t('جودة المخرجات','Output quality'),t('المخرجات المقبولة من أول مراجعة ÷ المخرجات المراجعة × 100','Outputs accepted on first review / outputs reviewed × 100'),t('≥ 90% — هدف مقترح','≥ 90% — proposed target'),t('سجل مراجعات الجودة وإعادة العمل','Quality review and rework log')],
+  [t('زمن الإنجاز','Completion time'),t('وسيط أيام العمل من بدء الطلب إلى قبوله','Median working days from request start to acceptance'),t('خفض 10% عن خط الأساس بعد 90 يومًا — مقترح','10% below baseline after 90 days — proposed'),t('تقرير خط الأساس واتجاه زمن الإنجاز','Baseline and cycle-time trend report')]
+ ];
+ const n=Math.min(5,Math.max(3,source.length));
+ return Array.from({length:n},(_,i)=>{
+  const outcome=source[i%source.length];let entry=types[i%3];const normalized=normalize(outcome);if(i<source.length&&/time|processing|زمن|وقت/.test(normalized))entry=types[2];if(i<source.length&&/quality|defect|جوده|اخطاء/.test(normalized))entry=types[1];
+  return {outcome,metric:entry[0]+': '+entry[1],target:i<source.length&&/[0-9٠-٩]/.test(outcome)?outcome:entry[2],frequency,deliverable:entry[3]};
+ });
+}
+function raci(c,locale='ar'){
+ const ar=locale==='ar',t=(a,b)=>ar?a:b,tasks=sentences(c.responsibilities).slice(0,12);
+ if(!c.title?.trim()||!tasks.length)throw Error(t('أدخل المسمى والمسؤوليات أولًا.','Enter the title and responsibilities first.'));
+ const stakeholders=sentences(String(c.stakeholders||'').replace(/[,،]/g,'\n'));
+ return tasks.map(responsibility=>({responsibility,R:c.title,A:c.manager||t('حدد صاحب القرار','Assign decision owner'),C:stakeholders[0]||t('حدد الإدارة المستشارة','Assign consulted department'),I:stakeholders.slice(1).join('، ')||c.department||t('حدد الجهة المطلعة','Assign informed department')}));
+}
+function raciKey(c){let hash=2166136261;for(const ch of JSON.stringify([c.responsibilities,c.title,c.manager,c.stakeholders]))hash=Math.imul(hash^ch.charCodeAt(0),16777619);return 'raci-v1-'+(hash>>>0).toString(16);}
+function licenseNotice(c,nodes){
+ const code=normalize(c.occupationCode).replace(/ /g,''),r=nodes.find(x=>x.level==='occupation'&&x.code===code);
+ if(!r)return null;
+ let group;
+ if(/^(214|215|216)/.test(code))group='engineering';
+ else if(/^2411|^3313/.test(code))group='accounting';
+ else if(/^(22|32)/.test(code)&&!/^225/.test(code))group='health';
+ else if(/مهندس|engineer/i.test(r.titleAr+' '+(r.titleEn||'')))group='engineering';
+ const data={
+ engineering:{authorityAr:'الهيئة السعودية للمهندسين',authorityEn:'Saudi Council of Engineers',source:'https://www.saudieng.sa/English/AboutSCE/Pages/PPE.aspx'},
+ accounting:{authorityAr:'الهيئة السعودية للمراجعين والمحاسبين',authorityEn:'Saudi Organization for Chartered and Professional Accountants',source:'https://socpa.org.sa/Socpa/Membership/Associate-Membership.aspx?lang=en-us'},
+ health:{authorityAr:'الهيئة السعودية للتخصصات الصحية',authorityEn:'Saudi Commission for Health Specialties',source:'https://scfhs.org.sa/en/requirements'}
+ };
+ return group?{...data[group],group,code,title:r.titleAr,checkedOn:'2026-09-13'}:null;
+}
+root.MiyarEnterpriseCore={normalize,search,skills,csv,diagnose,customGrade,kpis,raci,raciKey,licenseNotice,validateSalary,sentences,required,read,save,importDraft,importDecision,validateReferences,parseMatrix,KEY};
 if(typeof module!=='undefined')module.exports=root.MiyarEnterpriseCore;
 })(typeof window!=='undefined'?window:globalThis);

@@ -86,7 +86,7 @@ def test_export_is_scoped_editable_and_signed(env,monkeypatch):
     from docx import Document
     from openpyxl import load_workbook
     d=c.get(url+'docx',headers=auth());assert d.status_code==200;assert any('مهندس' in p.text for p in Document(io.BytesIO(d.content)).paragraphs)
-    x=c.get(url+'xlsx',headers=auth());assert x.status_code==200;w=load_workbook(io.BytesIO(x.content));assert set(w.sheetnames)=={'Position','RACI','Skills'};assert w['RACI']['C2'].value=='Manager'
+    x=c.get(url+'xlsx',headers=auth());assert x.status_code==200;w=load_workbook(io.BytesIO(x.content));assert set(w.sheetnames)=={'Position','RACI','Skills','KPIs'};assert w['RACI']['C2'].value=='Manager'
     pdf=c.get(url+'pdf',headers=auth());assert pdf.status_code==200;assert pdf.content.startswith(b'%PDF')
 
 def test_login_revocation_and_failed_attempt_limit(env):

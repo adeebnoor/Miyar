@@ -285,3 +285,38 @@ test('signing in retains the working draft and dashboard counts come from scoped
   a.w.document.getElementById('svc-resume').click();assert.equal(a.w.document.querySelector('[data-field="title"]').value,'Work in progress');assert.deepEqual(a.errors,[]);
  }finally{a.dom.window.close();}
 });
+
+test('performance suggestions, license alerts, matrices and new PDF control survive local revisions',async()=>{
+ for(const locale of ['ar','en']){const a=await ui(locale);try{
+  a.tab('create');a.$('sample').click();assert.ok(a.$('pdf-draft'));assert.match(a.$('license-notice').textContent,/Saudi Council|الهيئة السعودية/);
+  a.$('generate-kpis').click();assert.equal(a.w.document.querySelectorAll('[data-matrix-key="kpis"]').length,15);
+  a.$('generate-raci').click();assert.equal(a.w.document.querySelectorAll('[data-matrix-key="raci"]').length,15);
+  const target=a.w.document.querySelector('[data-matrix-key="kpis"][data-matrix-field="target"]');target.value='98% approved draft target';target.dispatchEvent(new a.w.Event('input'));
+  a.$('use-license').click();assert.ok(a.w.document.querySelector('[data-field="licenseSource"]').value.startsWith('https://www.saudieng.sa'));assert.equal(a.w.document.querySelector('[data-field="licenseDate"]').value,'');
+  a.$('save').click();await new Promise(r=>setImmediate(r));let saved=JSON.parse(a.w.localStorage.getItem(C.KEY))[0];assert.equal(saved.content.kpis[0].target,'98% approved draft target');assert.equal(saved.content.raci.length,3);
+  const imported=C.importDraft(saved);assert.equal(imported.kpis.length,3);
+  a.$('preview-draft').click();assert.match(a.w.document.querySelector('dialog').textContent,/98% approved draft target/);assert.equal(a.w.document.querySelectorAll('.signature-box').length,4);a.$('close-report').click();
+  const input=a.w.document.querySelector('[data-field="successMeasures"]');input.value='Changed success outcomes';input.dispatchEvent(new a.w.Event('input'));assert.ok(a.$('performance-warning').textContent.length>20);
+  assert.deepEqual(a.errors,[]);
+ }finally{a.dom.window.close();}}
+});
+test('salary proposal is linked to computed grade and invalidated by changed evidence',async()=>{
+ const a=await ui('en');try{a.tab('create');a.$('sample').click();a.tab('grading');
+ for(const e of a.w.document.querySelectorAll('[data-factor]'))e.value='2';for(const e of a.w.document.querySelectorAll('[data-factor-evidence]'))e.value='Measured scope evidence';
+ for(const [key,v] of Object.entries({salaryMin:'10000',salaryMax:'14000',salarySource:'Draft internal band proposal'}))a.w.document.querySelector('[data-pay="'+key+'"]').value=v;
+ a.$('calculate').click();await new Promise(r=>setImmediate(r));assert.match(a.$('salary-result').textContent,/B2.*10,000.*14,000.*SAR/);
+ a.tab('create');a.$('save').click();await new Promise(r=>setImmediate(r));let saved=JSON.parse(a.w.localStorage.getItem(C.KEY))[0];assert.equal(saved.content.salaryGrade,'B2');assert.equal(saved.content.salaryMin,10000);assert.match(saved.content.evaluationSummary,/500 points/);
+ a.tab('grading');const input=a.w.document.querySelector('[data-pay="salaryMax"]');input.value='9000';input.dispatchEvent(new a.w.Event('input'));a.$('calculate').click();await new Promise(r=>setImmediate(r));assert.match(a.$('message').textContent,/minimum and maximum/);assert.equal(a.$('grade-result').textContent,'');assert.deepEqual(a.errors,[]);
+ }finally{a.dom.window.close();}
+});
+test('license mapping checks known SSCO records, including Arabic digits, and avoids unknown-code claims',()=>{
+ assert.equal(C.licenseNotice({occupationCode:'٢١٤٢٠١'},ref.nodes).group,'engineering');
+ const accountant=ref.nodes.find(x=>x.level==='occupation'&&x.code.startsWith('2411'));
+ assert.equal(C.licenseNotice({occupationCode:accountant.code},ref.nodes).group,'accounting');
+ const health=ref.nodes.find(x=>x.level==='occupation'&&x.code.startsWith('221'));
+ assert.equal(C.licenseNotice({occupationCode:health.code},ref.nodes).group,'health');
+ assert.equal(C.licenseNotice({occupationCode:'999999',title:'Engineer'},ref.nodes),null);
+ assert.throws(()=>C.importDraft({content:{title:'Test',salaryMin:100,salaryMax:99}}));assert.throws(()=>C.importDraft({content:{title:'Test',salaryMax:200}}));
+ assert.throws(()=>C.importDraft({content:{title:'Test',kpis:[{metric:42}]}}));
+ const r=C.kpis({successMeasures:'Reduce processing time by 20% within 90 days'},'en');assert.equal(r.length,3);assert.match(r[0].metric,/Median working days/);assert.equal(r[0].target,'Reduce processing time by 20% within 90 days');
+});
