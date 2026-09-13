@@ -66,3 +66,11 @@ Local verification passed 63 JavaScript tests and the three deployment tests. Th
 - SSCO-based alerts for engineering, accounting and health roles link to the relevant professional authority. They do not query individual license records or infer definitive legal eligibility. The authority reference was checked on 13 September 2026.
 - Optional salary range, currency, period and source are linked to a calculated grade and preserved in the draft. Total Rewards evaluations use an organization-configured band where provided or an explicit reviewer proposal, attached to the evaluation revision. No market salary defaults are invented.
 - PDF, HTML, JSON, DOCX and XLSX include the added performance and compensation data. Public PDF requests cannot claim organizational approval.
+
+## Enterprise entrance — September 2026
+
+The public root and `#home` open the bilingual product entrance. Existing `#enterprise/...` links still open the operational workspace directly. The interactive position preview is clearly illustrative and never creates a record or an approval. Its primary action loads an editable sample with three KPIs and three RACI rows; unsaved work requires confirmation before replacement.
+
+The page presents corpus size, approval stages and export formats as capabilities. It does not claim measured savings, proprietary-method certification or automatic regulatory compliance. Local drafts, JSON import and account configuration remain in the workspace. The import chooser is localized and keyboard accessible.
+
+Validation: 69 JavaScript tests pass, including the entrance-to-draft journey in both languages, preview isolation, keyboard tabs, language switching with unsaved content, direct workspace links, and existing persistence/export regressions. Live browser visual verification was unavailable because the connected browser timed out; responsive CSS covers narrow, tablet and desktop layouts, but this does not substitute for a device visual review.
