@@ -22,6 +22,8 @@ function sync(){
  if(active)link.setAttribute('aria-current','page');else link.removeAttribute('aria-current');
 }
 document.addEventListener('click',event=>{
+ const strategicEntry=event.target.closest('[data-lp-strategy]');
+ if(strategicEntry){event.preventDefault();window.location.hash='demo';return;}
  if(event.target.closest('#language-btn,#lp-language,#presentation-language'))sync();
 });
 window.addEventListener('hashchange',sync);
