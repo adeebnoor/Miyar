@@ -1,34 +1,62 @@
-# معيار | MI’YĀR
+# معيار | MI’YĀR 5.0
 
-A bilingual workforce architecture and position-management prototype by Prof. Adeeb Noor and Ahmad Raza Khan, King Abdulaziz University.
+A bilingual strategy-to-workforce intelligence platform by Prof. Adeeb Noor and Ahmad Raza Khan, King Abdulaziz University.
 
-[Open Miyar](https://adeebnoor.github.io/Miyar/) · [Enterprise server](https://miyar-enterprise-api.onrender.com/) · [Architecture](docs/enterprise-architecture.md) · [Demo guide](docs/investor-demo.md) · [Product review](docs/product-investor-review.md) · [First login and operations](docs/render-activation.md) · [Checkpoint](docs/enterprise-progress.md)
+[Open Miyar](https://adeebnoor.github.io/Miyar/) · [Enterprise API](https://miyar-enterprise-api.onrender.com/) · [Architecture](docs/enterprise-architecture.md) · [OD Phase 1](docs/phase-1-od-engine.md) · [Manpower Phase 2](docs/phase-2-manpower-planning.md) · [Compensation Phase 3](docs/phase-3-compensation.md)
 
-The application opens as a working position-management service: create a request, import an existing draft, resume work, and inspect saved requests. Dashboard counts come from local drafts or the signed-in account’s scoped server records. **Field and Seniority accept free text**; values survive language changes, saving and export.
+## What Miyar 5.0 does
 
-## Public browser workspace
+Miyar connects the workforce decision from strategy to execution:
 
-- 5,041 occupations within 5,656 hierarchy nodes, from the supplied January 2019 edition. Four missing-parent records are flagged.
-- 599 educational specializations and nine levels, edition 2020; leading zeros preserved.
-- Position design: business need, alternatives, scope, qualifications, and directly editable RACI and competency tables.
-- A searchable position register with status filters and pagination; department selection survives navigation and language changes.
-- Local drafts, revision history, prior-version recovery and JSON import/export. Imported approvals and server identities are not trusted.
-- Complete package preview, HTML and direct bilingual PDF downloads, including four unsigned digital-signature fields.
-- Dictionary skill extraction, CSV structure diagnostics, illustrative custom point calculation and paired pilot measurement.
-- A task dashboard, direct tool URLs, save-and-open continuation, and a user guide.
-- Sign-in preserves an open draft; local drafts can be opened for explicit saving to the organization.
-- Service status provides a public server check; institutional operations require the appropriate account roles.
-- Organization administrators can inspect accounts, roles and department scope, and deactivate accounts through the existing permission checks.
+**Strategy → OD → Job Evaluation → Manpower Planning → Compensation → Approval**
 
-Local drafts stay in the current browser/device. Download JSON for backup; clearing browser data removes them. Local drafts cannot grant institutional approval.
+### Phase 1 — Organization Development & Job Architecture
 
-## Enterprise server
+Business inputs begin with strategic/business objectives and roles & responsibilities. Miyar produces a reviewable OD package with a proposed job title, job purpose, responsibilities, qualifications, experience, technical and behavioral competencies, KPIs, job family and career path. The package then links into the supplied Saudi occupation and education references, job evaluation and the institutional approval workflow.
 
-FastAPI/PostgreSQL implements tenant/department isolation, role-based access, four-stage approvals, immutable historical records, signed internal receipts, DOCX/XLSX/PDF exports, custom evaluation frameworks and HRIS exchange contracts.
+The public OD engine is transparent and rule-based. It does not claim live market-title intelligence, proprietary Korn Ferry/Mercer/WTW scoring or automatic regulatory compliance. Final grades require the organization-approved evaluation framework and human review.
 
-The enterprise server is live on Render and GitHub Pages is configured to connect to it automatically. Institutional operations require organization accounts; the public references and local drafts remain available without login. The connection screen does not authenticate with ChatGPT or external HR systems. External systems need authorized endpoints and credentials.
+### One-time institution setup
 
-Semantic retrieval uses a pinned multilingual MiniLM ONNX model and is disabled by default. A recorded development smoke run reached approximately 887 MiB peak RSS, exceeding the 512 MB free web-instance budget. No live E5/Gemini service or validated matching accuracy is claimed.
+An administrator can configure the approved organization structure and grade architecture once. The OD engine then reuses this context for new requests: organization unit, reporting line, grade proposal and provenance are retained with the draft. Institution profiles are versioned and audited on the enterprise server.
+
+### Phase 2 — Manpower Planning
+
+The manpower workspace calculates workforce demand and supply from explicit assumptions:
+
+- projected demand/workload;
+- capacity per FTE;
+- current FTE;
+- attrition and retirements;
+- committed hires and internal moves;
+- productivity assumptions;
+- optional annual cost per FTE.
+
+It produces Lower / Base / Higher-demand scenarios with **Required FTE**, **Forecast Supply** and **Workforce Gap** by year. Positive gaps can be handed to Phase 1 as a new OD request. Missing cost inputs stay visibly unknown; they are never converted to zero.
+
+### Phase 3 — Compensation
+
+The compensation workspace links an evaluated grade to an **organization-provided salary band**. It calculates midpoint positioning, compa-ratio, range penetration, target adjustment and annual employer cost impact where the required inputs exist. No market salary default is invented and no external survey is claimed unless the organization supplies an authorized source.
+
+## Saudi reference and governance layer
+
+- 5,041 occupations within 5,656 hierarchy nodes from the supplied January 2019 Saudi occupation edition; source issues remain flagged.
+- 599 educational specializations and nine levels from the supplied 2020 education edition; leading zeros are preserved.
+- SSCO-based professional-license review signals for engineering, accounting and health families; these are review alerts, not individual-license verification.
+- Saudization requirements remain unverified until a source URL and verification date are recorded.
+- Four-stage institutional workflow: OD → Total Rewards → Finance → Final Authority.
+- Tenant/department isolation, role-based access, immutable audit history, versioned position records, signed internal receipts and DOCX/XLSX/PDF exports.
+- Imported approvals and external identities do not grant authority in Miyar.
+
+## Public and enterprise modes
+
+The GitHub Pages site provides the bilingual public product and local drafting experience. The Render enterprise API adds organization accounts, PostgreSQL persistence, approval permissions, institutional settings, exports, audit and integration contracts.
+
+Enterprise API: `https://miyar-enterprise-api.onrender.com`
+
+External HR systems such as SAP SuccessFactors, Oracle HCM, Workday, Qiwa and GOSI are **not claimed as connected by default**. They require organization-authorized endpoints and credentials.
+
+Semantic matching is available only when the server model is explicitly enabled. Similarity values are not calibrated confidence. No live E5/Gemini service or validated matching accuracy is claimed.
 
 ## Run and test
 
@@ -38,39 +66,24 @@ npm test
 python -m http.server 8000 --directory dist
 ```
 
-For the API, use Python 3.12, install `server/requirements-lock.txt` and the native Pango libraries listed in the Dockerfile. Inject your database URL and secrets using `.env.example` as a reference.
+API:
 
 ```sh
+pip install -r server/requirements-lock.txt
 python -m pytest server/tests -q
-python -m server.cli bootstrap --email your-admin@example.org
 python -m server.start
 ```
 
-The Render Blueprint generates the bootstrap password and signing/session keys, then serves the UI and API from the same origin. Get the initial password privately from the service environment and change it inside Miyar. Existing accounts are not reset on redeploy. The local CLI prompts for a password if one is not supplied through the environment; no public passwords are seeded. Create distinct manager, OD, Rewards, Finance and final-authority accounts. Institutional grading requires an organization-approved custom framework.
+GitHub Actions gates publication on the complete browser suite and the PostgreSQL-backed server suite. The Render service is configured on `main` with auto-deploy after checks pass.
 
-GitHub Actions tests the API against PostgreSQL, including concurrent approvals, then tests the interface before deploying `dist`. Release 4.2.0 passed 55 interface tests and 24 server tests locally; the PostgreSQL concurrency case runs in CI, for 25 server cases there. The owner activated the Blueprint in My Workspace on 13 September 2026. Live checks confirmed PostgreSQL health, the signing public key, UI delivery and cross-origin access from GitHub Pages. First login and organization account/framework setup remain necessary for the live approval demonstration. Account for cold starts and the free database expiration on 13 October 2026 before a scheduled presentation.
+## Release 5.0 — September 2026
 
-The source editions do not establish current regulatory requirements. Reference counts are not market statistics; similarity is not calibrated confidence. Software tests do not establish novelty, ROI, legal compliance or patent protection. Original attachments, evaluation correspondence, credentials and organization data are not published. The font uses the [SIL Open Font License](dist/assets/OFL.txt).
+This release changes Miyar from a position-management prototype into a connected strategy-to-workforce platform:
 
-## Service interface — 4.4
+1. Phase 1 OD Engine with the HC expert case, job family/career path, KPI and competency generation, SSCO/education handoff and one-time institutional structure/grade setup.
+2. Phase 2 scenario-based manpower planning with transparent demand, supply and gap calculations plus direct Gap → OD handoff.
+3. Phase 3 organization-band compensation analysis with explicit unknown-state handling and no fabricated market pay data.
+4. Homepage and navigation updated to make the three-phase product journey visible immediately.
+5. Existing governance, export, persistence, security and classification regression tests remain in the release gate.
 
-The primary link is https://adeebnoor.github.io/Miyar/. Earlier review links now open the service dashboard. Investor and innovation-center content is removed from primary navigation. New request creation begins with an empty form. The dashboard shows actual saved records and clear local-versus-organization storage context; it does not seed example data.
-
-Local verification passed 63 JavaScript tests and the three deployment tests. The release workflow also gates publication on the full PostgreSQL API suite. Public-URL Render cloning currently lacks an authenticated Git-provider connection, so a successful GitHub push does not trigger a backend deploy; deploy the tested commit explicitly and verify `/health`. No paid resources are introduced.
-
-## Refinements — 4.5
-
-- Direct PDF from the public position form and saved local requests; the existing Render server renders a draft in memory. No sign-in or external PDF provider is required. Blank PDF signature fields do not constitute signed approvals. Institutional exports retain the server approval record and internal receipt.
-- Editable 3–5 KPI suggestions tied to success outcomes, preserving explicit numerical targets; editable RACI suggestions from the entered duties and stakeholders. Changes to source inputs prompt re-review. Local generation uses documented rules, not a generative model.
-- Optional organization AI endpoint: set `MIYAR_KPI_ENDPOINT` (HTTPS chat-completions endpoint), `MIYAR_KPI_MODEL`, and `MIYAR_KPI_API_KEY` on the server. Authenticated author roles can request a bounded JSON proposal; schema validation and human review remain required. No provider, credentials or paid resource is added by this release.
-- SSCO-based alerts for engineering, accounting and health roles link to the relevant professional authority. They do not query individual license records or infer definitive legal eligibility. The authority reference was checked on 13 September 2026.
-- Optional salary range, currency, period and source are linked to a calculated grade and preserved in the draft. Total Rewards evaluations use an organization-configured band where provided or an explicit reviewer proposal, attached to the evaluation revision. No market salary defaults are invented.
-- PDF, HTML, JSON, DOCX and XLSX include the added performance and compensation data. Public PDF requests cannot claim organizational approval.
-
-## Enterprise entrance — September 2026
-
-The public root and `#home` open the bilingual product entrance. Existing `#enterprise/...` links still open the operational workspace directly. The interactive position preview is clearly illustrative and never creates a record or an approval. Its primary action loads an editable sample with three KPIs and three RACI rows; unsaved work requires confirmation before replacement.
-
-The page presents corpus size, approval stages and export formats as capabilities. It does not claim measured savings, proprietary-method certification or automatic regulatory compliance. Local drafts, JSON import and account configuration remain in the workspace. The import chooser is localized and keyboard accessible.
-
-Validation: 69 JavaScript tests pass, including the entrance-to-draft journey in both languages, preview isolation, keyboard tabs, language switching with unsaved content, direct workspace links, and existing persistence/export regressions. Live browser visual verification was unavailable because the connected browser timed out; responsive CSS covers narrow, tablet and desktop layouts, but this does not substitute for a device visual review.
+The supplied reference editions do not establish current regulatory requirements. Reference counts are not market statistics. Software tests do not establish legal compliance, ROI, novelty or patent protection. Proprietary organization documents, credentials and confidential data are not published.
