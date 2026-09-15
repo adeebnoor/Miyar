@@ -2,7 +2,7 @@ name: Test and deploy Miyar to GitHub Pages
 
 on:
   push:
-    branches: [main]
+    branches: [main, fix/qa-review-2026-09-15]
   pull_request:
     branches: [main]
   workflow_dispatch:
