@@ -14,7 +14,9 @@ if(C.search&&!C.__qaSearch){
 }
 
 /* Extend dictionary extraction for common finance/accounting work. This is not
- * model inference; each returned skill includes the literal matched evidence. */
+ * model inference; each returned skill includes the literal matched evidence.
+ * Arabic clitics/articles are stripped for matching only so phrases such as
+ * "ومطابقة الحسابات" match "مطابقة الحسابات" without altering source text. */
 if(C.skills&&!C.__qaSkills){
  C.__qaSkills=true;const original=C.skills.bind(C);
  const local=[
@@ -24,7 +26,13 @@ if(C.skills&&!C.__qaSkills){
   {id:'qa-payables-receivables',labelAr:'الذمم الدائنة والمدينة',labelEn:'Accounts payable and receivable',aliases:['ذمم دائنة','ذمم مدينة','accounts payable','accounts receivable'],source:'Miyar local review vocabulary'},
   {id:'qa-budgeting',labelAr:'إعداد ومتابعة الميزانية',labelEn:'Budgeting and monitoring',aliases:['ميزانية','موازنة','budgeting','budget monitoring'],source:'Miyar local review vocabulary'}
  ];
- C.skills=function(text,vocabulary){const base=original(text,vocabulary),n=' '+norm(text)+' ',ids=new Set(base.map(x=>x.id));for(const s of local){const evidence=s.aliases.filter(a=>n.includes(' '+norm(a)+' '));if(evidence.length&&!ids.has(s.id)){base.push({...s,evidence});ids.add(s.id);}}return base;};
+ const loose=v=>norm(v).split(/\s+/).filter(Boolean).map(token=>{
+  let x=token;
+  if(/^و.+/.test(x)&&x.length>3)x=x.slice(1);
+  if(/^ال.+/.test(x)&&x.length>4)x=x.slice(2);
+  return x;
+ }).join(' ');
+ C.skills=function(text,vocabulary){const base=original(text,vocabulary),hay=' '+loose(text)+' ',ids=new Set(base.map(x=>x.id));for(const s of local){const evidence=s.aliases.filter(a=>hay.includes(' '+loose(a)+' '));if(evidence.length&&!ids.has(s.id)){base.push({...s,evidence});ids.add(s.id);}}return base;};
 }
 
 /* Preserve the server's real validation reason in Arabic. The main workspace
