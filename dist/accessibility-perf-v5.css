@@ -1,0 +1,36 @@
+/* Release hardening: improve small-text contrast and defer below-the-fold rendering work. */
+.release-cta span,
+.landing .lp-role-facts dt,
+.landing .lp-kpis small,
+.landing .lp-stage-number,
+.landing .lp-feature-number,
+.landing .lp-overline,
+.landing .lp-document-code,
+.landing .lp-document-bottom,
+.landing .lp-document-bottom > span:last-child,
+.landing .lp-approval-grid small {
+  color:#52675e;
+}
+
+/* Keep supporting copy readable at normal-text sizes without changing the brand palette. */
+.landing .lp-preview-label > span:last-child,
+.landing .lp-example-tag,
+.landing .lp-preview-content p,
+.landing .lp-capabilities p,
+.landing .lp-footer p {
+  color:#51666a;
+}
+
+/* Modern browsers can skip layout/paint for large sections until they approach the viewport.
+   This reduces initial rendering work; it does not pretend to reduce transferred JavaScript bytes. */
+@supports (content-visibility:auto) {
+  .landing .lp-proof,
+  .landing .lp-section,
+  .landing .lp-governance,
+  .landing .release-suite,
+  .landing .lp-footer {
+    content-visibility:auto;
+    contain-intrinsic-size:auto 760px;
+  }
+  .landing .lp-footer { contain-intrinsic-size:auto 120px; }
+}
