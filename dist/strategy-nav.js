@@ -23,7 +23,13 @@ function sync(){
 }
 document.addEventListener('click',event=>{
  const strategicEntry=event.target.closest('[data-lp-strategy]');
- if(strategicEntry){event.preventDefault();window.location.hash='demo';return;}
+ if(strategicEntry){
+  event.preventDefault();
+  const changed=window.location.hash!=='#demo';
+  window.location.hash='demo';
+  if(changed)window.dispatchEvent(new Event('hashchange'));
+  return;
+ }
  if(event.target.closest('#language-btn,#lp-language,#presentation-language'))sync();
 });
 window.addEventListener('hashchange',sync);
