@@ -12,7 +12,7 @@ permissions:
 
 concurrency:
   group: pages-${{ github.ref }}
-  cancel-in-progress: false
+  cancel-in-progress: true
 
 jobs:
   server-test:
@@ -80,4 +80,3 @@ jobs:
       - name: Deploy website
         id: deployment
         uses: actions/deploy-pages@v5
-
