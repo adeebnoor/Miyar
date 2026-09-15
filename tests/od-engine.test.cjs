@@ -51,10 +51,12 @@ test('HC example can be generated inside Position Design, linked to references a
   assert.equal(a.w.document.querySelector('[data-field=educationLevel]').value,'6');
   assert.ok(a.w.document.querySelector('[data-field=occupationCode]').value.length>0,'SSCO suggestion should be resolved from the supplied reference');
   assert.ok(a.w.document.querySelector('[data-field=educationFieldCode]').value.length>0,'education suggestion should be resolved from the supplied reference');
-  assert.match(a.$('ent-kpi-matrix').value,/95%/);assert.match(a.$('ent-skill-matrix').value,/OPEX/);
+  const kpiTargets=[...a.w.document.querySelectorAll('[data-matrix-key="kpis"][data-matrix-field="target"]')].map(x=>x.value).join(' ');
+  const skillNames=[...a.w.document.querySelectorAll('[data-matrix-key="skillRequirements"][data-matrix-field="name"]')].map(x=>x.value).join(' ');
+  assert.match(kpiTargets,/95%/);assert.match(skillNames,/OPEX/);
   assert.match(panel.querySelector('[data-od-result]').textContent,/Human Capital Projects & Operations Manager/);assert.match(panel.querySelector('[data-od-result]').textContent,/not a live market-survey result/i);
   a.$('ent-save').click();await settle();
-  const saved=JSON.parse(a.w.localStorage.getItem(a.w.MiyarEnterpriseCore.KEY));assert.equal(saved.length,1);assert.equal(saved[0].content.jobFamily,'Human Capital');assert.match(saved[0].content.careerPath,/CHRO/);assert.match(saved[0].content.odGenerationBasis,/rule-based proposal/i);
+  const saved=JSON.parse(a.w.localStorage.getItem(a.w.MiyarEnterpriseCore.KEY));assert.equal(saved.length,1);assert.equal(saved[0].content.jobFamily,'Human Capital');assert.match(saved[0].content.careerPath,/CHRO/);assert.match(saved[0].content.odGenerationBasis,/rule-based proposal/i);assert.ok(saved[0].content.kpis.length>=5);assert.match(saved[0].content.skillRequirements.map(x=>x.name).join(' '),/OPEX/);
   assert.deepEqual(a.errors,[]);
  }finally{a.dom.window.close();}
 });
