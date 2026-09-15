@@ -19,6 +19,24 @@ engine.classify=function(input,roles){
 };
 function isEnglish(){return document.documentElement.lang==='en';}
 function label(ar,en){return isEnglish()?en:ar;}
+function showFeedback(form){
+ const status=form.querySelector('.analysis-feedback');
+ const error=document.getElementById('form-error');
+ if(error&&!error.hidden){
+  if(status)status.textContent=label('أكمل المدخل المطلوب ثم أعد التحليل.','Complete the required input and run the analysis again.');
+  return;
+ }
+ const panel=document.querySelector('.result-panel');
+ const heading=document.getElementById('result-heading');
+ if(!panel)return;
+ panel.classList.remove('analysis-complete');
+ void panel.offsetWidth;
+ panel.classList.add('analysis-complete');
+ if(status)status.textContent=label('اكتمل التحليل — تم تحديث بطاقة الترشيح أدناه.','Analysis complete — the suggestion card has been updated below.');
+ if(heading){heading.tabIndex=-1;heading.focus({preventScroll:true});}
+ const reduced=window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches;
+ if(window.innerWidth<1050)panel.scrollIntoView({behavior:reduced?'auto':'smooth',block:'start'});
+}
 function ensure(){
  const form=document.getElementById('role-form');
  if(!form||form.dataset.outputFeedbackBound==='true')return;
@@ -43,26 +61,12 @@ function ensure(){
    }
   });
  }
- form.addEventListener('submit',()=>{
-  queueMicrotask(()=>{
-   const status=form.querySelector('.analysis-feedback');
-   const error=document.getElementById('form-error');
-   if(error&&!error.hidden){
-    if(status)status.textContent=label('أكمل المدخل المطلوب ثم أعد التحليل.','Complete the required input and run the analysis again.');
-    return;
-   }
-   const panel=document.querySelector('.result-panel');
-   const heading=document.getElementById('result-heading');
-   if(!panel)return;
-   panel.classList.remove('analysis-complete');
-   void panel.offsetWidth;
-   panel.classList.add('analysis-complete');
-   if(status)status.textContent=label('اكتمل التحليل — تم تحديث بطاقة الترشيح أدناه.','Analysis complete — the suggestion card has been updated below.');
-   if(heading){heading.tabIndex=-1;heading.focus({preventScroll:true});}
-   const reduced=window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches;
-   if(window.innerWidth<1050)panel.scrollIntoView({behavior:reduced?'auto':'smooth',block:'start'});
-  });
- });
+ const originalSubmit=form.onsubmit;
+ form.onsubmit=function(event){
+  const value=originalSubmit?originalSubmit.call(this,event):undefined;
+  showFeedback(form);
+  return value;
+ };
 }
 const observer=new MutationObserver(()=>ensure());
 const app=document.getElementById('app');
