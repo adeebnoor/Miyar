@@ -1,6 +1,8 @@
 const test=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path');
 const {JSDOM,VirtualConsole}=require('jsdom'),dir=path.join(__dirname,'../dist');
-const engine=require('../dist/od-engine.js');
+require('../dist/od-engine.js');
+require('../dist/od-engine-priority.js');
+const engine=globalThis.MiyarODEngine;
 const settle=()=>new Promise(r=>setImmediate(r));
 
 test('HC expert case becomes a reviewable Manager-level OD package without pretending vendor grading',()=>{
