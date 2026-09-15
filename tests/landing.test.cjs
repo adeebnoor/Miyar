@@ -14,7 +14,7 @@ test('public entrance makes the strategic workforce engine the primary path and 
  for(const lang of ['ar','en']){const a=await app(lang);try{
   assert.equal(a.$('view-home').hidden,false);assert.equal(a.w.document.querySelector('.app-shell').hidden,true);
   assert.equal(a.$('view-home').querySelectorAll('input[type=file]').length,0);
-  const primary=a.$('view-home').querySelector('[data-lp-strategy]');assert.ok(primary);
+  const primary=a.$('view-home').querySelector('.lp-hero [data-lp-strategy]');assert.ok(primary);
   assert.match(primary.textContent,lang==='ar'?/الهدف الاستراتيجي/:/strategic objective/i);
   primary.click();await settle();
   assert.equal(a.w.location.hash,'#demo');assert.equal(a.$('view-home').hidden,true);assert.equal(a.$('view-demo').hidden,false);assert.ok(a.$('objective'));assert.ok(a.$('role-form'));
