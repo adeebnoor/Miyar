@@ -1,1 +1,30 @@
-(function(){'use strict';const KEY='miyar-compensation-handoff-backup';function capture(e){if(!e.target.closest?.('[data-cp-from-mp]'))return;let v=null;try{v=JSON.parse(sessionStorage.getItem('miyar-compensation-handoff')||'null');}catch{}if(v)sessionStorage.setItem(KEY,JSON.stringify({...v,_at:Date.now()}));}function repair(){if(location.hash!=='#enterprise/compensation')return;let v=null;try{v=JSON.parse(sessionStorage.getItem(KEY)||'null');}catch{}if(!v||Date.now()-Number(v._at||0)>10000)return;const role=document.getElementById('cp-role'),headcount=document.getElementById('cp-headcount'),grade=document.getElementById('cp-grade');if(role&&!role.value)role.value=v.role||'';if(headcount&&(!headcount.value||headcount.value==='1')&&v.headcount)headcount.value=v.headcount;if(grade&&!grade.value)grade.value=v.grade||'';if(role?.value&&(grade?.value||!v.grade))setTimeout(()=>{try{sessionStorage.removeItem(KEY);}catch{}},50);}document.addEventListener('click',capture);window.addEventListener('hashchange',()=>setTimeout(repair,0));window.addEventListener('miyar:navigate',()=>setTimeout(repair,0));new MutationObserver(()=>{if(location.hash==='#enterprise/compensation')setTimeout(repair,0);}).observe(document.documentElement,{subtree:true,childList:true});window.MiyarCompensationHandoffFix={repair};})();
+(function(){
+'use strict';
+const KEY='miyar-compensation-handoff-backup';
+function institutionGrade(role){
+ const I=window.MiyarInstitutionProfile,p=I?.read?.();if(!I||!p||!String(role||'').trim())return'';
+ const g=I.matchGrade(p,role);if(!g)return'';
+ return g.id+' · '+(document.documentElement.lang!=='en'?g.labelAr:g.labelEn);
+}
+function capture(e){
+ if(!e.target.closest?.('[data-cp-from-mp]'))return;
+ let v=null;try{v=JSON.parse(sessionStorage.getItem('miyar-compensation-handoff')||'null');}catch{}
+ if(v){const grade=institutionGrade(v.role)||v.grade||'';sessionStorage.setItem(KEY,JSON.stringify({...v,grade,_at:Date.now()}));}
+}
+function repair(){
+ if(location.hash!=='#enterprise/compensation')return;
+ let v=null;try{v=JSON.parse(sessionStorage.getItem(KEY)||'null');}catch{}
+ if(!v||Date.now()-Number(v._at||0)>10000)return;
+ const role=document.getElementById('cp-role'),headcount=document.getElementById('cp-headcount'),grade=document.getElementById('cp-grade');
+ if(role&&!role.value)role.value=v.role||'';
+ if(headcount&&(!headcount.value||headcount.value==='1')&&v.headcount)headcount.value=v.headcount;
+ const expectedGrade=institutionGrade(v.role||role?.value||'')||v.grade||'';
+ if(grade&&expectedGrade&&grade.value!==expectedGrade)grade.value=expectedGrade;
+ if(role?.value&&(grade?.value||!expectedGrade))setTimeout(()=>{try{sessionStorage.removeItem(KEY);}catch{}},50);
+}
+document.addEventListener('click',capture);
+window.addEventListener('hashchange',()=>setTimeout(repair,0));
+window.addEventListener('miyar:navigate',()=>setTimeout(repair,0));
+new MutationObserver(()=>{if(location.hash==='#enterprise/compensation')setTimeout(repair,0);}).observe(document.documentElement,{subtree:true,childList:true});
+window.MiyarCompensationHandoffFix={repair,institutionGrade};
+})();
