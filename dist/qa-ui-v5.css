@@ -1,0 +1,5 @@
+.qa-directory{margin-top:16px;padding-top:14px;border-top:1px solid rgba(18,45,50,.12)}
+.qa-directory h4{margin:0 0 6px;font-size:1rem}.qa-directory p{margin:0 0 10px}.qa-directory-list{display:grid;gap:8px}.qa-directory-list .button{justify-content:flex-start;text-align:start;white-space:normal;width:100%}
+.qa-band-alert{margin:14px 0;padding:12px 14px;border-radius:12px;border:1px solid #e3a08a;background:#fff3ee;color:#702b14}.qa-band-alert p{margin:4px 0 0}.qa-error{color:#8f2e16!important;font-weight:700}.qa-demo-scope{max-width:760px;margin:8px 0 0;color:#48635b;font-size:.86rem;line-height:1.6}
+.ent-note,.service-footer-note,.field-hint,.source-caption,.lp-caption{color:#48615a}
+@media(max-width:650px){.od-toolbar{flex-wrap:wrap}.od-toolbar .action-row{flex-shrink:1;min-width:0;width:100%}.od-toolbar .action-row .button{flex:1 1 140px}.od-toolbar,.od-toolbar>*{max-width:100%;min-width:0}.od-layout,.od-form,.od-grid,.workspace,main{min-width:0}.view{max-width:100%;overflow-x:clip}}
