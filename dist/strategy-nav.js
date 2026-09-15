@@ -15,16 +15,16 @@ function sync(){
   nav.prepend(link);
  }
  const label=en?'Strategic workforce engine':'المحرك الاستراتيجي للقوى العاملة';
- const current=link.querySelector('span')?.textContent;
- if(current!==label)link.innerHTML=targetIcon+'<span>'+label+'</span>';
- const active=location.hash==='#demo';
+ if(link.querySelector('span')?.textContent!==label)link.innerHTML=targetIcon+'<span>'+label+'</span>';
+ const demo=document.getElementById('view-demo');
+ const active=Boolean(demo&&!demo.hidden);
  link.classList.toggle('active',active);
  if(active)link.setAttribute('aria-current','page');else link.removeAttribute('aria-current');
 }
-let queued=false;
-function schedule(){if(queued)return;queued=true;queueMicrotask(()=>{queued=false;sync();});}
-new MutationObserver(schedule).observe(document.documentElement,{subtree:true,childList:true});
+document.addEventListener('click',event=>{
+ if(event.target.closest('#language-btn,#lp-language,#presentation-language'))sync();
+});
 window.addEventListener('hashchange',sync);
 window.addEventListener('miyar:navigate',sync);
-if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',sync,{once:true});else sync();
+sync();
 })();
