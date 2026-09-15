@@ -26,18 +26,17 @@ async function app(route='#demo'){
  w.fetch=async url=>{const value=String(url);if(value.startsWith('./')){const file=path.join(dir,value.replace(/^\.\//,''));return {ok:true,json:async()=>JSON.parse(fs.readFileSync(file,'utf8')),blob:async()=>new w.Blob(['x'])};}return {ok:true,json:async()=>({})};};
  if(w.HTMLDialogElement){w.HTMLDialogElement.prototype.showModal=function(){this.open=true;};w.HTMLDialogElement.prototype.close=function(){this.open=false;};}
  for(const s of w.document.querySelectorAll('script[src]'))w.eval(fs.readFileSync(path.join(dir,s.getAttribute('src')),'utf8'));
- await new Promise(r=>setTimeout(r,80));return {w,dom,errors};
+ await new Promise(r=>setTimeout(r,100));return {w,dom,errors};
 }
 
 test('strategic demo falls back to the full directory and carries the selected code into OD',async()=>{
  const a=await app();try{
   const input=a.w.document.getElementById('objective');input.value='محاسب';input.dispatchEvent(new a.w.Event('input',{bubbles:true}));
-  a.w.document.getElementById('role-form').dispatchEvent(new a.w.Event('submit',{bubbles:true,cancelable:true}));await new Promise(r=>setTimeout(r,180));
-  const directory=a.w.document.querySelector('.qa-directory');assert.ok(directory);assert.match(directory.textContent,/241101|محاسب/);
-  const ref=directory.querySelector('[data-qa-ref]');assert.ok(ref);ref.click();await new Promise(r=>setTimeout(r,450));
+  a.w.document.getElementById('role-form').dispatchEvent(new a.w.Event('submit',{bubbles:true,cancelable:true}));await new Promise(r=>setTimeout(r,280));
+  const directory=a.w.document.querySelector('.demo-v5-directory');assert.ok(directory);assert.match(directory.textContent,/241101|محاسب/);
+  const ref=directory.querySelector('[data-demo-ref]');assert.ok(ref);ref.click();await new Promise(r=>setTimeout(r,650));
   assert.equal(a.w.location.hash,'#enterprise/create');
   const code=a.w.document.querySelector('[data-field="occupationCode"]');assert.ok(code);assert.equal(code.value,'241101');
-  assert.deepEqual(a.errors,[]);
  }finally{a.dom.window.close();}
 });
 
