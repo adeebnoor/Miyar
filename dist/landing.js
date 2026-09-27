@@ -19,7 +19,7 @@ function mount(host,{t,lang,icon,switchLanguage,example}){
  host.innerHTML=`
  <header class="lp-header"><div class="lp-wrap lp-header-inner">${brand}
   <nav class="lp-nav" aria-label="${t('التنقل الرئيسي','Main navigation')}">
-   <a href="#demo" data-lp-strategy>${t('المحرك الاستراتيجي','Strategic engine')}</a>
+   <a href="#demo" data-lp-strategy>${t('ابدأ','Start')}</a>
    <a href="#home/capabilities" data-lp-scroll="capabilities">${t('كيف يعمل','How it works')}</a>
    <a href="#home/governance" data-lp-scroll="governance">${t('الحوكمة','Governance')}</a>
    <a href="#enterprise/overview">${t('مساحة العمل','Workspace')}</a>
@@ -29,14 +29,30 @@ function mount(host,{t,lang,icon,switchLanguage,example}){
  <main id="landing-main" tabindex="-1">
   <section class="lp-hero" aria-labelledby="home-heading"><div class="lp-wrap lp-hero-grid">
    <div class="lp-hero-copy">
-    <span class="lp-eyebrow">${t('المحرك الاستراتيجي للقوى العاملة','STRATEGIC WORKFORCE ENGINE')}</span>
-    <h1 id="home-heading">${t('ابدأ بالهدف الاستراتيجي.<br><em>ثم صمّم القوى العاملة<br class="lp-wide-break"> التي تحققه.</em>','Start with the strategic objective.<br><em>Then design the workforce<br class="lp-wide-break"> to deliver it.</em>')}</h1>
-    <p>${t('معيار يبدأ من هدف أو احتياج أعمال، يحوله إلى ترشيح وظيفي قابل للتفسير، ثم ينقل القرار إلى تصميم المنصب وتقييمه واعتماده.','Miyar starts with a strategic or business objective, turns it into an explainable role suggestion, then carries the decision into position design, evaluation and approval.')}</p>
-    <div class="lp-hero-actions">
-     <a class="lp-button lp-primary" href="#demo" data-lp-strategy>${t('ابدأ من الهدف الاستراتيجي','Start with a strategic objective')} ${icon('arrow')}</a>
-     <a class="lp-secondary" href="#enterprise/overview">${t('لدي منصب جاهز — افتح مساحة العمل','I already have a position — open the workspace')}</a>
+    <span class="lp-eyebrow">${t('ابدأ هنا · أقل مدخل ممكن','START HERE · MINIMUM INPUT')}</span>
+    <h1 id="home-heading">${t('ما الذي تريد المؤسسة تحقيقه؟<br><em>صف الهدف، ودع معيار يقودك للخطوة التالية.</em>','What does the organization need to achieve?<br><em>Describe the goal, and let Miyar guide the next step.</em>')}</h1>
+    <p>${t('لا تحتاج إلى معرفة المسمى الوظيفي أو النموذج المناسب مسبقًا. اكتب الهدف أو المشكلة بجملة واحدة؛ معيار يرشح المرجع الأقرب ويشرح السبب، ثم يفتح لك الإجراء المناسب.','You do not need to know the job title or the right workflow in advance. Describe the goal or problem in one sentence; Miyar suggests the closest reference, explains why, then opens the right next action.')}</p>
+    <form id="lp-guided-form" class="lp-guided-start" novalidate>
+     <label for="lp-guided-objective">${t('صف الهدف أو المشكلة','Describe the goal or problem')}</label>
+     <textarea id="lp-guided-objective" name="objective" rows="3" minlength="12" placeholder="${t('مثال: رفع اعتمادية المعدات وتقليل التوقف عبر الصيانة الوقائية وتحسين إجراءات التشغيل','Example: Improve equipment reliability and reduce downtime through preventive maintenance and better operating procedures')}"></textarea>
+     <div class="lp-guided-examples" aria-label="${t('أمثلة سريعة','Quick examples')}">
+      <span>${t('جرّب مثالًا:','Try an example:')}</span>
+      <button type="button" data-guided-example="${t('رفع اعتمادية المعدات وتقليل التوقف عبر الصيانة الوقائية وتحسين إجراءات التشغيل','Improve equipment reliability and reduce downtime through preventive maintenance and better operating procedures')}">${t('اعتمادية المعدات','Equipment reliability')}</button>
+      <button type="button" data-guided-example="${t('رفع دقة التقارير المالية وتسريع الإقفال الشهري','Improve financial reporting accuracy and accelerate the monthly close')}">${t('التقارير المالية','Financial reporting')}</button>
+      <button type="button" data-guided-example="${t('تحسين جودة منصة الخدمات الرقمية وتقليل عيوب الإصدارات','Improve the digital services platform and reduce release defects')}">${t('الخدمات الرقمية','Digital services')}</button>
+     </div>
+     <div class="lp-guided-actions">
+      <button class="lp-button lp-primary" type="submit">${t('اقترح الدور المناسب','Find the right role')} ${icon('arrow')}</button>
+      <a class="lp-secondary" href="#enterprise/create">${t('أعرف المسمى — صمّم الوظيفة مباشرة','I know the role — design the position directly')}</a>
+     </div>
+     <p id="lp-guided-status" class="lp-guided-status" role="status" hidden></p>
+    </form>
+    <div class="lp-guided-steps" aria-label="${t('رحلة معيار المبسطة','Simplified Miyar journey')}">
+     <div><span>01</span><strong>${t('افهم','Understand')}</strong><small>${t('الهدف والاحتياج','Goal and need')}</small></div>
+     <div><span>02</span><strong>${t('رشّح وفسّر','Recommend')}</strong><small>${t('الدور والمرجع والسبب','Role, reference and rationale')}</small></div>
+     <div><span>03</span><strong>${t('نفّذ','Act')}</strong><small>${t('صمّم، خطّط، قيّم أو اعتمد','Design, plan, evaluate or approve')}</small></div>
     </div>
-    <p class="lp-caption">${t('المسار العام يقدم مطابقة توضيحية قابلة للتفسير؛ لا يدّعي تنبؤ الأعداد المستقبلية.','The public path provides explainable illustrative matching; it does not claim future headcount forecasting.')}</p>
+    <p class="lp-caption">${t('البداية مبسطة، لكن قدرات معيار المؤسسية تبقى كاملة: 5,041 مهنة، تصميم الوظيفة، تخطيط القوى العاملة، التعويضات، الإصدارات والاعتمادات.','The start is simplified, while Miyar retains its full enterprise depth: 5,041 occupations, job design, workforce planning, compensation, revisions and approvals.')}</p>
    </div>
    <div class="lp-showcase">
     <div class="lp-preview-label"><span>${icon('target')} ${t('شاهد المحرك قبل الدخول إلى بقية المنصة','See the engine before the rest of the platform')}</span><span>${t('مثال توضيحي','ILLUSTRATIVE')}</span></div>
@@ -89,6 +105,27 @@ function mount(host,{t,lang,icon,switchLanguage,example}){
 
  host.querySelector('#lp-language').onclick=switchLanguage;
  host.querySelectorAll('[data-lp-scroll]').forEach(a=>a.onclick=e=>{e.preventDefault();const target=host.querySelector('#lp-'+a.dataset.lpScroll);if(target)target.scrollIntoView({behavior:'smooth',block:'start'});});
+ const guidedForm=host.querySelector('#lp-guided-form');
+ if(guidedForm){
+  const objective=guidedForm.querySelector('#lp-guided-objective');
+  const status=guidedForm.querySelector('#lp-guided-status');
+  host.querySelectorAll('[data-guided-example]').forEach(button=>button.onclick=()=>{
+   objective.value=button.dataset.guidedExample||'';
+   if(status)status.hidden=true;
+   objective.focus();
+  });
+  guidedForm.onsubmit=event=>{
+   event.preventDefault();
+   const value=(objective?.value||'').trim();
+   if(value.length<12){
+    if(status){status.hidden=false;status.textContent=t('اكتب هدفًا أو مشكلة أوضح قليلًا — جملة واحدة تكفي.','Describe the goal or problem a little more clearly — one sentence is enough.');}
+    objective?.focus();
+    return;
+   }
+   try{sessionStorage.setItem('miyar-guided-objective-v1',value);}catch{}
+   window.location.hash='#demo';
+  };
+ }
  host.querySelectorAll('[data-lp-demo]').forEach(control=>control.onclick=async()=>{
   const status=host.querySelector('#lp-status');status.hidden=false;status.textContent=t('جارٍ تجهيز مثال المنصب…','Preparing the position example…');
   host.querySelectorAll('[data-lp-demo]').forEach(b=>b.disabled=true);
