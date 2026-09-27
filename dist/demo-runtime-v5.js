@@ -1,6 +1,7 @@
 (function(){
 'use strict';
 const RUN_KEY='miyar-demo-run-count-v5';
+const GUIDE_KEY='miyar-guided-objective-v1';
 function ar(){return document.documentElement.lang!=='en';}
 function t(a,b){return ar()?a:b;}
 function esc(v){return String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
@@ -29,7 +30,19 @@ function renderError(message){const p=panel();if(!p)return;p.innerHTML='<div cla
 function analyze(event){const form=event.target;if(!(form instanceof HTMLFormElement)||form.id!=='role-form')return;event.preventDefault();event.stopImmediatePropagation();const engine=window.MiyarEngine,data=window.MIYAR_DATA,input=readInput(),error=document.getElementById('form-error');if(!engine||!data?.roles){renderError(t('تعذر تحميل محرك التحليل. أعد تحميل الصفحة.','The analysis engine did not load. Reload the page.'));return;}if(!input.objective){if(error){error.textContent=t('أدخل المسمى أو وصف المهام أولًا.','Enter a title or task description first.');error.hidden=false;}renderError(t('أدخل المسمى أو وصف المهام أولًا.','Enter a title or task description first.'));return;}if(error)error.hidden=true;let result;try{result=engine.classify(input,data.roles);}catch(e){renderError(e.message||t('تعذر إكمال التحليل.','Analysis could not be completed.'));return;}const id=runId();if(result.kind==='match')renderMatch(result,input,id);else renderReview(result,input,id);const rp=document.querySelector('.result-panel');if(rp){rp.classList.remove('analysis-complete');void rp.offsetWidth;rp.classList.add('analysis-complete');if(window.innerWidth<1100)rp.scrollIntoView({behavior:'smooth',block:'start'});}const heading=document.getElementById('result-heading');heading?.focus?.({preventScroll:true});}
 function onInput(event){if(location.hash!=='#demo')return;if(!['objective','domain','seniority','constraints'].includes(event.target?.id))return;waiting();}
 function labelPanels(){if(location.hash!=='#demo')return;const form=document.getElementById('role-form');if(!form)return;const inputPanel=form.closest('.panel');const resultPanel=document.querySelector('.result-panel');if(inputPanel&&!inputPanel.querySelector('.demo-v5-io-label'))inputPanel.insertAdjacentHTML('afterbegin','<div class="demo-v5-io-label">INPUT</div>');if(resultPanel&&!resultPanel.querySelector('.demo-v5-io-label'))resultPanel.insertAdjacentHTML('afterbegin','<div class="demo-v5-io-label">OUTPUT</div>');if(!form.dataset.v5Primed){form.dataset.v5Primed='1';waiting();}}
-function prime(){labelPanels();}
+function consumeGuidedObjective(){
+ if(location.hash!=='#demo')return;
+ const form=document.getElementById('role-form'),objective=document.getElementById('objective');
+ if(!form||!objective||form.dataset.guidedConsumed)return;
+ let value='';try{value=sessionStorage.getItem(GUIDE_KEY)||'';}catch{}
+ if(!value)return;
+ form.dataset.guidedConsumed='1';
+ try{sessionStorage.removeItem(GUIDE_KEY);}catch{}
+ objective.value=value;
+ objective.dispatchEvent(new Event('input',{bubbles:true}));
+ setTimeout(()=>form.dispatchEvent(new Event('submit',{bubbles:true,cancelable:true})),0);
+}
+function prime(){labelPanels();consumeGuidedObjective();}
 document.addEventListener('submit',analyze,true);
 document.addEventListener('input',onInput,true);
 window.addEventListener('hashchange',()=>setTimeout(prime,0));
