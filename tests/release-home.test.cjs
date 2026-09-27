@@ -12,8 +12,9 @@ test('homepage release layer reflects OD, manpower and compensation with direct 
   const suite=w.document.getElementById('miyar-release-home');assert.ok(suite);
   assert.match(suite.textContent,/OD & Job Architecture/);assert.match(suite.textContent,/Manpower Planning/);assert.match(suite.textContent,/Compensation/);
   assert.ok(suite.querySelector('a[href="#enterprise/create"]'));assert.ok(suite.querySelector('a[href="#enterprise/manpower"]'));assert.ok(suite.querySelector('a[href="#enterprise/compensation"]'));
-  assert.match(w.document.querySelector('.lp-hero-copy').textContent,/plan capacity/i);assert.match(w.document.querySelector('.lp-hero-copy').textContent,/compensation/i);
-  assert.equal(w.document.querySelectorAll('.lp-nav [data-release-nav]').length,3);
+  assert.equal(w.document.querySelector('.lp-hero-copy h1').textContent,'Old');
+  assert.match(w.document.querySelector('.lp-eyebrow').textContent,/START HERE/);
+  assert.equal(w.document.querySelectorAll('.lp-nav [data-release-nav]').length,0);
  }finally{dom.window.close();}
 });
 
