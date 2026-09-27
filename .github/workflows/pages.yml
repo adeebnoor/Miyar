@@ -57,9 +57,35 @@ jobs:
         run: npm ci --ignore-scripts --no-audit --no-fund
       - name: Test classification, position workflow and interface
         run: npm test
+  e2e-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - name: Install free Playwright browser runner
+        run: |
+          npm ci --ignore-scripts --no-audit --no-fund
+          npm install --no-save --ignore-scripts --no-audit --no-fund @playwright/test@1.55.0
+          npx playwright install --with-deps chromium
+      - name: Serve Miyar locally
+        run: |
+          python3 -m http.server 4173 --directory dist >/tmp/miyar-http.log 2>&1 &
+          for i in {1..20}; do
+            curl -fsS http://127.0.0.1:4173/ >/dev/null && exit 0
+            sleep 1
+          done
+          cat /tmp/miyar-http.log
+          exit 1
+      - name: Test the first-user journey in a real browser
+        run: npx playwright test e2e/miyar-guided-start.spec.cjs --reporter=line --workers=1
+
   deploy:
     if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
-    needs: [server-test, ui-test]
+    needs: [server-test, ui-test, e2e-test]
     permissions:
       contents: read
       pages: write
