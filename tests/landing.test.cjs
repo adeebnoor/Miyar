@@ -10,16 +10,20 @@ async function app(locale='ar',route=''){
  for(const s of w.document.querySelectorAll('script[src]'))w.eval(fs.readFileSync(path.join(dir,s.getAttribute('src')),'utf8'));
  await settle();return {w,dom,errors,$:id=>w.document.getElementById(id)};
 }
-test('public entrance makes the strategic workforce engine the primary path and preserves the position example',async()=>{
+test('public entrance uses one guided objective, preserves a direct known-role path and keeps the position example',async()=>{
  for(const lang of ['ar','en']){const a=await app(lang);try{
   assert.equal(a.$('view-home').hidden,false);assert.equal(a.w.document.querySelector('.app-shell').hidden,true);
   assert.equal(a.$('view-home').querySelectorAll('input[type=file]').length,0);
-  const primary=a.$('view-home').querySelector('.lp-hero [data-lp-strategy]');assert.ok(primary);
-  assert.match(primary.textContent,lang==='ar'?/الهدف الاستراتيجي/:/strategic objective/i);
-  primary.click();await settle();
-  assert.equal(a.w.location.hash,'#demo');assert.equal(a.$('view-home').hidden,true);assert.equal(a.$('view-demo').hidden,false);assert.ok(a.$('objective'));assert.ok(a.$('role-form'));
+  const form=a.$('lp-guided-form'),objective=a.$('lp-guided-objective');assert.ok(form);assert.ok(objective);
+  const direct=form.querySelector('a[href="#enterprise/create"]');assert.ok(direct);
+  objective.value=lang==='ar'?'رفع اعتمادية الأنظمة الميكانيكية وتقليل توقف المعدات عبر الصيانة الوقائية وتحسين إجراءات التشغيل':'Improve mechanical system reliability and reduce equipment downtime through preventive maintenance and better operating procedures';
+  form.dispatchEvent(new a.w.Event('submit',{bubbles:true,cancelable:true}));
+  await new Promise(r=>setTimeout(r,25));
+  assert.equal(a.w.location.hash,'#demo');assert.equal(a.$('view-home').hidden,true);assert.equal(a.$('view-demo').hidden,false);
+  assert.match(a.$('objective').value,lang==='ar'?/اعتمادية الأنظمة الميكانيكية/:/mechanical system reliability/i);
+  await new Promise(r=>setTimeout(r,25));
+  assert.match(a.$('result-content').textContent,/214401/);
   const nav=a.w.document.querySelector('[data-strategy-nav]');assert.ok(nav);assert.equal(nav.getAttribute('href'),'#demo');assert.equal(nav.getAttribute('aria-current'),'page');
-  assert.match(nav.textContent,lang==='ar'?/المحرك الاستراتيجي/:/Strategic workforce engine/);
   a.w.location.hash='home';await new Promise(r=>setTimeout(r,5));assert.equal(a.$('view-home').hidden,false);
   a.$('lp-language').click();await settle();
   const sample=a.$('view-home').querySelector('[data-lp-demo]');assert.ok(sample);sample.click();await settle();
