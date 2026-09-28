@@ -220,8 +220,12 @@ test('360 visible release labels do not regress to the old backend/frontend edit
 
 
 test('360 homepage never presents the supplied 2019 occupation corpus as the current official SSCO',async({page})=>{
-  await page.goto(BASE+'#home');await page.waitForTimeout(180);
-  const text=(await page.locator('body').innerText()).replace(/\s+/g,' ');
+  await page.goto(BASE+'#home');
+  // Lower sections use content-visibility:auto: scroll to the reference notice
+  // before reading rendered text, just as a reviewer reaches this section.
+  await page.locator('.release-foundation').scrollIntoViewIfNeeded();
+  await expect(page.locator('.release-foundation')).toContainText(/GASTAT|الهيئة العامة للإحصاء/i);
+  const text=(await page.locator('#view-home').innerText()).replace(/\s+/g,' ');
   expect(text).toMatch(/2019|supplied January 2019/i);
   expect(text).toMatch(/GASTAT|الهيئة العامة للإحصاء/i);
   expect(text).not.toMatch(/5,041 (?:current|official) occupations/i);
