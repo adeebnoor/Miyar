@@ -27,13 +27,13 @@ test('360 public copy is internally consistent and no obsolete five-engineering-
   expect(text).not.toMatch(/خمس مهن هندسية|5 مهن هندسية|عينة من 5 مهن/i);
   expect(text).not.toMatch(/five[- ]engineering[- ]role|five engineering occupations|5-record sample/i);
   await expect(page.locator('#lp-guided-form')).toBeVisible();
+  await expect(page.locator('a[href*="pitch.html"]:visible').first()).toBeVisible();
+  const personal=page.locator('a[href="https://adeebnoor.github.io/"]:visible').first();
+  await expect(personal).toBeVisible();
   await page.goto(BASE+'#demo');await page.waitForTimeout(180);
   text=(await page.locator('body').innerText()).replace(/\s+/g,' ');
   expect(text).not.toMatch(/خمس مهن هندسية|5 مهن هندسية|عينة من 5 مهن/i);
   expect(text).not.toMatch(/five[- ]engineering[- ]role|five engineering occupations|5-record sample/i);
-  await expect(page.locator('a[href*="pitch.html"]').first()).toBeVisible();
-  const personal=page.locator('a[href="https://adeebnoor.github.io/"]').first();
-  await expect(personal).toBeVisible();
 });
 
 test('360 all primary public and workspace routes render with no horizontal overflow on desktop',async({page})=>{
@@ -49,21 +49,18 @@ test('360 all primary public and workspace routes render with no horizontal over
   }
 });
 
-test('360 every enterprise tab renders meaningful content in Arabic and English',async({page})=>{
+test('360 every enterprise route renders meaningful content in Arabic and English',async({page})=>{
+  const tabs=['overview','tour','reference','create','workspace','intelligence','bulk','grading','readiness','evidence','market','connection'];
   for(const lang of ['ar','en']){
-    await page.evaluate(value=>localStorage.setItem('miyar-language',value),lang).catch(()=>{});
-    await page.goto(BASE+'#enterprise/overview');
-    await page.waitForTimeout(200);
-    const tabs=['overview','tour','reference','create','workspace','intelligence','bulk','grading','readiness','evidence','market','connection'];
+    await page.addInitScript(value=>localStorage.setItem('miyar-language',value),lang);
     for(const tab of tabs){
-      const button=page.locator('[data-ent-tab="'+tab+'"]');
-      await expect(button,'Missing enterprise tab '+tab+' in '+lang).toBeVisible();
-      await button.click();
-      await page.waitForTimeout(80);
+      await page.goto(BASE+'#enterprise/'+tab);
+      await page.waitForTimeout(180);
       const content=page.locator('#ent-content');
-      await expect(content).toBeVisible();
+      await expect(content,'Missing enterprise content for '+tab+' in '+lang).toBeVisible();
       const tabText=(await content.innerText()).trim();
-      expect(tabText.length,'Empty tab '+tab+' in '+lang).toBeGreaterThan(40);
+      expect(tabText.length,'Empty route '+tab+' in '+lang).toBeGreaterThan(40);
+      await expect(page.locator('#enterprise-heading')).toBeVisible();
       if(tab==='market')expect(tabText).not.toMatch(/Tafany|تفاني/i);
     }
   }
