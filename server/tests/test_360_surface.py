@@ -117,8 +117,8 @@ def test_360_health_reports_real_storage_and_does_not_claim_unconfigured_ai(env)
     assert health.status_code==200
     body=health.json()
     assert body['status']=='ok'
-    assert body['version']=='5.0.2'
-    assert body['services']['version']=='5.0.2'
+    assert body['version']=='5.0.3'
+    assert body['services']['version']=='5.0.3'
     assert body['occupations']==5041
     assert body['semanticModelReady'] is False
     assert body['services']['approvals'] is True

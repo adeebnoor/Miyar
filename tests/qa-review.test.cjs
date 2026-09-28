@@ -25,7 +25,7 @@ async function app(route='#demo'){
  w.localStorage.setItem('miyar-language','ar');w.structuredClone=structuredClone;w.AbortSignal=AbortSignal;w.scrollTo=()=>{};w.HTMLElement.prototype.scrollIntoView=()=>{};w.confirm=()=>true;w.URL.createObjectURL=()=> 'blob:test';w.URL.revokeObjectURL=()=>{};w.matchMedia=()=>({matches:false});
  w.fetch=async url=>{const value=String(url);if(value.startsWith('./')){const file=path.join(dir,value.replace(/^\.\//,''));return {ok:true,json:async()=>JSON.parse(fs.readFileSync(file,'utf8')),blob:async()=>new w.Blob(['x'])};}return {ok:true,json:async()=>({})};};
  if(w.HTMLDialogElement){w.HTMLDialogElement.prototype.showModal=function(){this.open=true;};w.HTMLDialogElement.prototype.close=function(){this.open=false;};}
- for(const s of w.document.querySelectorAll('script[src]'))w.eval(fs.readFileSync(path.join(dir,s.getAttribute('src')),'utf8'));
+ for(const s of w.document.querySelectorAll('script[src]'))w.eval(fs.readFileSync(path.join(dir,s.getAttribute('src').split('?')[0]),'utf8'));
  await new Promise(r=>setTimeout(r,100));return {w,dom,errors};
 }
 
