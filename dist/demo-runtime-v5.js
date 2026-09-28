@@ -41,7 +41,7 @@ const HR_INTENTS=[
  ['talent',['ادارة المواهب','إدارة المواهب','المواهب','talent management','succession','high potential']],
  ['employeeRelations',['علاقات الموظفين','علاقات موظفين','employee relations','labor relations']],
  ['workforce',['تخطيط القوى العاملة','القوى العاملة','تخطيط القوى','workforce planning','manpower planning']],
- ['hrDevelopment',['تطوير الموارد البشرية','تطوير موارد بشرية','human resources development','hr development']],
+ ['hrDevelopment',['تطوير الموارد البشرية','تطوير موارد بشرية','سياسات الموارد البشرية','ممارسات الموارد البشرية','وظائف الموارد البشرية','كفاءة وظائف الموارد البشرية','human resources development','hr development','hr policies','hr practices','hr function effectiveness']],
  ['learning',['تدريب','ابتعاث','تعلم وتطوير','التعلم والتطوير','learning and development','training']],
  ['od',['تطوير تنظيمي','تطوير مؤسسي','الهياكل التنظيمية','هيكل تنظيمي','الهيكل التنظيمي','تصميم الهيكل','تصميم الهياكل','تصميم تنظيمي','نطاقات المسؤولية','organizational development','organization development','organization design','organizational design','organization structure','organizational structure']],
  ['jobAnalysis',['تحليل وظائف','تحليل الوظائف','تصنيف وظائف','تصنيف مهن','job analysis','job classification']],
