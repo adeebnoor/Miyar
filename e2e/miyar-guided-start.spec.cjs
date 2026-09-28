@@ -117,13 +117,63 @@ test('HR expanded directory exposes the curated source roles present in the supp
 
 test('exact HR-manager payroll case recommends أخصائي رواتب and keeps SSCO source title separate',async({page})=>{
   const result=await runDemoCase(page,{
-    objective:'مسؤول عن إعداد ومعالجة رواتب الموظفين بدقة بشكل شهري، واعداد التقارير لمسيرات الرواتب مع ضمان الالتزام بسياسات الشركة والأنظمة واللوائح المعمول بها',
-    domain:'الموارد البشرية',
-    seniority:'اخصائي'
+    objective:'مسؤول عن إعداد ومعالجة رواتب الموظفين بدقة بشكل شهري، واعداد التقارير لمسيرات الرواتب مع ضمان الالتزام بسياسات الشركة والأنظمة واللوائح المعمول بها'
   });
   const primary=result.locator('.demo-v5-primary-recommendation');
   await expect(primary).toBeVisible();
   await expect(primary.locator('h4')).toHaveText('أخصائي رواتب');
   await expect(primary).toContainText('242322');
   await expect(primary).toContainText('اخصائي رواتب وبدلات');
+});
+
+
+test('HR expected-output engine returns one primary role for common HR work families',async({page})=>{
+ const cases=[
+  ['استقطاب وفرز المرشحين وإجراء المقابلات والتنسيق لإتمام التوظيف','أخصائي توظيف','242305'],
+  ['إدارة المكافآت والحوافز والمزايا ومراجعة سياسات التعويضات','أخصائي مكافآت وتعويضات','242306'],
+  ['إدارة المواهب وخطط التعاقب الوظيفي وتحديد الموظفين ذوي الإمكانات العالية','أخصائي مواهب','242307'],
+  ['معالجة شكاوى الموظفين ودعم علاقات الموظفين وتطبيق السياسات الداخلية','أخصائي علاقات الموظفين','242302'],
+  ['إعداد خطط القوى العاملة وتحليل الاحتياج المستقبلي والفجوات','أخصائي تخطيط القوى العاملة','242319'],
+  ['تصميم وتنفيذ البرامج التدريبية وخطط التعلم والتطوير','أخصائي تدريب وتطوير','242402'],
+  ['تطوير سياسات وممارسات الموارد البشرية ورفع كفاءة وظائف الموارد البشرية','أخصائي تطوير موارد بشرية','242404'],
+  ['تصميم الهياكل التنظيمية وتحسين الأدوار ونطاقات المسؤولية','أخصائي تطوير تنظيمي','242109'],
+  ['تحليل الوظائف وتحديث الأوصاف وتصنيف الوظائف','محلل وظائف','242323'],
+  ['إدارة ملفات الموظفين والإجازات والإجراءات المتعلقة بشؤون الموظفين','أخصائي شؤون موظفين','242310'],
+  ['تشغيل خدمات الموارد البشرية اليومية وتحسين إجراءات الخدمة','أخصائي عمليات موارد بشرية','242303']
+ ];
+ for(const [objective,title,code] of cases){
+  await test.step(title+' | '+code,async()=>{
+   const result=await runDemoCase(page,{objective});
+   const primary=result.locator('.demo-v5-primary-recommendation');
+   await expect(primary,'Missing primary recommendation for: '+objective).toBeVisible();
+   await expect(primary.locator('h4'),'Wrong primary title for: '+objective).toHaveText(title);
+   await expect(primary,'Missing source code for: '+objective).toContainText(code);
+  });
+ }
+});
+
+test('entered manager level changes HR recommendation to the corresponding manager role',async({page})=>{
+ const cases=[
+  ['إدارة التوظيف والاستقطاب ومتابعة مؤشرات التعيين','مدير','مدير توظيف','121206'],
+  ['إدارة الرواتب والبدلات واعتماد دورة المسير والتقارير','مدير','مدير الرواتب والبدلات','121210'],
+  ['إدارة المواهب والتعاقب الوظيفي وتنمية القيادات','مدير','مدير مواهب','121208'],
+  ['إدارة تخطيط القوى العاملة وربط الاحتياج بالخطة الاستراتيجية','مدير','مدير القوى العاملة','121203'],
+  ['إدارة عمليات الموارد البشرية والخدمات اليومية للموظفين','مدير','مدير عمليات الموارد البشرية','121214']
+ ];
+ for(const [objective,seniority,title,code] of cases){
+  await test.step(title+' | '+code,async()=>{
+   const result=await runDemoCase(page,{objective,seniority});
+   const primary=result.locator('.demo-v5-primary-recommendation');
+   await expect(primary,'Missing manager recommendation for: '+objective).toBeVisible();
+   await expect(primary.locator('h4'),'Wrong manager title for: '+objective).toHaveText(title);
+   await expect(primary,'Missing manager source code for: '+objective).toContainText(code);
+  });
+ }
+});
+
+test('HR recommendation replaces failure-like review heading with a clear preliminary recommendation',async({page})=>{
+ const result=await runDemoCase(page,{objective:'مسؤول عن إعداد ومعالجة رواتب الموظفين بدقة بشكل شهري وإعداد تقارير مسير الرواتب'});
+ await expect(result.locator('.demo-v5-output > h3')).toHaveText('الترشيح الأولي');
+ await expect(result.locator('.demo-v5-output')).toHaveClass(/good/);
+ await expect(result.locator('.demo-v5-output')).not.toContainText('تم إنشاء مخرج — يحتاج مراجعة');
 });

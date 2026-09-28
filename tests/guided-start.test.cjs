@@ -53,7 +53,42 @@ test('HR public directory is derived from the bundled HR taxonomy units and supp
 
 test('HR payroll recommendation separates the business title from the classification title',()=>{
  const src=fs.readFileSync(path.join(dist,'demo-runtime-v5.js'),'utf8');
- assert.match(src,/payroll:\{ar:'أخصائي رواتب'/);
+ assert.match(src,/payroll:\{specialist:\{ar:'أخصائي رواتب'/);
  assert.match(src,/code:'242322'/);
  assert.match(src,/CLASSIFICATION REFERENCE/);
+});
+
+
+test('HR expected-output engine grounds every specialist and manager mapping in the bundled taxonomy',()=>{
+ const taxonomy=JSON.parse(fs.readFileSync(path.join(dist,'classifications/ssco-2019.json'),'utf8'));
+ const codes=new Set(taxonomy.nodes.filter(x=>x.level==='occupation').map(x=>String(x.code)));
+ const required=['242303','121202','121201','242305','121206','242322','121210','242306','121207','242307','121208','242302','121215','242319','121203','242402','121212','242404','121213','242109','121205','242323','121204','242310','121214','441602'];
+ for(const code of required)assert.ok(codes.has(code),'missing mapped HR source code '+code);
+ const src=fs.readFileSync(path.join(dist,'demo-runtime-v5.js'),'utf8');
+ for(const id of ['payroll','recruitment','rewards','talent','employeeRelations','workforce','learning','hrDevelopment','od','jobAnalysis','personnel','hrOperations','attendance'])assert.match(src,new RegExp(id));
+ assert.match(src,/function hrLevel/);
+ assert.match(src,/Preliminary recommendation/);
+});
+
+
+test('public recommendation surface no longer labels itself as a five-engineering-role sample',()=>{
+ const src=fs.readFileSync(path.join(dist,'app.js'),'utf8');
+ assert.doesNotMatch(src,/العينة الحالية: 5 مهن هندسية|Current sample: 5 engineering occupations|Original sample - 5 roles/);
+ assert.match(src,/محرك سريع \+ دليل مهني موسع/);
+ assert.match(src,/Role recommendation engine/);
+});
+
+
+test('explicit HR task language bypasses the engineering quick-sample gate',()=>{
+ const src=fs.readFileSync(path.join(dist,'demo-runtime-v5.js'),'utf8');
+ assert.match(src,/function isExplicitHRInput/);
+ assert.match(src,/const explicitHR=isExplicitHRInput\(input\)/);
+ assert.match(src,/if\(!explicitHR&&words\.length<=6\)/);
+ assert.match(src,/if\(isExplicitHRInput\(input\)\)return\{id:'hc'/);
+});
+
+
+test('HR operations intent recognizes natural HR services language',()=>{
+ const src=fs.readFileSync(path.join(dist,'demo-runtime-v5.js'),'utf8');
+ for(const phrase of ['خدمات الموارد البشرية','تشغيل خدمات الموارد البشرية','الخدمات المشتركة للموارد البشرية','hr services','hr shared services'])assert.ok(src.includes(phrase),phrase);
 });
