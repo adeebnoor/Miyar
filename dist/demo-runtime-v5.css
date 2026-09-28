@@ -5,3 +5,11 @@
 .demo-v5-hr-all ul{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;padding:0;list-style:none}
 .demo-v5-hr-all .button{width:100%;justify-content:flex-start;text-align:start}
 @media(max-width:760px){.demo-v5-hr-all ul{grid-template-columns:1fr}}
+
+.demo-v5-primary-recommendation{margin:14px 0 18px;padding:18px;border-radius:16px;background:#edf7f2;border:1px solid rgba(20,105,84,.22)}
+.demo-v5-primary-recommendation>span{display:block;font:800 .68rem/1 ui-monospace,SFMono-Regular,Menlo,monospace;letter-spacing:.1em;color:#146954}
+.demo-v5-primary-recommendation h4{margin:9px 0 14px;font-size:1.45rem;color:#123136}
+.demo-v5-primary-source{display:grid;grid-template-columns:auto 1fr;gap:5px 12px;align-items:center;margin-bottom:14px;padding:12px;border-radius:12px;background:#fff}
+.demo-v5-primary-source small{grid-column:1/-1;color:#607477;font-size:.72rem}
+.demo-v5-primary-source strong{font:800 .95rem/1 ui-monospace,SFMono-Regular,Menlo,monospace;color:#146954}
+.demo-v5-primary-source b{color:#25464a;font-size:.9rem}
