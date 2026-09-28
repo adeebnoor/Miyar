@@ -217,3 +217,12 @@ test('360 visible release labels do not regress to the old backend/frontend edit
   expect(text).not.toMatch(/\bv4\.5\b|\b5\.0(?!\.1)\b/i);
   await expect(page.locator('.edition').first()).toContainText(/5\.0\.1/);
 });
+
+
+test('360 homepage never presents the supplied 2019 occupation corpus as the current official SSCO',async({page})=>{
+  await page.goto(BASE+'#home');await page.waitForTimeout(180);
+  const text=(await page.locator('body').innerText()).replace(/\s+/g,' ');
+  expect(text).toMatch(/2019|supplied January 2019/i);
+  expect(text).toMatch(/GASTAT|الهيئة العامة للإحصاء/i);
+  expect(text).not.toMatch(/5,041 (?:current|official) occupations/i);
+});
