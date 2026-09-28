@@ -16,7 +16,8 @@ function renderMatch(result,input,id){const r=result.role,p=panel();if(!p)return
 function continueToOD(input,role={}){const describesNeed=input.objective.split(/\s+/).filter(Boolean).length>=3&&input.objective!==role.title;const fields={title:role.title||'',occupationCode:role.occupationCode||'',educationFieldCode:role.educationFieldCode||'',field:input.domain,seniority:input.seniority,constraints:input.constraints,businessNeed:describesNeed?input.objective:'',purpose:role.title&&describesNeed?input.objective:''};const message=role.title?t('نُقل الترشيح إلى المسودة: المسمى والرمز المهني والاحتياج. أكمل المسؤوليات ثم راجع الحزمة.','The recommendation was carried into the draft: title, occupation code and need. Complete the responsibilities, then review the package.'):t('نُقل الاحتياج إلى المسودة. اختر المرجع المهني وأكمل المسؤوليات.','The need was carried into the draft. Choose the occupation reference and complete the responsibilities.');const E=window.MiyarEnterprise;const fillStrategy=()=>{const box=document.querySelector('#miyar-od-workbench [data-od-strategy]');if(box&&!box.value&&describesNeed){box.value=input.objective;box.dispatchEvent(new Event('input',{bubbles:true}));}};if(E?.prefill){E.prefill(fields,message).then(ok=>{if(ok){setTimeout(fillStrategy,150);setTimeout(fillStrategy,600);}});}else location.hash='#enterprise/create';}
 let directoryPromise=null;
 function directoryNodes(){if(!directoryPromise)directoryPromise=fetch('./classifications/ssco-2019.json').then(r=>r.ok?r.json():null).then(d=>d?.nodes||[]).catch(()=>[]);return directoryPromise;}
-const HR_ROLE_CODES=['121202','121203','121206','121210','121212','121213','121215','121944','242109','242302','242303','242305','242310','242318','242319','242320','242321','242322','242401','242402','242404','242406','333301','333306','334103','431300','441604'];
+const HR_PARENT_UNITS=new Set(['1212','2423','2424']);
+const HR_SUPPORT_CODES=new Set(['333306','334103','431300','441601','441602','441603','441604']);
 const HR_CLUSTERS={
  recruitment:['242305','121206','242320','242321','333301'],
  payroll:['242322','242318','241107','121210','121944','431300'],
@@ -41,7 +42,7 @@ function hrIntent(input){
 function hrDirectoryRows(occupations,input){
  const intent=hrIntent(input),preferred=[...(HR_CLUSTERS[intent]||HR_CLUSTERS.general),...HR_CLUSTERS.general];
  const top=rowsByCodes(occupations,[...new Set(preferred)]).slice(0,6);
- const all=rowsByCodes(occupations,HR_ROLE_CODES);
+ const all=occupations.filter(r=>HR_PARENT_UNITS.has(String(r.parent))||HR_SUPPORT_CODES.has(String(r.code))).sort((a,b)=>String(a.code).localeCompare(String(b.code)));
  return {intent,top,all};
 }
 
@@ -87,7 +88,7 @@ async function directoryFallback(input,host){
  }
  const familyName=family?(ar()?family.ar:family.en):'';
  const intro=source==='hr-family'
-  ?t('تم التعرف على الاحتياج ضمن رأس المال البشري. تظهر أولاً الأدوار الأقرب للمهمة، ويمكنك فتح القائمة الكاملة لأدوار HR الموجودة في نسخة الدليل المرفقة.','The need was detected within Human Capital. The closest task-related roles appear first, and you can expand the HR roles available in the supplied classification snapshot.')
+  ?t('تم التعرف على الاحتياج ضمن رأس المال البشري. تظهر أولاً الأدوار الأقرب للمهمة، ويمكنك فتح عائلة أدوار HR المستخرجة مباشرة من وحدات الموارد البشرية في نسخة الدليل المرفقة.','The need was detected within Human Capital. The closest task-related roles appear first, and you can expand the HR role family derived directly from the Human Resources units in the supplied classification snapshot.')
   :source==='family'
   ?t('حدد معيار مجال الاحتياج مبدئيًا كـ «'+familyName+'» ويعرض مراجع مهنية مرتبطة بالمجال للمراجعة — وليست مطابقة نهائية.','Miyar preliminarily detected the business domain as “'+familyName+'” and is showing related occupation references for review — not a final match.')
   :t('لم يطابق المدخل عينة المحرك السريع، لكنه يطابق مسميات في دليل المهن (5,041 مهنة). اختر المرجع لنقله إلى محرك OD.','The input did not match the quick-engine sample, but it matches titles in the occupation directory (5,041 occupations). Choose a reference to carry it into the OD Engine.');
