@@ -32,7 +32,7 @@ test('complete deployed script bundle opens the public entrance and keeps worksp
  try{
   w.structuredClone=structuredClone;w.AbortSignal=AbortSignal;w.scrollTo=()=>{};w.confirm=()=>false;w.fetch=async url=>({ok:true,json:async()=>JSON.parse(fs.readFileSync(path.join(dir,String(url))))});
   w.HTMLDialogElement.prototype.showModal=function(){this.open=true;};w.HTMLDialogElement.prototype.close=function(){this.open=false;this.dispatchEvent(new w.Event('close'));};
-  for(const x of w.document.querySelectorAll('link[href],script[src]')){const target=x.getAttribute('src')||x.getAttribute('href');assert.ok(fs.existsSync(path.join(dir,target)),target);if(x.tagName==='SCRIPT')w.eval(fs.readFileSync(path.join(dir,target),'utf8'));}
+  for(const x of w.document.querySelectorAll('link[href],script[src]')){const target=(x.getAttribute('src')||x.getAttribute('href')).split('?')[0];assert.ok(fs.existsSync(path.join(dir,target)),target);if(x.tagName==='SCRIPT')w.eval(fs.readFileSync(path.join(dir,target),'utf8'));}
   await new Promise(r=>setImmediate(r));assert.equal(w.document.getElementById('view-home').hidden,false);assert.equal(w.document.getElementById('view-enterprise').hidden,true);assert.ok(w.document.getElementById('enterprise-heading'));
   w.document.querySelector('[data-enterprise-open="readiness"]').click();assert.match(w.document.getElementById('ent-content').textContent,/متاحة محليًا/);
   w.document.getElementById('language-btn').click();await new Promise(r=>setImmediate(r));assert.match(w.document.getElementById('ent-content').textContent,/Available locally/);
