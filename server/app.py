@@ -412,7 +412,9 @@ def create_app(db_url=None,jwt_secret=None,catalog=None):
     strategic_recent={}
     strategic_verified={}
     @app.get('/api/v1/analyze/strategic/status')
-    def strategic_status():return {**strategic_capability(),**strategic_verified}
+    def strategic_status():
+        from .strategic_check import public_report
+        return {**strategic_capability(),**strategic_verified,**public_report()}
     @app.post('/api/v1/analyze/strategic')
     def strategic(body:StrategicRequest,user=Depends(current),db=Depends(session)):
         require(user,'line_manager','od_specialist','admin')

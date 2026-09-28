@@ -63,3 +63,15 @@ Deploy the API commit separately from GitHub Pages; the Pages workflow does not 
 Test a known corpus objective (expect `matched-objective`) and an out-of-corpus need (may produce `generated-proposal`; actual route depends on actual similarity). Review titles, constraints and classification before accepting a proposal. Record provider model IDs and test outcomes before telling a partner the original engine is live.
 
 Automated tests cover both branches with deterministic injected embeddings and LLM responses, malformed vectors, threshold boundary, code clearing, Arabic source aliases, blocked final titles, authentication, consent, audit redaction and explicit provider-failure handling. These tests do not contact Gemini or an embedding provider.
+# Operator live provider check
+
+For a diagnostic deployment, set `MIYAR_STRATEGIC_STARTUP_CHECK=true`.
+The server runs two fixed examples once per process startup, using the configured
+real embedding and generation providers: the original civil-engineering objective
+and a synthetic Arabic payroll objective. The read-only strategic status endpoint
+includes `providerSelfTest` with actual results and redacted failure codes.
+Requests to that endpoint do not initiate provider calls. The check creates no
+accounts, reads no organization records, and does not change authentication.
+Disable the flag after collecting the result to avoid calls on future restarts.
+Passing this check verifies these provider cases only; it does not verify user
+login, browser submission, broad job coverage, or model accuracy.
