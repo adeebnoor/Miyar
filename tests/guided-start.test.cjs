@@ -39,11 +39,13 @@ test('long objectives use the OD family detector instead of being dropped by a s
 });
 
 
-test('curated HR public directory contains only real occupation codes from the bundled classification',()=>{
+test('HR public directory is derived from the bundled HR taxonomy units and support roles',()=>{
  const taxonomy=JSON.parse(fs.readFileSync(path.join(dist,'classifications/ssco-2019.json'),'utf8'));
- const occupations=new Map(taxonomy.nodes.filter(x=>x.level==='occupation').map(x=>[String(x.code),x.titleAr]));
- const expected=['121202','121203','121206','121210','121212','121213','121215','121944','242109','242302','242303','242305','242310','242318','242319','242320','242321','242322','242401','242402','242404','242406','333301','333306','334103','431300','441604'];
- for(const code of expected)assert.ok(occupations.has(code),'missing HR occupation '+code);
+ const parents=new Set(['1212','2423','2424']),support=new Set(['333306','334103','431300','441601','441602','441603','441604']);
+ const rows=taxonomy.nodes.filter(x=>x.level==='occupation'&&(parents.has(String(x.parent))||support.has(String(x.code))));
+ assert.ok(rows.length>=50,'expected broad HR taxonomy coverage');
+ const titles=rows.map(x=>x.titleAr).join(' ');
+ for(const expected of ['مدير تنفيذي للموارد البشرية','مدير عمليات الموارد البشرية','أخصائي توظيف','أخصائي مكافآت','أخصائي مواهب','اخصائي رواتب وبدلات','محلل وظائف','أخصائي تدريب','اختصاصي تطوير موارد بشرية','فني موارد بشرية','كاتب رواتب','كاتب شؤون موظفين'])assert.match(titles,new RegExp(expected));
  const src=fs.readFileSync(path.join(dist,'demo-runtime-v5.js'),'utf8');
- for(const code of expected)assert.match(src,new RegExp(code));
+ assert.match(src,/HR_PARENT_UNITS/);assert.match(src,/1212/);assert.match(src,/2423/);assert.match(src,/2424/);
 });
