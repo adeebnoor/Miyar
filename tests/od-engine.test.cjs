@@ -15,7 +15,7 @@ test('HC expert case becomes a reviewable Manager-level OD package without prete
  assert.match(p.content.skills,/Procurement/);assert.match(p.content.skills,/OPEX/);assert.ok(p.content.kpis.length>=5);
  assert.match(p.content.saudization,/100% Saudi/);assert.match(p.notices.join(' '),/verify|current official source/i);
  assert.match(p.notices.join(' '),/does not calculate Korn Ferry, Mercer or WTW/i);
- assert.ok(p.referenceQueries.ssco.includes('مدير الموارد البشرية'));assert.ok(p.referenceQueries.education.includes('إدارة الموارد البشرية'));
+ assert.ok(p.referenceQueries.ssco.includes('مدير موارد بشرية'));assert.ok(p.referenceQueries.education.includes('إدارة الموارد البشرية'));
 });
 
 test('OD engine keeps uncertainty visible instead of inventing management or regulatory facts',()=>{
