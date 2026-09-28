@@ -69,3 +69,11 @@ test('HR expected-output engine grounds every specialist and manager mapping in 
  assert.match(src,/function hrLevel/);
  assert.match(src,/Preliminary recommendation/);
 });
+
+
+test('public recommendation surface no longer labels itself as a five-engineering-role sample',()=>{
+ const src=fs.readFileSync(path.join(dist,'app.js'),'utf8');
+ assert.doesNotMatch(src,/العينة الحالية: 5 مهن هندسية|Current sample: 5 engineering occupations|Original sample - 5 roles/);
+ assert.match(src,/محرك سريع \+ دليل مهني موسع/);
+ assert.match(src,/Role recommendation engine/);
+});
