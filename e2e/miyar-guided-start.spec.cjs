@@ -111,5 +111,5 @@ test('HR expanded directory exposes the curated source roles present in the supp
   await expect(details).toContainText(/242305/);
   await expect(details).toContainText(/242322/);
   await expect(details).toContainText(/242402/);
-  expect(await details.locator('[data-demo-hr-ref]').count()).toBeGreaterThanOrEqual(20);
+  expect(await details.locator('[data-demo-hr-ref]').count()).toBeGreaterThanOrEqual(50);
 });
