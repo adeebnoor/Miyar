@@ -69,3 +69,47 @@ test('major Miyar surfaces render without uncaught browser errors',async({page})
   }
   expect(errors).toEqual([]);
 });
+
+
+async function runDemoCase(page,{objective,domain='',seniority=''}) {
+  await page.goto('http://127.0.0.1:4173/#demo');
+  await page.fill('#objective',objective);
+  if(domain)await page.fill('#domain',domain);
+  if(seniority)await page.fill('#seniority',seniority);
+  await page.locator('#role-form button[type="submit"]').click();
+  await expect(page.locator('#result-content .demo-v5-output')).toBeVisible();
+  return page.locator('#result-content');
+}
+
+test('HR payroll case from reviewer screenshot returns payroll and HR references',async({page})=>{
+  const result=await runDemoCase(page,{objective:'اصدار مسير الرواتب للموظفين و رفع تقارير الى الادارة العليا',domain:'ادارة عامة',seniority:'اخصائي'});
+  await expect(result.locator('.demo-v5-directory')).toBeVisible();
+  await expect(result.locator('.demo-v5-directory')).toContainText(/اخصائي رواتب وبدلات|اختصاصي رواتب وأجور عمالة/);
+  await expect(result.locator('.demo-v5-hr-all')).toBeVisible();
+  await expect(result.locator('.demo-v5-hr-all')).toContainText(/أخصائي موارد بشرية/);
+});
+
+test('HR recruitment case from reviewer screenshot returns recruitment roles',async({page})=>{
+  const result=await runDemoCase(page,{objective:'توظيف المرشحين',domain:'الموارد البشرية',seniority:'اخصائي'});
+  await expect(result.locator('.demo-v5-directory')).toContainText(/أخصائي توظيف/);
+  await expect(result.locator('.demo-v5-directory')).toContainText(/مدير توظيف/);
+});
+
+test('governance and compliance case returns reviewable source roles instead of no output',async({page})=>{
+  const result=await runDemoCase(page,{objective:'إعداد دليل الحوكمة والالتزام للشركة و مصفوفة الصلاحيات',domain:'الحوكمة',seniority:'مدير'});
+  await expect(result.locator('.demo-v5-directory')).toBeVisible();
+  await expect(result.locator('.demo-v5-directory')).toContainText(/مدير التزام|أخصائي تطوير تنظيمي/);
+});
+
+test('HR expanded directory exposes the curated source roles present in the supplied classification',async({page})=>{
+  const result=await runDemoCase(page,{objective:'إدارة عمليات الموارد البشرية والتوظيف والرواتب وعلاقات الموظفين والتدريب',domain:'الموارد البشرية'});
+  const details=result.locator('.demo-v5-hr-all');
+  await expect(details).toBeVisible();
+  await details.locator('summary').click();
+  await expect(details).toContainText(/121202/);
+  await expect(details).toContainText(/242303/);
+  await expect(details).toContainText(/242305/);
+  await expect(details).toContainText(/242322/);
+  await expect(details).toContainText(/242402/);
+  expect(await details.locator('[data-demo-hr-ref]').count()).toBeGreaterThanOrEqual(20);
+});
