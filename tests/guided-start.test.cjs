@@ -86,3 +86,9 @@ test('explicit HR task language bypasses the engineering quick-sample gate',()=>
  assert.match(src,/if\(!explicitHR&&words\.length<=6\)/);
  assert.match(src,/if\(isExplicitHRInput\(input\)\)return\{id:'hc'/);
 });
+
+
+test('HR operations intent recognizes natural HR services language',()=>{
+ const src=fs.readFileSync(path.join(dist,'demo-runtime-v5.js'),'utf8');
+ for(const phrase of ['خدمات الموارد البشرية','تشغيل خدمات الموارد البشرية','الخدمات المشتركة للموارد البشرية','hr services','hr shared services'])assert.ok(src.includes(phrase),phrase);
+});
