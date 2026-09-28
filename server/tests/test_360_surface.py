@@ -117,10 +117,23 @@ def test_360_health_reports_real_storage_and_does_not_claim_unconfigured_ai(env)
     assert health.status_code==200
     body=health.json()
     assert body['status']=='ok'
-    assert body['version']=='5.0.0'
-    assert body['services']['version']=='5.0.0'
+    assert body['version']=='5.0.1'
+    assert body['services']['version']=='5.0.1'
     assert body['occupations']==5041
     assert body['semanticModelReady'] is False
     assert body['services']['approvals'] is True
     assert body['services']['semanticEnabled'] is False
     assert any(x['format']=='PDF' for x in body['services']['exports'])
+
+
+def test_360_public_reference_catalogs_are_intentionally_readable_without_sign_in(env):
+    app,c,auth,position=env
+    taxonomy=c.get('/api/v1/taxonomy',params={'q':'مهندس مدني','limit':5})
+    assert taxonomy.status_code==200
+    assert any(str(row.get('code'))=='214201' for row in taxonomy.json())
+    education=c.get('/api/v1/education',params={'limit':5})
+    assert education.status_code==200
+    assert education.json()['release']
+    releases=c.get('/api/v1/taxonomy/releases')
+    assert releases.status_code==200
+    assert any(row.get('id')=='ssco-2019-supplied' for row in releases.json())
