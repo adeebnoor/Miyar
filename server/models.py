@@ -129,3 +129,10 @@ class LoginWindow(Base):
     key:Mapped[str]=mapped_column(String(64),primary_key=True)
     started:Mapped[int]=mapped_column(Integer)
     failures:Mapped[int]=mapped_column(Integer,default=0)
+
+class ExpertReviewQuota(Base):
+    __tablename__='expert_review_quotas'
+    key:Mapped[str]=mapped_column(String(80),primary_key=True)
+    started:Mapped[int]=mapped_column(Integer)
+    requests:Mapped[int]=mapped_column(Integer,default=0)
+    last_request:Mapped[int]=mapped_column(Integer,default=0)

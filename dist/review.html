@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex,nofollow"><meta name="referrer" content="no-referrer">
+  <title>اختبار الخبراء | معيار</title>
+  <link rel="stylesheet" href="review.css?v=1">
+  <script src="config.js?v=5.0.5" defer></script><script src="review.js?v=1" defer></script>
+</head>
+<body>
+<header class="topbar"><a class="brand" href="index.html#home">مِعيار <span>MI’YĀR</span></a><span class="tag">تجربة خبراء الموارد البشرية</span><a class="back" href="index.html#demo">الموقع الرئيسي ↗</a></header>
+<main>
+  <section class="intro"><p class="eyebrow">من الهدف إلى الوظيفة · EXPERT REVIEW</p><h1>اختبر الهدف.<br><span>راجع الدور المقترح.</span></h1><p class="lead">جرّب محرك معيار الدلالي، ثم قيّم ملاءمة المسمى والمستوى والترميز. لا تحتاج إلى حساب مؤسسة لهذه التجربة.</p></section>
+  <section class="service" aria-label="حالة التجربة"><div><span class="dot" id="service-dot"></span><strong id="service-state" role="status">جارٍ الاتصال بالخدمة…</strong><p id="service-detail">قد يستغرق تشغيل الخادم بعد الخمول نحو دقيقة.</p></div><button id="retry-status" type="button" hidden>إعادة الاتصال</button><div class="scope"><strong>5 أهداف مرجعية</strong><span>العينة الهندسية الأصلية؛ ليست تغطية شاملة للمهن.</span></div></section>
+  <div class="workspace">
+    <section class="panel input-panel" aria-labelledby="input-title"><div class="panel-heading"><span class="step">01</span><div><h2 id="input-title">الهدف والقيود</h2><p>استخدم مثالًا عامًا دون بيانات موظفين أو معلومات سرية.</p></div></div>
+      <form id="review-form"><fieldset id="review-fields" disabled>
+        <div class="examples"><span>ابدأ بمثال</span><button type="button" data-example="civil">هندسة مدنية</button><button type="button" data-example="payroll">رواتب وأجور</button><button type="button" data-example="development">تطوير تنظيمي</button></div>
+        <label for="objective">الهدف الاستراتيجي أو النتيجة المطلوبة <small>Objective</small></label><textarea id="objective" name="objective" dir="auto" rows="5" minlength="15" maxlength="2500" required placeholder="ما النتيجة التي تحتاج الجهة إلى تحقيقها؟ اذكر طبيعة العمل ومخرجاته."></textarea>
+        <div class="fields-grid"><div><label for="domain">المجال الوظيفي <small>Domain</small></label><input id="domain" dir="auto" minlength="2" maxlength="120" required placeholder="مثال: الموارد البشرية"></div><div><label for="seniority">المستوى المطلوب <small>Level</small></label><select id="seniority" required><option value="Professional">أخصائي / مهني — دون إدارة فريق</option><option value="Analyst">محلل</option><option value="Manager">مدير — مع مسؤولية إدارة فريق</option><option value="Director">مدير إدارة</option></select></div></div>
+        <label for="constraints">القيود ونطاق المسؤولية <small>Constraints</small></label><textarea id="constraints" rows="3" dir="auto" maxlength="1000" placeholder="مثال: يرفع التقارير لمدير المالية، ولا يدير فريقًا."></textarea>
+        <label class="consent"><input id="consent" type="checkbox" required><span>أوافق على إرسال نص المثال والمجال والمستوى والقيود إلى Google Gemini للتحليل. لن أُدخل بيانات شخصية أو سرية.</span></label>
+        <div class="actions"><button class="primary" type="submit" id="analyze">تحليل الهدف <span aria-hidden="true">←</span></button><button type="reset" id="reset">مسح المثال</button></div>
+      </fieldset></form>
+      <p id="request-state" class="request-state" role="status" aria-live="polite"></p>
+    </section>
+    <section class="panel result-panel" aria-labelledby="result-title"><div class="panel-heading"><span class="step">02</span><div><h2 id="result-title">النتيجة ومراجعتك</h2><p>اقتراح مهني للمراجعة، وليس اعتمادًا أو قرارًا بشأن موظف.</p></div></div>
+      <div id="empty-result" class="empty"><div class="empty-symbol" aria-hidden="true">↗</div><h3>ستظهر النتيجة هنا</h3><p>يُقارن الهدف بالأهداف المرجعية باستخدام Embedding. عند ضعف المطابقة، يقترح LLM مسمى ثم يتحقق من ملاءمته.</p><div class="pipeline">هدف <span>←</span> مطابقة <span>←</span> توليد عند الحاجة <span>←</span> تحقق</div></div>
+      <div id="result" hidden aria-live="polite"></div>
+      <form id="feedback-form" hidden><div class="feedback-heading"><span class="step">03</span><h3>تقييم الخبير</h3></div><p>راجع مناسبة المسمى للهدف، والمستوى المطلوب، والقيود، وصحة أي رمز مسند.</p><label for="assessment">التقييم الإجمالي</label><select id="assessment" required><option value="">اختر تقييمك</option><option value="suitable">مناسب</option><option value="needs-edit">يحتاج تعديلًا</option><option value="unsuitable">غير مناسب</option></select><label for="expected-title">المسمى أو الرمز الذي تقترحه <small>اختياري</small></label><input id="expected-title" maxlength="300" dir="auto"><label for="comments">الملاحظات وسبب التقييم</label><textarea id="comments" rows="3" maxlength="2000" dir="auto" required></textarea><button class="download" type="submit">تنزيل النتيجة وملاحظاتي ↓</button><p class="fineprint">يُنزل ملف JSON على جهازك لمشاركته مع الفريق. لا تُرسل ملاحظاتك إلى الخادم تلقائيًا.</p></form>
+    </section>
+  </div>
+  <aside class="boundaries"><strong>كيف تُفسّر النتيجة؟</strong><p>التشابه الدلالي ليس نسبة ثقة. انخفاضه يعني عدم وجود تطابق قوي ضمن العينة المحدودة؛ لا يثبت أن الوظيفة جديدة أو ليس لها رمز رسمي. المسميات المولّدة، بما فيها أي مستوى مثل «أول»، تحتاج مراجعتك.</p></aside>
+</main><footer><span>معيار 5.0.5 · مراجعة المحرك الاستراتيجي</span><span>لا تعرض هذه الصفحة سجلات المؤسسة أو صلاحيات اعتمادها.</span></footer>
+</body></html>

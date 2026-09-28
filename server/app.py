@@ -411,6 +411,8 @@ def create_app(db_url=None,jwt_secret=None,catalog=None):
     strategic_slot=threading.BoundedSemaphore(1)
     strategic_recent={}
     strategic_verified={}
+    from .expert_review import install as install_expert_review
+    install_expert_review(app,Session,secret,references,strategic_engine,strategic_slot)
     @app.get('/api/v1/analyze/strategic/status')
     def strategic_status():
         from .strategic_check import public_report
