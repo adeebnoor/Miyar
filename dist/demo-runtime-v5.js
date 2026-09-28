@@ -20,24 +20,67 @@ const HR_PARENT_UNITS=new Set(['1212','2423','2424']);
 const HR_SUPPORT_CODES=new Set(['333306','334103','431300','441601','441602','441603','441604']);
 const HR_CLUSTERS={
  recruitment:['242305','121206','242320','242321','333301'],
- payroll:['242322','242318','241107','121210','121944','431300'],
+ payroll:['242322','242318','241107','121210','431300'],
+ rewards:['242306','121207','242322','121210'],
+ talent:['242307','121208','242303'],
  employeeRelations:['242302','242310','121215','334103','441604'],
- workforce:['121203','242319','242303','121202','333306'],
- learning:['242402','242404','121212','121213','242401','242406'],
- od:['242109','242404','121213','242303','121202'],
+ workforce:['242319','121203','242303','121202','333306'],
+ learning:['242402','242401','242406','121212'],
+ hrDevelopment:['242404','121213','242402'],
+ od:['242109','121205','242404','121213'],
+ jobAnalysis:['242323','242304','121204'],
+ personnel:['242310','121215','441601','441604'],
+ hrOperations:['242303','121214','333306'],
+ attendance:['441602','242310','334103'],
  general:['242303','121202','242302','242310','333306']
 };
+const HR_INTENTS=[
+ ['payroll',['مسير الرواتب','مسيرات الرواتب','معالجة رواتب','اعداد الرواتب','إعداد الرواتب','رواتب الموظفين','الرواتب','رواتب','اجور','أجور','payroll','salary processing','payroll processing']],
+ ['recruitment',['توظيف','استقطاب','مرشح','مرشحين','تعيين','recruit','recruitment','talent acquisition','candidate']],
+ ['rewards',['تعويضات','مكافآت','مزايا','compensation','rewards','benefits']],
+ ['talent',['ادارة المواهب','إدارة المواهب','المواهب','talent management','succession','high potential']],
+ ['employeeRelations',['علاقات الموظفين','علاقات موظفين','employee relations','labor relations']],
+ ['workforce',['تخطيط القوى العاملة','القوى العاملة','تخطيط القوى','workforce planning','manpower planning']],
+ ['hrDevelopment',['تطوير الموارد البشرية','تطوير موارد بشرية','human resources development','hr development']],
+ ['learning',['تدريب','ابتعاث','تعلم وتطوير','التعلم والتطوير','learning and development','training']],
+ ['od',['تطوير تنظيمي','تطوير مؤسسي','organizational development','organization development']],
+ ['jobAnalysis',['تحليل وظائف','تحليل الوظائف','تصنيف وظائف','تصنيف مهن','job analysis','job classification']],
+ ['personnel',['شؤون الموظفين','شؤون موظفين','شؤون الافراد','شؤون الأفراد','personnel affairs','personnel']],
+ ['hrOperations',['عمليات الموارد البشرية','عمليات رأس المال البشري','hr operations','human resources operations']],
+ ['attendance',['دوام','حضور وانصراف','الحضور والانصراف','attendance','timekeeping']]
+];
+const HR_ROLE_LEVELS={
+ general:{specialist:{ar:'أخصائي موارد بشرية',en:'Human Resources Specialist',code:'242303'},manager:{ar:'مدير موارد بشرية',en:'Human Resources Manager',code:'121202'},executive:{ar:'مدير تنفيذي للموارد البشرية',en:'Executive Director, Human Resources',code:'121201'}},
+ recruitment:{specialist:{ar:'أخصائي توظيف',en:'Recruitment Specialist',code:'242305'},manager:{ar:'مدير توظيف',en:'Recruitment Manager',code:'121206'}},
+ payroll:{specialist:{ar:'أخصائي رواتب',en:'Payroll Specialist',code:'242322'},manager:{ar:'مدير الرواتب والبدلات',en:'Payroll & Allowances Manager',code:'121210'}},
+ rewards:{specialist:{ar:'أخصائي مكافآت وتعويضات',en:'Rewards & Compensation Specialist',code:'242306'},manager:{ar:'مدير المكافآت والتعويضات',en:'Rewards & Compensation Manager',code:'121207'}},
+ talent:{specialist:{ar:'أخصائي مواهب',en:'Talent Management Specialist',code:'242307'},manager:{ar:'مدير مواهب',en:'Talent Management Manager',code:'121208'}},
+ employeeRelations:{specialist:{ar:'أخصائي علاقات الموظفين',en:'Employee Relations Specialist',code:'242302'},manager:{ar:'مدير علاقات الموظفين',en:'Employee Relations Manager',code:'121215'}},
+ workforce:{specialist:{ar:'أخصائي تخطيط القوى العاملة',en:'Workforce Planning Specialist',code:'242319'},manager:{ar:'مدير القوى العاملة',en:'Workforce Planning Manager',code:'121203'}},
+ learning:{specialist:{ar:'أخصائي تدريب وتطوير',en:'Learning & Development Specialist',code:'242402'},manager:{ar:'مدير التدريب والتطوير',en:'Learning & Development Manager',code:'121212'}},
+ hrDevelopment:{specialist:{ar:'أخصائي تطوير موارد بشرية',en:'Human Resources Development Specialist',code:'242404'},manager:{ar:'مدير تطوير الموارد البشرية',en:'Human Resources Development Manager',code:'121213'}},
+ od:{specialist:{ar:'أخصائي تطوير تنظيمي',en:'Organization Development Specialist',code:'242109'},manager:{ar:'مدير تطوير مؤسسي',en:'Organization Development Manager',code:'121205'}},
+ jobAnalysis:{specialist:{ar:'محلل وظائف',en:'Job Analyst',code:'242323'},manager:{ar:'مدير تصنيف الوظائف',en:'Job Classification Manager',code:'121204'}},
+ personnel:{specialist:{ar:'أخصائي شؤون موظفين',en:'Personnel Affairs Specialist',code:'242310'},manager:{ar:'مدير شؤون موظفين',en:'Personnel Affairs Manager',code:'121215'}},
+ hrOperations:{specialist:{ar:'أخصائي عمليات موارد بشرية',en:'HR Operations Specialist',code:'242303'},manager:{ar:'مدير عمليات الموارد البشرية',en:'HR Operations Manager',code:'121214'}},
+ attendance:{specialist:{ar:'مسؤول دوام',en:'Time & Attendance Officer',code:'441602'},manager:{ar:'مدير شؤون موظفين',en:'Personnel Affairs Manager',code:'121215'}}
+};
 function rowsByCodes(occupations,codes){const map=new Map(occupations.map(r=>[String(r.code),r]));return codes.map(code=>map.get(code)).filter(Boolean);}
+function normalizedHRText(input){
+ const C=window.MiyarEnterpriseCore;
+ return C?.normalize?C.normalize([input.objective,input.domain,input.constraints].join(' ')):String([input.objective,input.domain,input.constraints].join(' ')).toLowerCase();
+}
 function hrIntent(input){
- const C=window.MiyarEnterpriseCore,n=C?.normalize?C.normalize([input.objective,input.domain,input.constraints].join(' ')):String([input.objective,input.domain,input.constraints].join(' ')).toLowerCase();
- const has=terms=>terms.some(x=>n.includes(C?.normalize?C.normalize(x):String(x).toLowerCase()));
- if(has(['توظيف','استقطاب','مرشح','مرشحين','recruit','talent acquisition']))return'recruitment';
- if(has(['مسير الرواتب','رواتب','الرواتب','اجور','أجور','بدلات','payroll','salary','compensation','benefits']))return'payroll';
- if(has(['علاقات الموظفين','شؤون الموظفين','شؤون موظفين','employee relations','personnel']))return'employeeRelations';
- if(has(['تخطيط القوى العاملة','القوى العاملة','workforce planning','manpower']))return'workforce';
- if(has(['تدريب','ابتعاث','تطوير الموارد البشرية','learning and development','training']))return'learning';
- if(has(['تطوير تنظيمي','organizational development','organization development']))return'od';
+ const C=window.MiyarEnterpriseCore,n=normalizedHRText(input),norm=x=>C?.normalize?C.normalize(x):String(x).toLowerCase();
+ for(const [id,terms] of HR_INTENTS)if(terms.some(x=>n.includes(norm(x))))return id;
  return'general';
+}
+function hrLevel(input){
+ const C=window.MiyarEnterpriseCore,n=C?.normalize?C.normalize([input.seniority,input.objective].join(' ')):String([input.seniority,input.objective].join(' ')).toLowerCase();
+ const has=terms=>terms.some(x=>n.includes(C?.normalize?C.normalize(x):String(x).toLowerCase()));
+ if(has(['رئيس تنفيذي','تنفيذي','chief human resources','chro','executive director']))return'executive';
+ if(has(['مدير','رئيس قسم','رئيس ادارة','رئيس إدارة','manager','director','head of']))return'manager';
+ return'specialist';
 }
 function hrDirectoryRows(occupations,input){
  const intent=hrIntent(input),preferred=[...(HR_CLUSTERS[intent]||HR_CLUSTERS.general),...HR_CLUSTERS.general];
@@ -45,19 +88,13 @@ function hrDirectoryRows(occupations,input){
  const all=occupations.filter(r=>HR_PARENT_UNITS.has(String(r.parent))||HR_SUPPORT_CODES.has(String(r.code))).sort((a,b)=>String(a.code).localeCompare(String(b.code)));
  return {intent,top,all};
 }
-const HR_BUSINESS_TITLES={
- payroll:{ar:'أخصائي رواتب',en:'Payroll Specialist',code:'242322'},
- recruitment:{ar:'أخصائي توظيف',en:'Recruitment Specialist',code:'242305'},
- employeeRelations:{ar:'أخصائي علاقات الموظفين',en:'Employee Relations Specialist',code:'242302'},
- workforce:{ar:'أخصائي تخطيط القوى العاملة',en:'Workforce Planning Specialist',code:'242319'},
- learning:{ar:'أخصائي تدريب وتطوير',en:'Learning & Development Specialist',code:'242402'},
- od:{ar:'أخصائي تطوير تنظيمي',en:'Organization Development Specialist',code:'242109'},
- general:{ar:'أخصائي موارد بشرية',en:'Human Resources Specialist',code:'242303'}
-};
-function hrPrimaryRecommendation(intent,occupations){
- const spec=HR_BUSINESS_TITLES[intent]||HR_BUSINESS_TITLES.general;
+function hrPrimaryRecommendation(intent,input,occupations){
+ const levels=HR_ROLE_LEVELS[intent]||HR_ROLE_LEVELS.general;
+ let level=hrLevel(input);
+ if(level==='executive'&&!levels.executive)level='manager';
+ const spec=levels[level]||levels.specialist;
  const source=occupations.find(r=>String(r.code)===spec.code)||null;
- return source?{...spec,source}:null;
+ return source?{...spec,level,intent,source}:null;
 }
 
 function detectedBusinessFamily(input){
@@ -82,7 +119,7 @@ async function directoryFallback(input,host){
  if(!rows.length){
   family=detectedBusinessFamily(input);
   if(family?.id==='hc'){
-   source='hr-family';const h=hrDirectoryRows(occupations,input);rows=h.top;hrAll=h.all;hrIntentId=h.intent;hrPrimary=hrPrimaryRecommendation(h.intent,occupations);
+   source='hr-family';const h=hrDirectoryRows(occupations,input);rows=h.top;hrAll=h.all;hrIntentId=h.intent;hrPrimary=hrPrimaryRecommendation(h.intent,input,occupations);
   }else if(family){
    source='family';const seen=new Set();
    for(const query of family.ssco){
@@ -113,6 +150,14 @@ async function directoryFallback(input,host){
  const box=document.createElement('div');box.className='demo-v5-directory';box.dataset.referenceSource=source;
  box.innerHTML=hrPrimaryCard+'<h4>'+t(source==='hr-family'?'بدائل HR مرتبطة بالمهمة':'مراجع من دليل المهن الكامل',source==='hr-family'?'Related HR alternatives':'References from the full occupation directory')+'</h4><p>'+esc(intro)+'</p><ul>'+rows.map((r,i)=>'<li><button type="button" class="button button-outline" data-demo-ref="'+i+'"><strong>'+esc(r.code)+'</strong> · '+esc(r.titleAr||r.titleEn)+'</button></li>').join('')+'</ul>'+hrMore;
  host.querySelector('.demo-v5-output')?.appendChild(box);
+ if(source==='hr-family'&&hrPrimary){
+  const output=host.querySelector('.demo-v5-output');
+  output?.classList.remove('review');output?.classList.add('good');
+  const heading=output?.querySelector(':scope > h3');if(heading)heading.textContent=t('الترشيح الأولي','Preliminary recommendation');
+  const limit=output?.querySelector('.demo-v5-limit');if(limit)limit.textContent=t('المسمى المقترح مبني على طبيعة العمل المكتوبة، بينما يظهر مرجع التصنيف منفصلًا للتتبع والمراجعة البشرية.','The recommended business title is based on the described work, while the classification reference remains separate for traceability and human review.');
+  output?.querySelector('.demo-v5-actions')?.remove();
+  if(badge())badge().textContent=t('ترشيح أولي','PRELIMINARY RECOMMENDATION');
+ }
  box.querySelector('[data-demo-primary-hr]')?.addEventListener('click',()=>{if(hrPrimary)continueToOD(input,{title:ar()?hrPrimary.ar:hrPrimary.en,occupationCode:hrPrimary.source.code});});
  box.querySelectorAll('[data-demo-ref]').forEach(b=>b.onclick=()=>{const r=rows[Number(b.dataset.demoRef)];continueToOD(input,{title:r.titleAr||r.titleEn,occupationCode:r.code});});
  box.querySelectorAll('[data-demo-hr-ref]').forEach(b=>b.onclick=()=>{const r=hrAll[Number(b.dataset.demoHrRef)];continueToOD(input,{title:r.titleAr||r.titleEn,occupationCode:r.code});});
