@@ -113,3 +113,17 @@ test('HR expanded directory exposes the curated source roles present in the supp
   await expect(details).toContainText(/242402/);
   expect(await details.locator('[data-demo-hr-ref]').count()).toBeGreaterThanOrEqual(50);
 });
+
+
+test('exact HR-manager payroll case recommends أخصائي رواتب and keeps SSCO source title separate',async({page})=>{
+  const result=await runDemoCase(page,{
+    objective:'مسؤول عن إعداد ومعالجة رواتب الموظفين بدقة بشكل شهري، واعداد التقارير لمسيرات الرواتب مع ضمان الالتزام بسياسات الشركة والأنظمة واللوائح المعمول بها',
+    domain:'الموارد البشرية',
+    seniority:'اخصائي'
+  });
+  const primary=result.locator('.demo-v5-primary-recommendation');
+  await expect(primary).toBeVisible();
+  await expect(primary.locator('h4')).toHaveText('أخصائي رواتب');
+  await expect(primary).toContainText('242322');
+  await expect(primary).toContainText('اخصائي رواتب وبدلات');
+});
