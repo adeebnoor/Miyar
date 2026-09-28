@@ -52,7 +52,7 @@ function mount(host,{t,lang,icon,switchLanguage,example}){
      <div><span>02</span><strong>${t('رشّح وفسّر','Recommend')}</strong><small>${t('الدور والمرجع والسبب','Role, reference and rationale')}</small></div>
      <div><span>03</span><strong>${t('نفّذ','Act')}</strong><small>${t('صمّم، خطّط، قيّم أو اعتمد','Design, plan, evaluate or approve')}</small></div>
     </div>
-    <p class="lp-caption">${t('البداية مبسطة، لكن قدرات معيار المؤسسية تبقى كاملة: 5,041 مهنة، تصميم الوظيفة، تخطيط القوى العاملة، التعويضات، الإصدارات والاعتمادات.','The start is simplified, while Miyar retains its full enterprise depth: 5,041 occupations, job design, workforce planning, compensation, revisions and approvals.')}</p>
+    <p class="lp-caption">${t('البداية مبسطة، لكن قدرات معيار المؤسسية تبقى كاملة: 5,041 مهنة، تصميم الوظيفة، تخطيط القوى العاملة، التعويضات، الإصدارات والاعتمادات.','The start is simplified, while Miyar retains its full enterprise depth: a versioned supplied occupation reference, job design, workforce planning, compensation, revisions and approvals.')}</p>
    </div>
    <div class="lp-showcase">
     <div class="lp-preview-label"><span>${icon('target')} ${t('شاهد المحرك قبل الدخول إلى بقية المنصة','See the engine before the rest of the platform')}</span><span>${t('مثال توضيحي','ILLUSTRATIVE')}</span></div>
