@@ -31,7 +31,7 @@ function mount(host,{t,lang,icon,switchLanguage,example}){
    <div class="lp-hero-copy">
     <span class="lp-eyebrow">${t('ابدأ هنا · أقل مدخل ممكن','START HERE · MINIMUM INPUT')}</span>
     <h1 id="home-heading">${t('ما الذي تريد المؤسسة تحقيقه؟<br><em>صف الهدف، ودع معيار يقودك للخطوة التالية.</em>','What does the organization need to achieve?<br><em>Describe the goal, and let Miyar guide the next step.</em>')}</h1>
-    <p>${t('لا تحتاج إلى معرفة المسمى الوظيفي أو النموذج المناسب مسبقًا. اكتب الهدف أو المشكلة بجملة واحدة؛ معيار يرشح المرجع الأقرب ويشرح السبب، ثم يفتح لك الإجراء المناسب.','You do not need to know the job title or the right workflow in advance. Describe the goal or problem in one sentence; Miyar suggests the closest reference, explains why, then opens the right next action.')}</p>
+    <p>${t('لا تحتاج إلى معرفة المسمى الوظيفي أو النموذج المناسب مسبقًا. اكتب الهدف أو المشكلة بجملة واحدة؛ معيار يرشح مرجعًا مناسبًا عندما تكفي الأدلة، أو يعرض مراجع للمراجعة، ثم يفتح لك الإجراء المناسب.','You do not need to know the job title or the right workflow in advance. Describe the goal or problem in one sentence; Miyar suggests a reference when evidence is sufficient, or shows reviewable references, then opens the right next action.')}</p>
     <form id="lp-guided-form" class="lp-guided-start" novalidate>
      <label for="lp-guided-objective">${t('صف الهدف أو المشكلة','Describe the goal or problem')}</label>
      <textarea id="lp-guided-objective" name="objective" rows="3" minlength="12" placeholder="${t('مثال: رفع اعتمادية المعدات وتقليل التوقف عبر الصيانة الوقائية وتحسين إجراءات التشغيل','Example: Improve equipment reliability and reduce downtime through preventive maintenance and better operating procedures')}"></textarea>
