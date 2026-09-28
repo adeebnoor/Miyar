@@ -135,7 +135,8 @@ function consumeGuidedObjective(){
 }
 function prime(){labelPanels();if(location.hash==='#demo'){let requested=false;try{requested=sessionStorage.getItem('miyar-open-ai')==='1';if(requested)sessionStorage.removeItem('miyar-open-ai');}catch{}const mode=document.getElementById('demo-engine-mode');if(requested&&mode){mode.value='ai';mode.dispatchEvent(new Event('change',{bubbles:true}));}}consumeGuidedObjective();}
 document.addEventListener('submit',analyze,true);
-document.addEventListener('input',onInput,true);
+// Clear legacy cards after the base form updates its own input state.
+document.addEventListener('input',onInput);
 window.addEventListener('hashchange',()=>setTimeout(prime,0));
 window.addEventListener('miyar:navigate',()=>setTimeout(prime,0));
 new MutationObserver(()=>{if(window.location?.hash==='#demo')setTimeout(prime,0);}).observe(document.documentElement,{subtree:true,childList:true});
