@@ -142,11 +142,13 @@ test('HR expected-output engine returns one primary role for common HR work fami
   ['تشغيل خدمات الموارد البشرية اليومية وتحسين إجراءات الخدمة','أخصائي عمليات موارد بشرية','242303']
  ];
  for(const [objective,title,code] of cases){
-  const result=await runDemoCase(page,{objective});
-  const primary=result.locator('.demo-v5-primary-recommendation');
-  await expect(primary).toBeVisible();
-  await expect(primary.locator('h4')).toHaveText(title);
-  await expect(primary).toContainText(code);
+  await test.step(title+' | '+code,async()=>{
+   const result=await runDemoCase(page,{objective});
+   const primary=result.locator('.demo-v5-primary-recommendation');
+   await expect(primary,'Missing primary recommendation for: '+objective).toBeVisible();
+   await expect(primary.locator('h4'),'Wrong primary title for: '+objective).toHaveText(title);
+   await expect(primary,'Missing source code for: '+objective).toContainText(code);
+  });
  }
 });
 
@@ -159,10 +161,13 @@ test('entered manager level changes HR recommendation to the corresponding manag
   ['إدارة عمليات الموارد البشرية والخدمات اليومية للموظفين','مدير','مدير عمليات الموارد البشرية','121214']
  ];
  for(const [objective,seniority,title,code] of cases){
-  const result=await runDemoCase(page,{objective,seniority});
-  const primary=result.locator('.demo-v5-primary-recommendation');
-  await expect(primary.locator('h4')).toHaveText(title);
-  await expect(primary).toContainText(code);
+  await test.step(title+' | '+code,async()=>{
+   const result=await runDemoCase(page,{objective,seniority});
+   const primary=result.locator('.demo-v5-primary-recommendation');
+   await expect(primary,'Missing manager recommendation for: '+objective).toBeVisible();
+   await expect(primary.locator('h4'),'Wrong manager title for: '+objective).toHaveText(title);
+   await expect(primary,'Missing manager source code for: '+objective).toContainText(code);
+  });
  }
 });
 
