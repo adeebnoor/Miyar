@@ -71,6 +71,13 @@ jobs:
           npm ci --ignore-scripts --no-audit --no-fund
           npm install --no-save --ignore-scripts --no-audit --no-fund @playwright/test@1.55.0
           npx playwright install --with-deps chromium
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: pip
+          cache-dependency-path: server/requirements-lock.txt
+      - name: Install isolated authenticated browser API
+        run: pip install -r server/requirements-lock.txt
       - name: Serve Miyar locally
         run: |
           python3 -m http.server 4173 --directory dist >/tmp/miyar-http.log 2>&1 &

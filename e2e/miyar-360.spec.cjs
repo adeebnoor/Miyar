@@ -214,8 +214,8 @@ test('360 critical screens expose accessible names for interactive controls and 
 test('360 visible release labels do not regress to the old backend/frontend edition',async({page})=>{
   await page.goto(BASE+'#enterprise/create');await page.waitForTimeout(180);
   const text=(await page.locator('body').innerText()).replace(/\s+/g,' ');
-  expect(text).not.toMatch(/\bv4\.5\b|\b5\.0(?!\.1)\b/i);
-  await expect(page.locator('.edition').first()).toContainText(/5\.0\.1/);
+  expect(text).not.toMatch(/\bv4\.5\b|\b5\.0\.1\b/i);
+  await expect(page.locator('.edition').first()).toContainText(require('../package.json').version);
 });
 
 

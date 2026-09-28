@@ -27,7 +27,9 @@ def _text(value,name,limit=300,required=False):
 def validate_profile(value):
     if not isinstance(value,dict) or value.get('schema')!='miyar-institution-profile/1.0':
         raise ValueError('Use the miyar-institution-profile/1.0 schema')
-    units=value.get('units',[]);grades=value.get('gradeStructure',{}).get('grades',[])
+    grade=value.get('gradeStructure',{})
+    if not isinstance(grade,dict):raise ValueError('Invalid grade structure')
+    units=value.get('units',[]);grades=grade.get('grades',[])
     if not isinstance(units,list) or len(units)>500:raise ValueError('Organization structure supports up to 500 units')
     if not isinstance(grades,list) or len(grades)>100:raise ValueError('Grade structure supports up to 100 grades')
     clean_units=[];codes=set()
@@ -56,7 +58,7 @@ def validate_profile(value):
         row={'id':gid,'labelAr':_text(raw.get('labelAr'),'Arabic grade label',120,True),'labelEn':_text(raw.get('labelEn'),'English grade label',120,True),'level':level}
         minimum,maximum=raw.get('minPoints'),raw.get('maxPoints')
         if minimum is not None or maximum is not None:
-            if not isinstance(minimum,int) or not isinstance(maximum,int) or not 0<=minimum<=maximum<=1000:raise ValueError('Grade point ranges must be integer values between 0 and 1000')
+            if type(minimum) is not int or type(maximum) is not int or not 0<=minimum<=maximum<=1000:raise ValueError('Grade point ranges must be integer values between 0 and 1000')
             row.update(minPoints=minimum,maxPoints=maximum);ranges.append((minimum,maximum,gid))
         clean_grades.append(row)
     ranges.sort()

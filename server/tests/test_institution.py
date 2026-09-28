@@ -47,3 +47,18 @@ def test_od_generated_metadata_is_accepted_by_enterprise_positions(env):
     app,c,auth,position=env;install_institution(app)
     p=position(strategyObjective='Cascade HC strategy into prioritized initiatives',marketTitle='Human Capital Projects & Operations Manager',jobFamily='Human Capital',careerPath='Senior Manager > Director > CHRO',recommendedLevel='Manager level',gradeRecommendationBasis='Pre-evaluation recommendation; formal review required',odGenerationBasis='Rule-based OD proposal with human review',orgUnitCode='HC',orgUnitPath='Corporate / Human Capital',organizationProfileVersion='1',proposedGrade='G11 · Manager',gradeArchitectureName='Approved Grade Architecture',gradeArchitectureVersion='1')
     assert p['content']['jobFamily']=='Human Capital';assert p['content']['orgUnitCode']=='HC';assert p['content']['proposedGrade'].startswith('G11')
+
+import pytest
+
+@pytest.mark.parametrize('field,value',[
+    ('gradeStructure',None),('gradeStructure',[]),('gradeStructure','invalid'),
+    ('gradeStructure',{'grades':None}),('gradeStructure',{'grades':[None]}),
+    ('units',None),('units',{}),('units',[None]),
+])
+def test_malformed_profile_returns_422_and_preserves_saved_version(env,field,value):
+    app,c,auth,_=env;install_institution(app)
+    good=c.post('/api/v1/settings/institution-profile',headers=auth('admin'),json={'profile':profile(),'reason':'Approved test profile before invalid input'}).json()['profile']
+    bad=profile();bad[field]=value
+    response=c.post('/api/v1/settings/institution-profile',headers=auth('admin'),json={'profile':bad,'reason':'Invalid profile must not overwrite existing setup'})
+    assert response.status_code==422,response.text
+    assert c.get('/api/v1/settings/institution-profile',headers=auth('admin')).json()['profile']==good

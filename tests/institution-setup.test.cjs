@@ -46,3 +46,21 @@ test('institution mapping waits for the explicit OD generated event instead of a
  assert.match(institution,/addEventListener\('miyar:od-generated'/);
  assert.doesNotMatch(institution,/closest\('\[data-od-generate\]'\).*decorateOD/);
 });
+
+test('local institution validation rejects cycles, overlaps and malformed structures without replacing the saved profile',()=>{
+ const a=loadInstitution();try{const I=a.w.MiyarInstitutionProfile;I.saveLocal(I.profileExample(),true);
+ const cases=[p=>p.units[0].parentCode='HC',p=>p.units.push({...p.units[0]}),p=>p.units[1].parentCode='missing',p=>p.units[0].nameAr='',p=>p.gradeStructure.grades[1].minPoints=400,p=>p.gradeStructure=null,p=>p.gradeStructure=[],p=>p.approvedOn='2099-01-01',p=>p.approvedOn='2026-02-30'];
+ for(const mutate of cases){const p=I.profileExample();mutate(p);assert.throws(()=>I.saveLocal(p,true));assert.equal(I.read().version,1);}
+ }finally{a.dom.window.close();}
+});
+
+test('institution session changes discard delayed prior-tenant responses and do not persist server profiles locally',async()=>{
+ const a=loadInstitution();try{const I=a.w.MiyarInstitutionProfile;let resolveA;const profileA=I.profileExample();profileA.organizationName='A';const profileB=I.profileExample();profileB.organizationName='B';
+ a.w.MiyarEnterprise={institutionRequest:()=>new Promise(resolve=>resolveA=resolve)};
+ a.w.dispatchEvent(new a.w.CustomEvent('miyar:session',{detail:{organizationId:'a',role:'admin'}}));
+ a.w.MiyarEnterprise.institutionRequest=async()=>({profile:profileB});
+ a.w.dispatchEvent(new a.w.CustomEvent('miyar:session',{detail:{organizationId:'b',role:'line_manager'}}));await settle();resolveA({profile:profileA});await settle();
+ assert.equal(I.read().organizationName,'B');assert.equal(a.w.localStorage.getItem(I.KEY),null);
+ a.w.dispatchEvent(new a.w.CustomEvent('miyar:session',{detail:null}));assert.equal(I.read().organizationName,'');
+ }finally{a.dom.window.close();}
+});

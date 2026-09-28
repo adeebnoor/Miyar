@@ -129,8 +129,10 @@ async function directoryFallback(input,host){
   }else if(family){
    source='family';const seen=new Set();
    for(const query of family.ssco){
-    let found=C.search(occupations,query).slice(0,4);
-    if(!found.length){const q=C.normalize(query);found=occupations.filter(r=>C.normalize(r.titleAr||'')===q||C.normalize(r.titleAr||'').includes(q)).slice(0,4);}
+    const tokens=C.normalize(query).split(' ').filter(Boolean);
+    const relevant=row=>{const words=C.normalize([row.titleAr,row.titleEn].join(' ')).split(/[^\p{L}\p{N}]+/u).filter(Boolean).map(w=>w.replace(/^ال/,''));return tokens.every(q=>words.some(w=>w.startsWith(q.replace(/^ال/,''))));};
+    let found=C.search(occupations,query).filter(relevant).slice(0,4);
+    if(!found.length){const q=C.normalize(query);found=occupations.filter(relevant).slice(0,4);}
     for(const row of found){
      if(seen.has(row.code))continue;seen.add(row.code);rows.push(row);if(rows.length>=5)break;
     }
