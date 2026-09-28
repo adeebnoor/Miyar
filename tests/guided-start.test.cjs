@@ -37,3 +37,13 @@ test('long objectives use the OD family detector instead of being dropped by a s
   assert.match(src,/family\.ssco/);
   assert.match(src,/No confident occupation reference yet/);
 });
+
+
+test('curated HR public directory contains only real occupation codes from the bundled classification',()=>{
+ const taxonomy=JSON.parse(fs.readFileSync(path.join(dist,'classifications/ssco-2019.json'),'utf8'));
+ const occupations=new Map(taxonomy.nodes.filter(x=>x.level==='occupation').map(x=>[String(x.code),x.titleAr]));
+ const expected=['121202','121203','121206','121210','121212','121213','121215','121944','242109','242302','242303','242305','242310','242318','242319','242320','242321','242322','242401','242402','242404','242406','333301','333306','334103','431300','441604'];
+ for(const code of expected)assert.ok(occupations.has(code),'missing HR occupation '+code);
+ const src=fs.readFileSync(path.join(dist,'demo-runtime-v5.js'),'utf8');
+ for(const code of expected)assert.match(src,new RegExp(code));
+});
