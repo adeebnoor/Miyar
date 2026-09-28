@@ -23,10 +23,14 @@ async function goto(page,hash,lang='ar'){
 
 test('360 public copy is internally consistent and no obsolete five-engineering-role claim survives',async({page})=>{
   await goto(page,'#home','ar');
-  const text=(await page.locator('body').innerText()).replace(/\s+/g,' ');
-  expect(text).not.toMatch(/خمس مهن هندسية|5 مهن هندسية/i);
-  expect(text).not.toMatch(/five[- ]engineering[- ]role|five engineering occupations/i);
+  let text=(await page.locator('body').innerText()).replace(/\s+/g,' ');
+  expect(text).not.toMatch(/خمس مهن هندسية|5 مهن هندسية|عينة من 5 مهن/i);
+  expect(text).not.toMatch(/five[- ]engineering[- ]role|five engineering occupations|5-record sample/i);
   await expect(page.locator('#lp-guided-form')).toBeVisible();
+  await page.goto(BASE+'#demo');await page.waitForTimeout(180);
+  text=(await page.locator('body').innerText()).replace(/\s+/g,' ');
+  expect(text).not.toMatch(/خمس مهن هندسية|5 مهن هندسية|عينة من 5 مهن/i);
+  expect(text).not.toMatch(/five[- ]engineering[- ]role|five engineering occupations|5-record sample/i);
   await expect(page.locator('a[href*="pitch.html"]').first()).toBeVisible();
   const personal=page.locator('a[href="https://adeebnoor.github.io/"]').first();
   await expect(personal).toBeVisible();
