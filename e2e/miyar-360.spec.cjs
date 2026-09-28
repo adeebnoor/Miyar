@@ -62,7 +62,9 @@ test('360 every enterprise tab renders meaningful content in Arabic and English'
       await page.waitForTimeout(80);
       const content=page.locator('#ent-content');
       await expect(content).toBeVisible();
-      expect((await content.innerText()).trim().length,'Empty tab '+tab+' in '+lang).toBeGreaterThan(40);
+      const tabText=(await content.innerText()).trim();
+      expect(tabText.length,'Empty tab '+tab+' in '+lang).toBeGreaterThan(40);
+      if(tab==='market')expect(tabText).not.toMatch(/Tafany|تفاني/i);
     }
   }
 });
