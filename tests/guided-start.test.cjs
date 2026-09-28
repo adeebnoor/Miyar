@@ -27,3 +27,13 @@ test('deployment is gated by free real-browser tests',()=>{
   assert.match(src,/@playwright\/test@1\.55\.0/);
   assert.match(src,/needs: \[server-test, ui-test, e2e-test\]/);
 });
+
+
+test('long objectives use the OD family detector instead of being dropped by a six-word limit',()=>{
+  const src=fs.readFileSync(path.join(dist,'demo-runtime-v5.js'),'utf8');
+  assert.doesNotMatch(src,/words\.length>6/);
+  assert.match(src,/MiyarODEngine/);
+  assert.match(src,/detectedBusinessFamily/);
+  assert.match(src,/family\.ssco/);
+  assert.match(src,/No confident occupation reference yet/);
+});
