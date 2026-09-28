@@ -3,7 +3,7 @@
 Provider configuration is server-only and opt-in. Never substitute keyword scores
 for embeddings, or treat a low corpus similarity as proof that no SSCO code exists.
 """
-import json, math, os, re, threading
+import json, math, os, re, threading, time
 from pathlib import Path
 from urllib.parse import urlsplit
 import httpx
@@ -13,6 +13,16 @@ E5_MODEL='intfloat/multilingual-e5-large'
 
 class Unavailable(RuntimeError):
     pass
+
+def provider_post(client, url, **kwargs):
+    """Retry temporary upstream failures only, within one 60-second budget."""
+    deadline=time.monotonic()+60
+    for attempt in range(3):
+        response=client.post(url,timeout=max(.1,deadline-time.monotonic()),**kwargs)
+        if response.status_code not in {502,503,504} or attempt==2:return response
+        delay=2**attempt
+        if time.monotonic()+delay>=deadline:return response
+        time.sleep(delay)
 
 def capability():
     mode=os.getenv('MIYAR_STRATEGIC_EMBEDDING_MODE','')
@@ -66,7 +76,7 @@ class Embeddings:
         requests=[{'model':'models/'+model,'content':{'parts':[{'text':text}]},'taskType':'RETRIEVAL_QUERY' if kind=='query' else 'RETRIEVAL_DOCUMENT'} for text in texts]
         try:
             with httpx.Client(timeout=60,follow_redirects=False) as client:
-                response=client.post('https://generativelanguage.googleapis.com/v1beta/models/'+model+':batchEmbedContents',headers={'x-goog-api-key':key},json={'requests':requests})
+                response=provider_post(client,'https://generativelanguage.googleapis.com/v1beta/models/'+model+':batchEmbedContents',headers={'x-goog-api-key':key},json={'requests':requests})
                 response.raise_for_status()
                 if len(response.content)>5_000_000:raise Unavailable('Embedding response exceeds the size limit')
                 vectors=response.json()['embeddings']
@@ -86,7 +96,7 @@ def gemini(stage,data):
     if model in {'gemini-2.5-flash','gemini-2.5-flash-lite'}:config['thinkingConfig']={'thinkingBudget':0}
     try:
         with httpx.Client(timeout=60,follow_redirects=False) as client:
-            response=client.post('https://generativelanguage.googleapis.com/v1beta/models/'+model+':generateContent',headers={'x-goog-api-key':key},json={'systemInstruction':{'parts':[{'text':prompt}]},'contents':[{'role':'user','parts':[{'text':json.dumps(data,ensure_ascii=False)}]}],'generationConfig':config})
+            response=provider_post(client,'https://generativelanguage.googleapis.com/v1beta/models/'+model+':generateContent',headers={'x-goog-api-key':key},json={'systemInstruction':{'parts':[{'text':prompt}]},'contents':[{'role':'user','parts':[{'text':json.dumps(data,ensure_ascii=False)}]}],'generationConfig':config})
             response.raise_for_status()
             if len(response.content)>100000:raise Unavailable('Generation response exceeds the size limit')
             parts=response.json()['candidates'][0]['content']['parts'];result=json.loads(''.join(x.get('text','') for x in parts))

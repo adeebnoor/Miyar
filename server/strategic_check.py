@@ -26,6 +26,9 @@ def safe_failure(error):
     for _ in range(5):
         if isinstance(current, httpx.HTTPStatusError):
             result = {'kind': 'provider-http-error', 'httpStatus': current.response.status_code}
+            operation = current.request.url.path.rsplit(':', 1)[-1]
+            if operation in {'batchEmbedContents', 'generateContent'}:
+                result['providerOperation'] = operation
             try:
                 payload = current.response.json().get('error', {})
                 status = payload.get('status')

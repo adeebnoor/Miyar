@@ -125,6 +125,7 @@ def test_gemini_embeddings_use_one_server_key_and_preserve_real_vector_order(mon
     monkeypatch.setenv('MIYAR_STRATEGIC_EMBEDDING_MODE','gemini');monkeypatch.setenv('MIYAR_STRATEGIC_EMBEDDING_MODEL','gemini-embedding-001');monkeypatch.setenv('MIYAR_STRATEGIC_GEMINI_KEY','private-test-generation')
     class Response:
         content=b'{}'
+        status_code=200
         def raise_for_status(self):pass
         def json(self):return {'embeddings':[{'values':[3,0]},{'values':[0,2]}]}
     class Client:
@@ -146,3 +147,17 @@ def test_one_key_configuration_does_not_claim_live_inference(monkeypatch):
     r=capability();assert r['configured'] and r['embeddingConfigured'] and r['generationConfigured']
     assert not r['liveVerified'] and r['embeddingModel']=='gemini-embedding-001' and r['provider']=='Google Gemini'
     monkeypatch.delenv('MIYAR_STRATEGIC_GEMINI_KEY');assert not capability()['configured']
+
+@pytest.mark.parametrize('statuses,expected_calls', [([503,200],2),([503,503,503,200],3),([401,200],1),([429,200],1)])
+def test_provider_retries_only_temporary_failures_and_is_bounded(monkeypatch,statuses,expected_calls):
+    import httpx
+    import server.strategic as module
+    calls=[]
+    monkeypatch.setattr(module.time,'sleep',lambda _:None)
+    class Client:
+        def post(self,url,**kwargs):
+            assert 0 < kwargs['timeout'] <= 60
+            code=statuses[len(calls)];calls.append(code)
+            return httpx.Response(code,request=httpx.Request('POST',url))
+    response=module.provider_post(Client(),'https://provider.example.test')
+    assert len(calls)==expected_calls and response.status_code==statuses[expected_calls-1]

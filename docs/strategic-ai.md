@@ -65,6 +65,12 @@ Test a known corpus objective (expect `matched-objective`) and an out-of-corpus 
 Automated tests cover both branches with deterministic injected embeddings and LLM responses, malformed vectors, threshold boundary, code clearing, Arabic source aliases, blocked final titles, authentication, consent, audit redaction and explicit provider-failure handling. These tests do not contact Gemini or an embedding provider.
 # Operator live provider check
 
+The deployed generation model is `gemini-3.1-flash-lite`. The original
+`gemini-2.5-flash` returned HTTP 404 for the configured project; Google now limits
+2.5 models to prior users. Provider requests retry HTTP 502/503/504 at most twice
+within a 60-second request budget. Authentication, invalid-model and quota errors
+are not retried. Model configuration alone never proves successful inference.
+
 For a diagnostic deployment, set `MIYAR_STRATEGIC_STARTUP_CHECK=true`.
 The server runs two fixed examples once per process startup, using the configured
 real embedding and generation providers: the original civil-engineering objective
