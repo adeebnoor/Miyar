@@ -52,7 +52,7 @@ def create_app(db_url=None,jwt_secret=None,catalog=None):
     engine,Session=database(url);Base.metadata.create_all(engine)
     from .audit import protect
     protect(engine);references=catalog or Catalog()
-    app=FastAPI(title='Miyar Enterprise Workforce API',version='5.0.0',description='Tenant-scoped positions, revision-bound approvals, versioned classification references and explicit integration boundaries.')
+    app=FastAPI(title='Miyar Enterprise Workforce API',version='5.0.1',description='Tenant-scoped positions, revision-bound approvals, versioned classification references and explicit integration boundaries.')
     app.state.sessions=Session;app.state.catalog=references;app.state.secret=secret
     origins=[x.strip() for x in os.getenv('MIYAR_CORS_ORIGINS','https://adeebnoor.github.io').split(',') if x.strip()]
     app.add_middleware(CORSMiddleware,allow_origins=origins,allow_credentials=False,allow_methods=['GET','POST','PATCH'],allow_headers=['Authorization','Content-Type','Idempotency-Key'])
@@ -429,6 +429,8 @@ def create_app(db_url=None,jwt_secret=None,catalog=None):
         require(user,'admin');return [{'id':x.id,'eventType':x.event_type,'status':x.status,'attempts':x.attempts,'createdAt':x.created_at,'lastError':x.last_error} for x in db.scalars(select(OutboxEvent).where(OutboxEvent.org_id==user.org_id).order_by(OutboxEvent.created_at.desc()).limit(100))]
     from .enterprise import install
     install(app,session,current,organization,audit,present,content,department,snapshot,revise)
+    from .institution import install_institution
+    install_institution(app)
     if os.getenv('MIYAR_SERVE_UI')=='true':
         @app.get('/config.js',include_in_schema=False)
         def browser_configuration():
