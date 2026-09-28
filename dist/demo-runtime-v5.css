@@ -13,3 +13,5 @@
 .demo-v5-primary-source small{grid-column:1/-1;color:#607477;font-size:.72rem}
 .demo-v5-primary-source strong{font:800 .95rem/1 ui-monospace,SFMono-Regular,Menlo,monospace;color:#146954}
 .demo-v5-primary-source b{color:#25464a;font-size:.9rem}
+
+.demo-v5-primary-basis{margin:-4px 0 14px!important;color:#52675e!important;font-size:.86rem}
