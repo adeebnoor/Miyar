@@ -81,7 +81,7 @@ jobs:
           cat /tmp/miyar-http.log
           exit 1
       - name: Test the first-user journey in a real browser
-        run: npx playwright test e2e/miyar-guided-start.spec.cjs --reporter=line --workers=1
+        run: npx playwright test e2e/*.spec.cjs --reporter=line --workers=1
 
   deploy:
     if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
