@@ -7,7 +7,7 @@ test('review page requires consent, submits scope and exports the expert evaluat
  let calls=0;
  await page.route(API+'/status',route=>route.fulfill({json:STATUS}));
  await page.route(API,route=>{calls++;const body=route.request().postDataJSON();expect(body.consentExternalProcessing).toBe(true);expect(body.field).toBe('Engineering');expect(body.constraints).toContain('no management');return route.fulfill({json:RESULT});});
- await page.goto(BASE);await expect(page.locator('#review-fields')).toBeEnabled();
+ await page.goto(BASE);await expect(page.locator('#analyze')).toBeEnabled();
  await page.locator('[data-example="civil"]').click();await page.locator('#analyze').click();expect(calls).toBe(0);
  await page.locator('#consent').check();await page.locator('#analyze').click();
  await expect(page.locator('#result')).toContainText('Civil Engineer');await expect(page.locator('#result')).toContainText('214201');expect(calls).toBe(1);
@@ -25,5 +25,5 @@ test('review generation shows an unmapped proposal without invented codes',async
 });
 test('expired review is unavailable and never silently uses rules',async({page})=>{
  await page.route(API+'/status',route=>route.fulfill({json:{...STATUS,enabled:false}}));
- await page.goto(BASE);await expect(page.locator('#service-state')).toHaveText('التجربة غير متاحة حاليًا');await expect(page.locator('#review-fields')).toBeDisabled();await expect(page.locator('#result')).toBeHidden();
+ await page.goto(BASE);await expect(page.locator('#service-state')).toHaveText('التجربة غير متاحة حاليًا');await expect(page.locator('#analyze')).toBeDisabled();await expect(page.locator('#result')).toBeHidden();
 });
