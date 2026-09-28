@@ -77,3 +77,12 @@ test('public recommendation surface no longer labels itself as a five-engineerin
  assert.match(src,/محرك سريع \+ دليل مهني موسع/);
  assert.match(src,/Role recommendation engine/);
 });
+
+
+test('explicit HR task language bypasses the engineering quick-sample gate',()=>{
+ const src=fs.readFileSync(path.join(dist,'demo-runtime-v5.js'),'utf8');
+ assert.match(src,/function isExplicitHRInput/);
+ assert.match(src,/const explicitHR=isExplicitHRInput\(input\)/);
+ assert.match(src,/if\(!explicitHR&&words\.length<=6\)/);
+ assert.match(src,/if\(isExplicitHRInput\(input\)\)return\{id:'hc'/);
+});
