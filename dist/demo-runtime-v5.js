@@ -45,6 +45,20 @@ function hrDirectoryRows(occupations,input){
  const all=occupations.filter(r=>HR_PARENT_UNITS.has(String(r.parent))||HR_SUPPORT_CODES.has(String(r.code))).sort((a,b)=>String(a.code).localeCompare(String(b.code)));
  return {intent,top,all};
 }
+const HR_BUSINESS_TITLES={
+ payroll:{ar:'أخصائي رواتب',en:'Payroll Specialist',code:'242322'},
+ recruitment:{ar:'أخصائي توظيف',en:'Recruitment Specialist',code:'242305'},
+ employeeRelations:{ar:'أخصائي علاقات الموظفين',en:'Employee Relations Specialist',code:'242302'},
+ workforce:{ar:'أخصائي تخطيط القوى العاملة',en:'Workforce Planning Specialist',code:'242319'},
+ learning:{ar:'أخصائي تدريب وتطوير',en:'Learning & Development Specialist',code:'242402'},
+ od:{ar:'أخصائي تطوير تنظيمي',en:'Organization Development Specialist',code:'242109'},
+ general:{ar:'أخصائي موارد بشرية',en:'Human Resources Specialist',code:'242303'}
+};
+function hrPrimaryRecommendation(intent,occupations){
+ const spec=HR_BUSINESS_TITLES[intent]||HR_BUSINESS_TITLES.general;
+ const source=occupations.find(r=>String(r.code)===spec.code)||null;
+ return source?{...spec,source}:null;
+}
 
 function detectedBusinessFamily(input){
  const C=window.MiyarEnterpriseCore,n=C?.normalize?C.normalize([input.objective,input.domain,input.constraints].join(' ')):String([input.objective,input.domain,input.constraints].join(' ')).toLowerCase();
@@ -64,11 +78,11 @@ async function directoryFallback(input,host){
   rows=C.search(occupations,input.objective).slice(0,5);
   if(!rows.length){const q=C.normalize(input.objective);rows=occupations.filter(r=>{const title=C.normalize(r.titleAr||'');return title===q||title.includes(q)||q.includes(title);}).slice(0,5);}
  }
- let hrAll=[];
+ let hrAll=[],hrIntentId='',hrPrimary=null;
  if(!rows.length){
   family=detectedBusinessFamily(input);
   if(family?.id==='hc'){
-   source='hr-family';const h=hrDirectoryRows(occupations,input);rows=h.top;hrAll=h.all;
+   source='hr-family';const h=hrDirectoryRows(occupations,input);rows=h.top;hrAll=h.all;hrIntentId=h.intent;hrPrimary=hrPrimaryRecommendation(h.intent,occupations);
   }else if(family){
    source='family';const seen=new Set();
    for(const query of family.ssco){
@@ -92,11 +106,14 @@ async function directoryFallback(input,host){
   :source==='family'
   ?t('حدد معيار مجال الاحتياج مبدئيًا كـ «'+familyName+'» ويعرض مراجع مهنية مرتبطة بالمجال للمراجعة — وليست مطابقة نهائية.','Miyar preliminarily detected the business domain as “'+familyName+'” and is showing related occupation references for review — not a final match.')
   :t('لم يطابق المدخل عينة المحرك السريع، لكنه يطابق مسميات في دليل المهن (5,041 مهنة). اختر المرجع لنقله إلى محرك OD.','The input did not match the quick-engine sample, but it matches titles in the occupation directory (5,041 occupations). Choose a reference to carry it into the OD Engine.');
+ const hrPrimaryCard=source==='hr-family'&&hrPrimary
+  ?'<section class="demo-v5-primary-recommendation" data-hr-primary="'+esc(hrIntentId)+'"><span>'+t('المسمى المقترح','RECOMMENDED ROLE')+'</span><h4>'+esc(ar()?hrPrimary.ar:hrPrimary.en)+'</h4><div class="demo-v5-primary-source"><small>'+t('مرجع التصنيف','CLASSIFICATION REFERENCE')+'</small><strong>'+esc(hrPrimary.source.code)+'</strong><b>'+esc(hrPrimary.source.titleAr||hrPrimary.source.titleEn)+'</b></div><button type="button" class="button button-primary" data-demo-primary-hr>'+t('استخدم هذا الترشيح','Use this recommendation')+'</button></section>':'';
  const hrMore=source==='hr-family'&&hrAll.length
   ?'<details class="demo-v5-hr-all"><summary>'+t('عرض أدوار الموارد البشرية في الدليل ('+hrAll.length+')','Show HR-related roles in the supplied directory ('+hrAll.length+')')+'</summary><p class="demo-v5-hr-note">'+t('هذه مسميات مرجعية من نسخة التصنيف المرفقة بالمشروع؛ ظهورها لا يعني أنها مناسبة تلقائيًا لهذا الاحتياج.','These are reference titles from the classification snapshot supplied with the project; listing them does not mean each one is automatically suitable for this need.')+'</p><ul>'+hrAll.map((r,i)=>'<li><button type="button" class="button button-outline" data-demo-hr-ref="'+i+'"><strong>'+esc(r.code)+'</strong> · '+esc(r.titleAr||r.titleEn)+'</button></li>').join('')+'</ul></details>':'';
  const box=document.createElement('div');box.className='demo-v5-directory';box.dataset.referenceSource=source;
- box.innerHTML='<h4>'+t(source==='hr-family'?'أقرب أدوار الموارد البشرية للمهمة':'مراجع من دليل المهن الكامل',source==='hr-family'?'Closest HR roles for this task':'References from the full occupation directory')+'</h4><p>'+esc(intro)+'</p><ul>'+rows.map((r,i)=>'<li><button type="button" class="button button-outline" data-demo-ref="'+i+'"><strong>'+esc(r.code)+'</strong> · '+esc(r.titleAr||r.titleEn)+'</button></li>').join('')+'</ul>'+hrMore;
+ box.innerHTML=hrPrimaryCard+'<h4>'+t(source==='hr-family'?'بدائل HR مرتبطة بالمهمة':'مراجع من دليل المهن الكامل',source==='hr-family'?'Related HR alternatives':'References from the full occupation directory')+'</h4><p>'+esc(intro)+'</p><ul>'+rows.map((r,i)=>'<li><button type="button" class="button button-outline" data-demo-ref="'+i+'"><strong>'+esc(r.code)+'</strong> · '+esc(r.titleAr||r.titleEn)+'</button></li>').join('')+'</ul>'+hrMore;
  host.querySelector('.demo-v5-output')?.appendChild(box);
+ box.querySelector('[data-demo-primary-hr]')?.addEventListener('click',()=>{if(hrPrimary)continueToOD(input,{title:ar()?hrPrimary.ar:hrPrimary.en,occupationCode:hrPrimary.source.code});});
  box.querySelectorAll('[data-demo-ref]').forEach(b=>b.onclick=()=>{const r=rows[Number(b.dataset.demoRef)];continueToOD(input,{title:r.titleAr||r.titleEn,occupationCode:r.code});});
  box.querySelectorAll('[data-demo-hr-ref]').forEach(b=>b.onclick=()=>{const r=hrAll[Number(b.dataset.demoHrRef)];continueToOD(input,{title:r.titleAr||r.titleEn,occupationCode:r.code});});
  const lead=host.querySelector('.demo-v5-output > p');if(lead)lead.textContent=source==='hr-family'?t('تم تحليل الاحتياج كحالة موارد بشرية وعرض المراجع الأقرب للمهمة من دليل المهن، مع إتاحة بقية أدوار HR للمراجعة.','The need was analyzed as an HR case. Miyar is showing the closest task-related occupation references and keeps the broader HR role set available for review.'):source==='family'?t('لم تعطِ العينة الهندسية ترشيحًا مباشرًا؛ لذلك انتقل معيار إلى مجال العمل ودليل المهن الأوسع بدل إرجاع نتيجة فارغة.','The engineering sample did not provide a direct recommendation, so Miyar used the detected business domain and broader occupation directory instead of returning an empty result.'):t('لا يوجد تطابق ضمن عينة المحرك السريع (خمس مهن هندسية)، لكن توجد مطابقات في دليل المهن أدناه.','No match in the quick-engine sample (five engineering roles), but directory matches are listed below.');
