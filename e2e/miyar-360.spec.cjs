@@ -187,3 +187,33 @@ test('360 phone viewport has no horizontal overflow across critical user journey
     expect(overflow,'mobile overflow '+route).toBeLessThanOrEqual(2);
   }
 });
+
+
+test('360 critical screens expose accessible names for interactive controls and labels for form fields',async({page})=>{
+  const routes=['#home','#demo','#enterprise/create','#enterprise/manpower','#enterprise/compensation','#enterprise/connection'];
+  for(const route of routes){
+    await page.goto(BASE+route);await page.waitForTimeout(180);
+    const issues=await page.evaluate(()=>{
+      const visible=el=>{const s=getComputedStyle(el),r=el.getBoundingClientRect();return s.display!=='none'&&s.visibility!=='hidden'&&r.width>0&&r.height>0;};
+      const name=el=>(el.getAttribute('aria-label')||el.getAttribute('title')||el.textContent||'').trim();
+      const controls=[...document.querySelectorAll('button,a[href]')].filter(visible).filter(el=>!name(el)).map(el=>el.outerHTML.slice(0,180));
+      const fields=[...document.querySelectorAll('input,textarea,select')].filter(visible).filter(el=>{
+        if(el.type==='hidden')return false;
+        const labelled=el.labels&&el.labels.length;
+        return !labelled&&!el.getAttribute('aria-label')&&!el.getAttribute('aria-labelledby');
+      }).map(el=>el.outerHTML.slice(0,180));
+      const images=[...document.querySelectorAll('img')].filter(el=>!el.hasAttribute('alt')).map(el=>el.outerHTML.slice(0,180));
+      return {controls,fields,images};
+    });
+    expect(issues.controls,'unnamed controls '+route).toEqual([]);
+    expect(issues.fields,'unlabelled fields '+route).toEqual([]);
+    expect(issues.images,'images without alt '+route).toEqual([]);
+  }
+});
+
+test('360 visible release labels do not regress to the old backend/frontend edition',async({page})=>{
+  await page.goto(BASE+'#enterprise/create');await page.waitForTimeout(180);
+  const text=(await page.locator('body').innerText()).replace(/\s+/g,' ');
+  expect(text).not.toMatch(/\bv4\.5\b/i);
+  await expect(page.locator('.edition').first()).toContainText(/5\.0/);
+});
