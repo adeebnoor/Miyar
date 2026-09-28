@@ -37,3 +37,12 @@ test('approved structure and grade architecture flow into the HC OD draft metada
   assert.deepEqual(a.errors,[]);
  }finally{a.dom.window.close();}
 });
+
+
+test('institution mapping waits for the explicit OD generated event instead of a zero-delay click race',()=>{
+ const od=fs.readFileSync(path.join(dist,'od-workbench.js'),'utf8');
+ const institution=fs.readFileSync(path.join(dist,'institution-setup.js'),'utf8');
+ assert.match(od,/miyar:od-generated/);
+ assert.match(institution,/addEventListener\('miyar:od-generated'/);
+ assert.doesNotMatch(institution,/closest\('\[data-od-generate\]'\).*decorateOD/);
+});
