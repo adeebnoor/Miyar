@@ -44,7 +44,31 @@ const KPI={
 function kpis(family,text,locale){const n=norm(text),ids=[];if(family==='health')ids.push('patient','waiting');if(family==='sales')ids.push('revenue','pipeline');if(family==='finance')ids.push('finance','budget');if(family==='it')ids.push('software');if(/project|initiative|مشروع|مبادرة/.test(n))ids.push('project');if(/report|تقرير/.test(n))ids.push('reporting');if(/budget|opex|ميزانية|مصروف/.test(n))ids.push('budget');ids.push('commitments','stakeholders');return [...new Set(ids)].slice(0,5).map(id=>{const v=KPI[id][locale==='ar'?'ar':'en'];return {outcome:v[0],metric:v[1],target:v[2]+(locale==='ar'?' — مقترح للمراجعة':' — proposed for review'),frequency:locale==='ar'?'شهريًا؛ مع مراجعة ربع سنوية':'Monthly; quarterly review',deliverable:locale==='ar'?'سجل قياس ومصدر بيانات تعتمدُه الإدارة':'Measurement log and department-approved data source'};});}
 function patchTitle(family,manager,locale,proposal){if(family==='health')return manager?(locale==='ar'?'مدير خدمات صحية':'Health Services Manager'):(locale==='ar'?'ممرض / اختصاصي تمريض':'Nurse / Nursing Specialist');if(family==='sales')return manager?(locale==='ar'?'مدير مبيعات':'Sales Manager'):(locale==='ar'?'أخصائي مبيعات':'Sales Specialist');if(family==='finance'&&!manager)return locale==='ar'?'أخصائي مالي / محاسب':'Finance Specialist / Accountant';if(family==='it'&&!manager)return locale==='ar'?'أخصائي تقنية / برمجيات':'Technology / Software Specialist';return proposal.content.title;}
 E.generate=function(input={},locale='en'){
- const p=baseGenerate(input,locale),hit=detect(input);if(!hit)return p;
+ const p=baseGenerate(input,locale),R=root.MiyarRoleRecommender,recommendation=R?.recommend({objective:[input.strategyObjective,input.responsibilities].filter(Boolean).join(' '),domain:input.department,seniority:input.requestedLevel,constraints:input.constraints});
+ if(recommendation){
+  const r=recommendation.candidate,f=recommendation.detection.family,ar=locale==='ar',title=ar?r.titleAr:r.titleEn,manager=r.level!=='specialist';
+  p.family={id:f.id,label:ar?f.ar:f.en};p.content.jobFamily=p.family.label;p.content.title=title;p.content.marketTitle=title;if(r.intent!=='portfolio')p.content.seniority=ar?(manager?'مستوى مدير':'مستوى مهني'):(manager?'Manager level':'Professional level');
+  p.content.purpose=ar?'تنفيذ '+title+' لدعم الهدف: '+String(input.strategyObjective||''):'Deliver the '+title+' scope in support of: '+String(input.strategyObjective||'');
+  p.gradeRecommendation={level:r.level,rationale:ar?'احتُرم المستوى المدخل؛ الدرجة تحتاج التقييم المؤسسي المعتمد.':'Entered seniority is respected; grade requires approved organizational evaluation.',status:'pre-evaluation'};
+  if(r.intent!=='portfolio'){
+   const skills=(ar?r.skillsAr:r.skillsEn),fallback=ar?[f.ar+' — مهارات تخصصية تحتاج تحديدًا','تحليل الأدلة','توثيق النتائج']:[f.en+' — detailed skills need specification','Evidence analysis','Outcome documentation'];
+   p.content.skills=(skills.length?skills:fallback).join('\n');
+   p.content.skillRequirements=(skills.length?skills:fallback).map(name=>({name,type:ar?'فنية':'Technical',level:manager?(ar?'متقدم':'Advanced'):(ar?'متوسط':'Working'),evidence:ar?'اقتراح من كتالوج الدور؛ يعتمد بعد مراجعة المسؤوليات.':'Role catalog proposal; validate against responsibilities.'}));
+   const metric=ar?r.metricAr:r.metricEn;
+   p.content.kpis=metric?[{outcome:ar?'جودة وفعالية '+title:title+' effectiveness',metric,target:ar?'يحدد من خط الأساس ويعتمده مالك العملية':'Set from baseline and approved by the process owner',frequency:ar?'شهريًا':'Monthly',deliverable:ar?'سجل قياس بمصدر موثق':'Measurement log with documented source'}]:kpis(f.id,input.responsibilities||'',locale);
+   p.content.successMeasures=p.content.kpis.map(x=>x.metric).join('\n');
+   p.content.careerPath=manager?(ar?'مدير أول في '+f.ar+' ← مدير إدارة (بعد التقييم)':'Senior '+f.en+' Manager → Director (subject to evaluation)'):(ar?'أخصائي أول في '+f.ar+' ← مدير (بعد التقييم)':'Senior '+f.en+' Specialist → Manager (subject to evaluation)');
+   p.content.qualifications=ar?'مؤهل مرتبط بـ '+f.ar+'؛ الرموز التعليمية روابط مقترحة تحتاج مراجعة.':'Qualification relevant to '+f.en+'; education-code links are proposed and require review.';
+   p.content.certifications=ar?'تحدد الشهادات حسب تخصص الدور وسياسة الجهة؛ لا يُفترض اشتراط شهادة مشاريع.':'Certifications depend on the role and organization policy; no project certificate is assumed.';
+  }
+  p.content.odGenerationBasis=ar?'اقتراح قواعد شفافة من الهدف والمسؤوليات مع فحص المجال والمستوى والقيود؛ بانتظار اعتماد المختص.':'Transparent rule-based proposal from the objective and responsibilities, with domain, level and constraint checks; expert approval pending.';
+  p.referenceQueries={ssco:[r.referenceTitleAr],education:r.educationCodes,educationLevel:'6'};
+  p.validation=recommendation.checks;p.content.roleValidation=recommendation.checks;p.content.finalProposedTitle=recommendation.finalTitle?title:'';
+  if(recommendation.detection.conflict)p.notices.unshift(ar?'تعارض مجال: تم تفضيل الإدارة المدخلة؛ راجع وصف العمل.':'Domain conflict: entered department takes priority; review the work description.');
+  if(r.intent==='general'||!r.skillsAr.length)p.notices.unshift(ar?'قالب عام داخل المجال؛ يجب تخصيص المهارات والمؤشرات مع مختص.':'Generic template within this family; specialize skills and KPIs with a domain reviewer.');
+  return p;
+ }
+ const hit=R?null:detect(input);if(!hit){p.notices.unshift(locale==='ar'?'قالب عام: لم يُحدد تخصص موثوق.':'Generic template: no supported specialization detected.');return p;}
  const {id,d}=hit,manager=peopleManager(input,id,p),ar=locale==='ar',text=[input.strategyObjective,input.responsibilities].join(' ');
  p.family={id,label:ar?d.ar:d.en};
  p.content.jobFamily=ar?d.ar:d.en;

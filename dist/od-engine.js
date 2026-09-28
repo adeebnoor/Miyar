@@ -18,6 +18,7 @@ const behaviorEn=['Stakeholder management','Communication','Analytical thinking'
 const behaviorAr=['إدارة أصحاب العلاقة','التواصل','التفكير التحليلي','التخطيط وتحديد الأولويات','المساءلة','التحسين المستمر','التعاون'];
 function familyScore(def,text){return def.keywords.reduce((score,k)=>score+(normalize(text).includes(normalize(k))?1:0),0);}
 function detectFamily(input){
+ const shared=root.MiyarRoleRecommender?.familyDefinition(input);if(shared){const existing=families.find(f=>f.id===shared.id);return {...shared,...(existing||{}),ssco:shared.ssco,education:existing?.education||[]};}if(root.MiyarRoleRecommender)return families.find(f=>f.id==='generic');
  const text=[input.strategyObjective,input.responsibilities,input.department,input.context].join(' ');
  const ranked=families.filter(x=>x.id!=='generic').map(x=>({family:x,score:familyScore(x,text)})).sort((a,b)=>b.score-a.score);
  return ranked[0]?.score?ranked[0].family:families.find(x=>x.id==='generic');

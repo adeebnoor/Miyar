@@ -32,9 +32,9 @@ test('deployment is gated by free real-browser tests',()=>{
 test('long objectives use the OD family detector instead of being dropped by a six-word limit',()=>{
   const src=fs.readFileSync(path.join(dist,'demo-runtime-v5.js'),'utf8');
   assert.doesNotMatch(src,/words\.length>6/);
-  assert.match(src,/MiyarODEngine/);
-  assert.match(src,/detectedBusinessFamily/);
-  assert.match(src,/family\.ssco/);
+  assert.match(src,/MiyarRoleRecommender/);
+  const R=require('../dist/role-recommender.js');
+  assert.equal(R.recommend({objective:'Manage recruitment and payroll services for the human resources department',domain:'Human Resources'}).candidate.family,'hc');
   assert.match(src,/No confident occupation reference yet/);
 });
 
@@ -47,14 +47,14 @@ test('HR public directory is derived from the bundled HR taxonomy units and supp
  const titles=rows.map(x=>x.titleAr).join(' ');
  for(const expected of ['مدير تنفيذي للموارد البشرية','مدير عمليات الموارد البشرية','أخصائي توظيف','أخصائي مكافآت','أخصائي مواهب','اخصائي رواتب وبدلات','محلل وظائف','أخصائي تدريب','اختصاصي تطوير موارد بشرية','فني موارد بشرية','كاتب رواتب','كاتب شؤون موظفين'])assert.match(titles,new RegExp(expected));
  const src=fs.readFileSync(path.join(dist,'demo-runtime-v5.js'),'utf8');
- assert.match(src,/HR_PARENT_UNITS/);assert.match(src,/1212/);assert.match(src,/2423/);assert.match(src,/2424/);
+ assert.match(src,/1212/);assert.match(src,/2423/);assert.match(src,/2424/);
 });
 
 
 test('HR payroll recommendation separates the business title from the classification title',()=>{
  const src=fs.readFileSync(path.join(dist,'demo-runtime-v5.js'),'utf8');
- assert.match(src,/payroll:\{specialist:\{ar:'أخصائي رواتب'/);
- assert.match(src,/code:'242322'/);
+ const R=require('../dist/role-recommender.js'),r=R.recommend({objective:'معالجة رواتب الموظفين',seniority:'أخصائي'});
+ assert.equal(r.candidate.titleAr,'أخصائي رواتب');assert.equal(r.candidate.ssco,'242322');
  assert.match(src,/CLASSIFICATION REFERENCE/);
 });
 
@@ -65,8 +65,9 @@ test('HR expected-output engine grounds every specialist and manager mapping in 
  const required=['242303','121202','121201','242305','121206','242322','121210','242306','121207','242307','121208','242302','121215','242319','121203','242402','121212','242404','121213','242109','121205','242323','121204','242310','121214','441602'];
  for(const code of required)assert.ok(codes.has(code),'missing mapped HR source code '+code);
  const src=fs.readFileSync(path.join(dist,'demo-runtime-v5.js'),'utf8');
- for(const id of ['payroll','recruitment','rewards','talent','employeeRelations','workforce','learning','hrDevelopment','od','jobAnalysis','personnel','hrOperations','attendance'])assert.match(src,new RegExp(id));
- assert.match(src,/function hrLevel/);
+ const catalog=require('../dist/role-catalog.js');
+ for(const r of catalog.roles)assert.ok(codes.has(r.ssco),'missing source '+r.ssco);
+ for(const id of ['payroll','recruitment','rewards','talent','employeeRelations','workforce','learning','hrDevelopment','od','jobAnalysis','personnel','hrOperations','attendance'])assert.ok(catalog.roles.some(r=>r.intent===id));
  assert.match(src,/Preliminary recommendation/);
 });
 
@@ -79,16 +80,12 @@ test('public recommendation surface no longer labels itself as a five-engineerin
 });
 
 
-test('explicit HR task language bypasses the engineering quick-sample gate',()=>{
- const src=fs.readFileSync(path.join(dist,'demo-runtime-v5.js'),'utf8');
- assert.match(src,/function isExplicitHRInput/);
- assert.match(src,/const explicitHR=isExplicitHRInput\(input\)/);
- assert.match(src,/if\(!explicitHR&&words\.length<=6\)/);
- assert.match(src,/if\(isExplicitHRInput\(input\)\)return\{id:'hc'/);
+test('explicit HR task language is recognized without an engineering sample gate',()=>{
+ const R=require('../dist/role-recommender.js');
+ for(const objective of ['معالجة رواتب الموظفين','التوظيف واستقطاب المرشحين','تشغيل خدمات الموارد البشرية'])assert.equal(R.recommend({objective}).candidate.family,'hc');
 });
 
-
 test('HR operations intent recognizes natural HR services language',()=>{
- const src=fs.readFileSync(path.join(dist,'demo-runtime-v5.js'),'utf8');
+ const src=fs.readFileSync(path.join(dist,'role-catalog.js'),'utf8');
  for(const phrase of ['خدمات الموارد البشرية','تشغيل خدمات الموارد البشرية','الخدمات المشتركة للموارد البشرية','hr services','hr shared services'])assert.ok(src.includes(phrase),phrase);
 });

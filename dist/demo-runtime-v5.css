@@ -15,3 +15,7 @@
 .demo-v5-primary-source b{color:#25464a;font-size:.9rem}
 
 .demo-v5-primary-basis{margin:-4px 0 14px!important;color:#52675e!important;font-size:.86rem}
+/* Validation and the final proposed title remain readable at mobile widths. */
+.demo-validation{margin-block:1rem;padding:1rem;border:1px solid #d8e3e7;border-radius:12px;background:#fff;color:#193d46}
+.demo-validation h5{font-size:1rem;margin:0 0 .7rem}.demo-validation ul{display:grid;gap:.65rem;padding:0;list-style:none}.demo-validation li{font-size:.92rem;line-height:1.65;overflow-wrap:anywhere}.demo-validation [data-status=warn] b{color:#875500}.demo-validation [data-status=fail] b{color:#a92530}
+.demo-final-title{display:grid;gap:.6rem;padding:1rem;background:#e6f2ef;border-inline-start:4px solid #25766b;border-radius:8px;margin-block:1rem}.demo-final-title span{font-size:.8rem;letter-spacing:.04em}.demo-final-title strong{font-size:1.25rem}.demo-domain-conflict{padding:1rem;background:#fff4d9;border-radius:10px;margin-block:.8rem;line-height:1.7}.demo-v5-primary-recommendation mark{display:inline-block;margin:.2rem;padding:.15rem .4rem;background:#f4ead0;color:#403b26;border-radius:4px}.demo-v5-primary-recommendation>small{display:block;margin-block:.7rem}.cp-policy{padding:1rem;background:#edf4f2;border-radius:10px;margin-block:1rem}.mp-scenario-controls{padding:1rem;margin-block:1rem;border:1px solid #d3dfdf;border-radius:12px}.mp-scenario-controls summary{cursor:pointer;font-weight:700}

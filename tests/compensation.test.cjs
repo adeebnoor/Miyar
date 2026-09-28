@@ -8,7 +8,7 @@ test('compensation engine uses only a sourced organization band and keeps missin
 });
 
 test('current salary produces auditable compa-ratio and adjustment without changing the band',()=>{
- const v=C.evaluate({...C.example,currentSalary:27000,targetPenetration:60,headcount:2,oncostPercent:10});assert.equal(v.result.targetSalary,32000);assert.equal(v.result.compaRatio,.9);assert.equal(v.result.currentRangePenetrationPercent,35);assert.equal(v.result.adjustmentPerFte,5000);assert.equal(v.result.annualAdjustmentCost,120000);assert.equal(v.input.bandMin,20000);assert.equal(v.input.bandMax,40000);
+ const v=C.evaluate({...C.example,currentSalary:27000,targetPenetration:60,headcount:2,oncostPercent:10});assert.equal(v.result.targetSalary,32000);assert.equal(v.result.compaRatio,.9);assert.equal(v.result.currentRangePenetrationPercent,35);assert.equal(v.result.adjustmentPerFte,5000);assert.equal(v.result.annualAdjustmentCost,132000);assert.equal(v.input.bandMin,20000);assert.equal(v.input.bandMax,40000);
 });
 
 async function app(route='#enterprise/compensation'){

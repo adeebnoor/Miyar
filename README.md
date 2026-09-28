@@ -2,7 +2,7 @@
 
 A bilingual strategy-to-workforce intelligence platform by Prof. Adeeb Noor and Ahmad Raza Khan, King Abdulaziz University.
 
-[Open Miyar](https://adeebnoor.github.io/Miyar/) · [Enterprise API](https://miyar-enterprise-api.onrender.com/) · [Architecture](docs/enterprise-architecture.md) · [OD Phase 1](docs/phase-1-od-engine.md) · [Manpower Phase 2](docs/phase-2-manpower-planning.md) · [Compensation Phase 3](docs/phase-3-compensation.md)
+[Open Miyar](https://adeebnoor.github.io/Miyar/) · [Enterprise API](https://miyar-enterprise-api.onrender.com/) · [Architecture](docs/enterprise-architecture.md) · [OD Phase 1](docs/phase1-od-engine.md) · [Manpower Phase 2](docs/phase-2-manpower.md) · [Compensation Phase 3](docs/phase-3-compensation.md)
 
 ## What Miyar 5.0 does
 
@@ -74,7 +74,7 @@ python -m pytest server/tests -q
 python -m server.start
 ```
 
-GitHub Actions gates publication on the complete browser suite and the PostgreSQL-backed server suite. The Render service is configured on `main` with auto-deploy after checks pass.
+GitHub Actions gates publication on the complete browser suite and the PostgreSQL-backed server suite. Pages publishes only after all gates pass. The existing Render API has previously failed to auto-deploy despite its configured setting; check its live commit separately. Frontend 5.0.4 does not change the API or require a backend redeploy.
 
 ## Release 5.0 — September 2026
 
@@ -87,3 +87,7 @@ This release changes Miyar from a position-management prototype into a connected
 5. Existing governance, export, persistence, security and classification regression tests remain in the release gate.
 
 The supplied reference editions do not establish current regulatory requirements. Reference counts are not market statistics. Software tests do not establish legal compliance, ROI, novelty or patent protection. Proprietary organization documents, credentials and confidential data are not published.
+
+## Expert review update 5.0.4
+
+See [release notes](docs/release-5.0.4.md). The shared catalog provides 79 proposed role/level mappings in 15 families. Each code is checked against the supplied snapshot. Business titles and education links still require domain-expert approval. Quick Trial and OD share field priority, Arabic normalization and seniority rules. No external LLM is enabled.
