@@ -20,6 +20,6 @@ test('homepage release layer reflects OD, manpower and compensation with direct 
 
 test('index loads the final homepage assets after the three phase workbenches',()=>{
  const html=fs.readFileSync(path.join(dir,'index.html'),'utf8');
- assert.match(html,/release-home\.css/);assert.match(html,/release-home\.js/);assert.match(html,/manpower-workbench\.js/);assert.match(html,/compensation-workbench\.js/);
+ const assets=JSON.parse(fs.readFileSync(path.join(dir,'release.json'),'utf8')).assets;assert.ok(assets.styles.includes('release-home.css'));assert.ok(assets.scripts.indexOf('release-home.js')>assets.scripts.indexOf('manpower-workbench.js'));assert.ok(assets.scripts.indexOf('release-home.js')>assets.scripts.indexOf('compensation-workbench.js'));assert.match(html,/miyar-[a-f0-9]+\.js/);
  assert.match(html,/Strategy → OD → Job Evaluation → Manpower Planning → Compensation → Approval/);
 });

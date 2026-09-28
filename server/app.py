@@ -6,7 +6,8 @@ from typing import Annotated,Literal
 from fastapi import FastAPI,Depends,HTTPException,UploadFile,File,Request,Header,Query
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
-from fastapi.responses import Response
+from fastapi.responses import Response,RedirectResponse
+from .release import VERSION,RELEASE
 from fastapi.staticfiles import StaticFiles
 from pathlib import Path
 from fastapi.security import HTTPAuthorizationCredentials
@@ -55,7 +56,7 @@ def create_app(db_url=None,jwt_secret=None,catalog=None):
     engine,Session=database(url);Base.metadata.create_all(engine)
     from .audit import protect
     protect(engine);references=catalog or Catalog()
-    app=FastAPI(title='Miyar Enterprise Workforce API',version='5.0.5',description='Tenant-scoped positions, revision-bound approvals, versioned classification references and explicit integration boundaries.')
+    app=FastAPI(title='Miyar Enterprise Workforce API',version=VERSION,description='Tenant-scoped positions, revision-bound approvals, versioned classification references and explicit integration boundaries.')
     app.state.sessions=Session;app.state.catalog=references;app.state.secret=secret
     origins=[x.strip() for x in os.getenv('MIYAR_CORS_ORIGINS','https://adeebnoor.github.io').split(',') if x.strip()]
     app.add_middleware(CORSMiddleware,allow_origins=origins,allow_credentials=False,allow_methods=['GET','POST','PATCH'],allow_headers=['Authorization','Content-Type','Idempotency-Key'])
@@ -73,6 +74,8 @@ def create_app(db_url=None,jwt_secret=None,catalog=None):
         response=await call_next(request);response.headers['X-Content-Type-Options']='nosniff';response.headers['Referrer-Policy']='no-referrer'
         if request.url.path.startswith('/api/'):response.headers['Cache-Control']='no-store'
         return response
+    from .observability import install as install_observability
+    install_observability(app)
     def session():
         with Session() as db:
             try:yield db
@@ -179,7 +182,7 @@ def create_app(db_url=None,jwt_secret=None,catalog=None):
         try:
             with engine.connect() as connection:connection.execute(select(1))
         except SQLAlchemyError:return JSONResponse({'status':'unavailable','database':'unreachable'},status_code=503)
-        return {'status':'ok','version':app.version,'taxonomy':references.occupations['id'],'occupations':len(references.roles),'semanticModelReady':references.model is not None,'storage':'postgresql' if engine.dialect.name=='postgresql' else 'local-development-sqlite','services':service_capabilities()}
+        return {'status':'ok','version':app.version,'frontendVersion':RELEASE['version'],'buildId':RELEASE['buildId'],'frontendUrl':'https://adeebnoor.github.io/Miyar/','operations':app.state.operational_snapshot(),'taxonomy':references.occupations['id'],'occupations':len(references.roles),'semanticModelReady':references.model is not None,'storage':'postgresql' if engine.dialect.name=='postgresql' else 'local-development-sqlite','services':service_capabilities()}
     @app.post('/api/v1/auth/login')
     def login(body:Login,request:Request,db=Depends(session)):
         email=body.email.strip().lower();key=digest({'email':email,'ip':request.client.host if request.client else ''});ts=int(time.time());window=db.get(LoginWindow,key)
@@ -220,7 +223,9 @@ def create_app(db_url=None,jwt_secret=None,catalog=None):
         signing=False
         try:public_key();signing=True
         except (ValueError,TypeError):pass
-        return {'version':app.version,'storage':engine.dialect.name,'approvals':True,'kpiGenerationEnabled':bool(os.getenv('MIYAR_KPI_ENDPOINT') and os.getenv('MIYAR_KPI_MODEL') and os.getenv('MIYAR_KPI_API_KEY')),'semanticEnabled':os.getenv('MIYAR_ENABLE_EMBEDDINGS')=='true','semanticModelReady':references.model is not None,'signingConfigured':signing,'exports':[{'format':kind,'available':find_spec(module) is not None} for kind,module in [('DOCX','docx'),('XLSX','openpyxl'),('PDF','weasyprint')]],'externalConnectors':'Require organization-authorized endpoint configuration'}
+        from .strategic import capability as strategic_capability
+        from .expert_review import availability as expert_availability
+        return {'strategicAI':{**strategic_capability(),'purpose':'strategic-objective-to-role'},'expertReview':expert_availability(),'skillsSemantic':{'enabled':os.getenv('MIYAR_ENABLE_EMBEDDINGS')=='true','modelReady':references.model is not None,'purpose':'occupation-skill-matching'},'recovery':{'mode':'administrator-assisted','selfServiceEmail':False,'tokenLifetimeSeconds':900},'version':app.version,'storage':engine.dialect.name,'approvals':True,'kpiGenerationEnabled':bool(os.getenv('MIYAR_KPI_ENDPOINT') and os.getenv('MIYAR_KPI_MODEL') and os.getenv('MIYAR_KPI_API_KEY')),'semanticEnabled':os.getenv('MIYAR_ENABLE_EMBEDDINGS')=='true','semanticModelReady':references.model is not None,'signingConfigured':signing,'exports':[{'format':kind,'available':find_spec(module) is not None} for kind,module in [('DOCX','docx'),('XLSX','openpyxl'),('PDF','weasyprint')]],'externalConnectors':'Require organization-authorized endpoint configuration'}
     @app.get('/api/v1/capabilities')
     def capabilities(user=Depends(current)):
         return service_capabilities()
@@ -257,6 +262,13 @@ def create_app(db_url=None,jwt_secret=None,catalog=None):
         try:steps=validate_workflow(body.steps)
         except (ValueError,TypeError,KeyError) as e:raise HTTPException(422,str(e))
         org=organization(db,user);org.settings={**org.settings,'workflow':steps};audit(db,user,'workflow.configured',{'steps':steps,'reason':body.reason});db.commit();return {'steps':steps,'appliesTo':'New submissions; existing requests retain their stage snapshot'}
+    @app.post('/api/v1/settings/framework/preview')
+    def preview_framework(body:FrameworkRequest,user=Depends(current),db=Depends(session)):
+        require(user,'admin')
+        try:f=validate_framework(body.framework)
+        except (ValueError,TypeError,KeyError,ArithmeticError) as e:raise HTTPException(422,str(e))
+        previous=organization(db,user).settings.get('framework',DEFAULT_FRAMEWORK)
+        return {'framework':f,'currentVersion':previous.get('version',1),'nextVersion':int(previous.get('version',0))+1,'activated':False}
     @app.post('/api/v1/settings/framework')
     def framework(body:FrameworkRequest,user=Depends(current),db=Depends(session)):
         require(user,'admin')
@@ -462,13 +474,14 @@ def create_app(db_url=None,jwt_secret=None,catalog=None):
     @app.get('/api/v1/integrations/outbox')
     def outbox(user=Depends(current),db=Depends(session)):
         require(user,'admin');return [{'id':x.id,'eventType':x.event_type,'status':x.status,'attempts':x.attempts,'createdAt':x.created_at,'lastError':x.last_error} for x in db.scalars(select(OutboxEvent).where(OutboxEvent.org_id==user.org_id).order_by(OutboxEvent.created_at.desc()).limit(100))]
+    from .recovery import install as install_recovery
+    install_recovery(app,session,current,audit,secret)
     from .enterprise import install
     install(app,session,current,organization,audit,present,content,department,snapshot,revise)
     from .institution import install_institution
     install_institution(app)
-    if os.getenv('MIYAR_SERVE_UI')=='true':
-        @app.get('/config.js',include_in_schema=False)
-        def browser_configuration():
-            return Response('window.MIYAR_CONFIG = {apiBase: window.location.origin};',media_type='application/javascript',headers={'Cache-Control':'no-store'})
-        app.mount('/',StaticFiles(directory=Path(__file__).resolve().parent.parent/'dist',html=True),name='website')
+    @app.get('/',include_in_schema=False)
+    @app.get('/index.html',include_in_schema=False)
+    def canonical_frontend():
+        return RedirectResponse('https://adeebnoor.github.io/Miyar/?v='+VERSION+'#home',status_code=307,headers={'Cache-Control':'no-store'})
     return app

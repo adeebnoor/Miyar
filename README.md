@@ -1,3 +1,7 @@
+## Current release: 5.1.0
+
+The full website remains at https://adeebnoor.github.io/Miyar/?v=5.1.0#home. See [consultant audit response](docs/audit-remediation-5.1.0.md) for implemented, partial and pending findings and [operations](docs/operations-5.1.md) for release gates, recovery and key rotation. Strategic Gemini objective matching and semantic skill matching are separate capabilities. Public [status and methodology](https://adeebnoor.github.io/Miyar/trust.html#status) describe current limits. Run `npm run build` after changes; commit the generated release and assets together.
+
 # معيار | MI’YĀR 5.0
 
 A bilingual strategy-to-workforce intelligence platform by Prof. Adeeb Noor and Ahmad Raza Khan, King Abdulaziz University.

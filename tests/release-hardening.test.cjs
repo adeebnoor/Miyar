@@ -10,8 +10,9 @@ function luminance(hex){const n=parseInt(hex.slice(1),16);const r=channel((n>>16
 function contrast(a,b='#ffffff'){const x=luminance(a),y=luminance(b);return (Math.max(x,y)+0.05)/(Math.min(x,y)+0.05);}
 
 test('home loads release hardening after the base landing styles',()=>{
-  const base=index.indexOf('./landing.css');
-  const hardening=index.indexOf('./accessibility-perf-v5.css');
+  const assets=JSON.parse(fs.readFileSync('dist/release.json')).assets.styles;
+  const base=assets.indexOf('landing.css');
+  const hardening=assets.indexOf('accessibility-perf-v5.css');
   assert.ok(base>=0);
   assert.ok(hardening>base);
 });

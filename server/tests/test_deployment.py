@@ -12,15 +12,14 @@ def test_hosted_ui_resolves_assets_without_exposing_server_files(tmp_path,monkey
     with TestClient(app) as c:
         health=c.get('/health').json()
         assert health['status']=='ok'
-        assert health['version']=='5.0.5'
+        assert health['version']=='5.1.0'
         assert health['services']['approvals'] is True
         assert {item['format'] for item in health['services']['exports']}=={'DOCX','XLSX','PDF'}
-        assert set(health['services'])=={'version','storage','approvals','semanticEnabled','semanticModelReady','signingConfigured','kpiGenerationEnabled','exports','externalConnectors'}
-        page=c.get('/');assert page.status_code==200;assert './config.js' in page.text
-        config=c.get('/config.js');assert 'window.location.origin' in config.text
-        assert config.headers['cache-control']=='no-store'
-        assert c.get('/classifications/ssco-2019.json').json()['validation']['occupations']==5041
-        assert c.get('/assets/arabic.ttf').status_code==200
+        assert {'strategicAI','skillsSemantic','recovery','approvals','exports'}.issubset(health['services'])
+        page=c.get('/',follow_redirects=False);assert page.status_code==307
+        assert page.headers['location']=='https://adeebnoor.github.io/Miyar/?v=5.1.0#home'
+        assert c.get('/config.js').status_code==404
+        assert c.get('/classifications/ssco-2019.json').status_code==404
         assert c.get('/api/v1/positions').status_code==401
         for path in ['/server/app.py','/.env','/%2e%2e/server/security.py']:
             assert c.get(path).status_code==404

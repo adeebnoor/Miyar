@@ -14,3 +14,6 @@ tmp/
 .runtime/
 .model-cache/
 secrets/
+# Content-named production bundles are rebuilt deterministically in CI.
+dist/miyar-*.js
+dist/miyar-*.css
