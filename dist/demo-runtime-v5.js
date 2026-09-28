@@ -75,6 +75,11 @@ function hrIntent(input){
  for(const [id,terms] of HR_INTENTS)if(terms.some(x=>n.includes(norm(x))))return id;
  return'general';
 }
+function isExplicitHRInput(input){
+ const C=window.MiyarEnterpriseCore,n=normalizedHRText(input),norm=x=>C?.normalize?C.normalize(x):String(x).toLowerCase();
+ if(HR_INTENTS.some(([,terms])=>terms.some(x=>n.includes(norm(x)))))return true;
+ return ['موارد بشرية','راس المال البشري','رأس المال البشري','human resources','human capital','hr operations','hr specialist','hr manager'].some(x=>n.includes(norm(x)));
+}
 function hrLevel(input){
  const C=window.MiyarEnterpriseCore,n=C?.normalize?C.normalize([input.seniority,input.objective].join(' ')):String([input.seniority,input.objective].join(' ')).toLowerCase();
  const has=terms=>terms.some(x=>n.includes(C?.normalize?C.normalize(x):String(x).toLowerCase()));
@@ -100,6 +105,7 @@ function hrPrimaryRecommendation(intent,input,occupations){
 function detectedBusinessFamily(input){
  const C=window.MiyarEnterpriseCore,n=C?.normalize?C.normalize([input.objective,input.domain,input.constraints].join(' ')):String([input.objective,input.domain,input.constraints].join(' ')).toLowerCase();
  if(['حوكمة','امتثال','governance','compliance'].some(x=>n.includes(C?.normalize?C.normalize(x):x))||C?.normalize?.(input.domain||'').includes('التزام'))return{id:'governance',ar:'الحوكمة والالتزام',en:'Governance & Compliance',ssco:['مدير التزام','أخصائي تطوير تنظيمي','خبير تنظيم','باحث تنظيم']};
+ if(isExplicitHRInput(input))return{id:'hc',ar:'رأس المال البشري',en:'Human Capital',ssco:['أخصائي موارد بشرية','مدير موارد بشرية']};
  const E=window.MiyarODEngine;if(!E?.detectFamily)return null;
  try{
   const family=E.detectFamily({strategyObjective:input.objective,department:input.domain,context:input.constraints});
@@ -110,13 +116,13 @@ async function directoryFallback(input,host){
  const C=window.MiyarEnterpriseCore;if(!C?.search||!host)return;
  const words=C.normalize(input.objective).split(' ').filter(Boolean);if(!words.length)return;
  const occupations=(await directoryNodes()).filter(x=>x.level==='occupation');if(!host.isConnected)return;
- let rows=[],family=null,source='direct';
- if(words.length<=6){
+ let rows=[],family=null,source='direct';const explicitHR=isExplicitHRInput(input);
+ if(!explicitHR&&words.length<=6){
   rows=C.search(occupations,input.objective).slice(0,5);
   if(!rows.length){const q=C.normalize(input.objective);rows=occupations.filter(r=>{const title=C.normalize(r.titleAr||'');return title===q||title.includes(q)||q.includes(title);}).slice(0,5);}
  }
  let hrAll=[],hrIntentId='',hrPrimary=null;
- if(!rows.length){
+ if(!rows.length||explicitHR){
   family=detectedBusinessFamily(input);
   if(family?.id==='hc'){
    source='hr-family';const h=hrDirectoryRows(occupations,input);rows=h.top;hrAll=h.all;hrIntentId=h.intent;hrPrimary=hrPrimaryRecommendation(h.intent,input,occupations);
