@@ -16,14 +16,48 @@ function renderMatch(result,input,id){const r=result.role,p=panel();if(!p)return
 function continueToOD(input,role={}){const describesNeed=input.objective.split(/\s+/).filter(Boolean).length>=3&&input.objective!==role.title;const fields={title:role.title||'',occupationCode:role.occupationCode||'',educationFieldCode:role.educationFieldCode||'',field:input.domain,seniority:input.seniority,constraints:input.constraints,businessNeed:describesNeed?input.objective:'',purpose:role.title&&describesNeed?input.objective:''};const message=role.title?t('نُقل الترشيح إلى المسودة: المسمى والرمز المهني والاحتياج. أكمل المسؤوليات ثم راجع الحزمة.','The recommendation was carried into the draft: title, occupation code and need. Complete the responsibilities, then review the package.'):t('نُقل الاحتياج إلى المسودة. اختر المرجع المهني وأكمل المسؤوليات.','The need was carried into the draft. Choose the occupation reference and complete the responsibilities.');const E=window.MiyarEnterprise;const fillStrategy=()=>{const box=document.querySelector('#miyar-od-workbench [data-od-strategy]');if(box&&!box.value&&describesNeed){box.value=input.objective;box.dispatchEvent(new Event('input',{bubbles:true}));}};if(E?.prefill){E.prefill(fields,message).then(ok=>{if(ok){setTimeout(fillStrategy,150);setTimeout(fillStrategy,600);}});}else location.hash='#enterprise/create';}
 let directoryPromise=null;
 function directoryNodes(){if(!directoryPromise)directoryPromise=fetch('./classifications/ssco-2019.json').then(r=>r.ok?r.json():null).then(d=>d?.nodes||[]).catch(()=>[]);return directoryPromise;}
+function detectedBusinessFamily(input){
+ const E=window.MiyarODEngine;if(!E?.detectFamily)return null;
+ try{
+  const family=E.detectFamily({strategyObjective:input.objective,department:input.domain,context:input.constraints});
+  return family&&family.id!=='generic'&&Array.isArray(family.ssco)&&family.ssco.length?family:null;
+ }catch{return null;}
+}
 async function directoryFallback(input,host){
  const C=window.MiyarEnterpriseCore;if(!C?.search||!host)return;
- const words=C.normalize(input.objective).split(' ').filter(Boolean);if(!words.length||words.length>6)return;
+ const words=C.normalize(input.objective).split(' ').filter(Boolean);if(!words.length)return;
  const occupations=(await directoryNodes()).filter(x=>x.level==='occupation');if(!host.isConnected)return;
- let rows=C.search(occupations,input.objective).slice(0,5);
- if(!rows.length){const q=C.normalize(input.objective);rows=occupations.filter(r=>{const title=C.normalize(r.titleAr||'');return title===q||title.includes(q)||q.includes(title);}).slice(0,5);}
- if(!rows.length)return;
- const box=document.createElement('div');box.className='demo-v5-directory';box.innerHTML='<h4>'+t('مطابقات من دليل المهن الكامل','Matches from the full occupation directory')+'</h4><p>'+t('لم يطابق المدخل عينة المحرك السريع، لكنه يطابق مسميات في دليل المهن (5,041 مهنة). اختر المرجع لنقله إلى محرك OD.','The input did not match the quick-engine sample, but it matches titles in the occupation directory (5,041 occupations). Choose a reference to carry it into the OD Engine.')+'</p><ul>'+rows.map((r,i)=>'<li><button type="button" class="button button-outline" data-demo-ref="'+i+'"><strong>'+esc(r.code)+'</strong> · '+esc(r.titleAr)+'</button></li>').join('')+'</ul>';host.querySelector('.demo-v5-output')?.appendChild(box);box.querySelectorAll('[data-demo-ref]').forEach(b=>b.onclick=()=>{const r=rows[Number(b.dataset.demoRef)];continueToOD(input,{title:r.titleAr,occupationCode:r.code});});const lead=host.querySelector('.demo-v5-output > p');if(lead)lead.textContent=t('لا يوجد تطابق ضمن عينة المحرك السريع (خمس مهن هندسية)، لكن توجد مطابقات في دليل المهن أدناه.','No match in the quick-engine sample (five engineering roles), but directory matches are listed below.');
+ let rows=[],family=null,source='direct';
+ if(words.length<=6){
+  rows=C.search(occupations,input.objective).slice(0,5);
+  if(!rows.length){const q=C.normalize(input.objective);rows=occupations.filter(r=>{const title=C.normalize(r.titleAr||'');return title===q||title.includes(q)||q.includes(title);}).slice(0,5);}
+ }
+ if(!rows.length){
+  family=detectedBusinessFamily(input);
+  if(family){
+   source='family';const seen=new Set();
+   for(const query of family.ssco){
+    for(const row of C.search(occupations,query).slice(0,4)){
+     if(seen.has(row.code))continue;seen.add(row.code);rows.push(row);if(rows.length>=5)break;
+    }
+    if(rows.length>=5)break;
+   }
+  }
+ }
+ if(!rows.length){
+  const box=document.createElement('div');box.className='demo-v5-directory demo-v5-directory-empty';
+  box.innerHTML='<h4>'+t('لا يوجد مرجع مهني موثوق بعد','No confident occupation reference yet')+'</h4><p>'+t('تم تحليل الاحتياج، لكن الأدلة الحالية لا تكفي لربطه بمسمى من الدليل دون تخمين. افتح محرك OD لتوثيق المسؤوليات؛ عندها يصبح الترشيح أدق.','The need was analyzed, but the current evidence is not sufficient to link it to a directory title without guessing. Open the OD Engine and add responsibilities for a more defensible recommendation.')+'</p>';
+  host.querySelector('.demo-v5-output')?.appendChild(box);return;
+ }
+ const familyName=family?(ar()?family.ar:family.en):'';
+ const intro=source==='family'
+  ?t('حدد معيار مجال الاحتياج مبدئيًا كـ «'+familyName+'» ويعرض مراجع مهنية مرتبطة بالمجال للمراجعة — وليست مطابقة نهائية.','Miyar preliminarily detected the business domain as “'+familyName+'” and is showing related occupation references for review — not a final match.')
+  :t('لم يطابق المدخل عينة المحرك السريع، لكنه يطابق مسميات في دليل المهن (5,041 مهنة). اختر المرجع لنقله إلى محرك OD.','The input did not match the quick-engine sample, but it matches titles in the occupation directory (5,041 occupations). Choose a reference to carry it into the OD Engine.');
+ const box=document.createElement('div');box.className='demo-v5-directory';box.dataset.referenceSource=source;
+ box.innerHTML='<h4>'+t('مراجع من دليل المهن الكامل','References from the full occupation directory')+'</h4><p>'+esc(intro)+'</p><ul>'+rows.map((r,i)=>'<li><button type="button" class="button button-outline" data-demo-ref="'+i+'"><strong>'+esc(r.code)+'</strong> · '+esc(ar()?(r.titleAr||r.titleEn):(r.titleEn||r.titleAr))+'</button></li>').join('')+'</ul>';
+ host.querySelector('.demo-v5-output')?.appendChild(box);
+ box.querySelectorAll('[data-demo-ref]').forEach(b=>b.onclick=()=>{const r=rows[Number(b.dataset.demoRef)];continueToOD(input,{title:r.titleAr||r.titleEn,occupationCode:r.code});});
+ const lead=host.querySelector('.demo-v5-output > p');if(lead)lead.textContent=source==='family'?t('لم تعطِ العينة الهندسية ترشيحًا مباشرًا؛ لذلك انتقل معيار إلى مجال العمل ودليل المهن الأوسع بدل إرجاع نتيجة فارغة.','The engineering sample did not provide a direct recommendation, so Miyar used the detected business domain and broader occupation directory instead of returning an empty result.'):t('لا يوجد تطابق ضمن عينة المحرك السريع (خمس مهن هندسية)، لكن توجد مطابقات في دليل المهن أدناه.','No match in the quick-engine sample (five engineering roles), but directory matches are listed below.');
 }
 function renderReview(result,input,id){const p=panel();if(!p)return;const reason=ar()?(result.reason||result.message||''):(result.reasonEn||result.messageEn||result.reason||result.message||'');p.innerHTML=outputHeader(id,input)+'<div class="demo-v5-output review"><div class="demo-v5-output-label">OUTPUT</div><h3>'+t('تم إنشاء مخرج — يحتاج مراجعة','Output generated — review required')+'</h3><p>'+esc(reason)+'</p><p class="demo-v5-limit">'+t('التجربة السريعة هنا محدودة بعينة خمس مهن هندسية. لاحتياجات HC أو الأدوار الأخرى استخدم محرك OD الكامل.','This quick demo is limited to a five-engineering-role sample. For HC or other roles, use the full OD Engine.')+'</p><div class="demo-v5-actions"><button type="button" class="button button-primary" data-demo-continue>'+t('افتح محرك OD الكامل','Open full OD Engine')+'</button></div></div>';p.querySelector('[data-demo-continue]').onclick=()=>continueToOD(input);directoryFallback(input,p);if(badge())badge().textContent=t('مخرج للمراجعة','REVIEW OUTPUT');}
 function renderError(message){const p=panel();if(!p)return;p.innerHTML='<div class="demo-v5-output error"><div class="demo-v5-output-label">OUTPUT</div><h3>'+t('أكمل المدخل المطلوب','Complete the required input')+'</h3><p>'+esc(message)+'</p></div>';if(badge())badge().textContent=t('مدخل ناقص','INPUT REQUIRED');}
