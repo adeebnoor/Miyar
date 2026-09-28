@@ -5,12 +5,15 @@ const scripts=[...template.matchAll(/<script defer src="\.\/([^?]+)\?[^\"]+"><\/
 const styles=[...template.matchAll(/<link rel="stylesheet" href="\.\/([^?]+)\?[^\"]+">/g)].map(m=>m[1]);
 scripts.push('audit-improvements.js');styles.push('audit-improvements.css');
 const all=[...scripts,...styles,'trust.js','trust.css','../server/requirements-lock.txt',...fs.readdirSync('server').filter(x=>x.endsWith('.py')).map(x=>'../server/'+x)];
-const hash=crypto.createHash('sha256').update(version).update(template).update(fs.readFileSync(__filename)).update(fs.readFileSync('dist/assets/arabic.woff2')); for(const f of all)hash.update(f).update(fs.readFileSync(path.join('dist',f)));const buildId=hash.digest('hex').slice(0,16);
+const hash=crypto.createHash('sha256').update(version).update(template).update(fs.readFileSync('web/trust.template.html')).update(fs.readFileSync(__filename)).update(fs.readFileSync('dist/assets/arabic.woff2')); for(const f of all)hash.update(f).update(fs.readFileSync(path.join('dist',f)));const buildId=hash.digest('hex').slice(0,16);
 const manifest={version,buildId,releasedAt:'2026-09-29',changes:['Separated strategic AI and skills status','Lazy references and compressed assets','Account recovery and framework preview','Salary band CSV import','Privacy, methodology, status and audit register'],assets:{scripts,styles}};
 fs.writeFileSync('dist/release.json',JSON.stringify(manifest,null,2)+'\n');fs.writeFileSync('dist/release-config.js','window.MIYAR_RELEASE='+JSON.stringify(manifest)+';\n');
 const js=esbuild.transformSync(fs.readFileSync('dist/release-config.js','utf8')+'\n'+scripts.map(f=>fs.readFileSync('dist/'+f,'utf8')).join('\n;\n'),{minify:true,target:'es2020',loader:'js',legalComments:'none'}).code;
 const css=esbuild.transformSync(styles.map(f=>fs.readFileSync('dist/'+f,'utf8')).join('\n'),{minify:true,loader:'css',legalComments:'none'}).code;
-for(const f of fs.readdirSync('dist'))if(/^miyar-[a-f0-9]+\.(js|css)$/.test(f))fs.unlinkSync('dist/'+f);
+for(const f of fs.readdirSync('dist'))if(/^miyar-(?:trust-)?[a-f0-9]+\.(js|css)$/.test(f))fs.unlinkSync('dist/'+f);
+const trustJs=esbuild.transformSync(fs.readFileSync('dist/release-config.js','utf8')+'\n'+fs.readFileSync('dist/config.js','utf8')+'\n'+fs.readFileSync('dist/trust.js','utf8'),{minify:true,target:'es2020',loader:'js',legalComments:'none'}).code;
+fs.writeFileSync('dist/miyar-trust-'+buildId+'.js',trustJs);fs.writeFileSync('dist/miyar-trust-'+buildId+'.css',fs.readFileSync('dist/trust.css','utf8'));
+const trust=fs.readFileSync('web/trust.template.html','utf8').replace(/<script defer[^>]+><\/script>/g,'').replace('./trust.css','./miyar-trust-'+buildId+'.css').replace('</head>','<script defer src="./miyar-trust-'+buildId+'.js"></script></head>');fs.writeFileSync('dist/trust.html',trust);
 fs.writeFileSync('dist/miyar-'+buildId+'.js',js);fs.writeFileSync('dist/miyar-'+buildId+'.css',css);
 template=template.replace(/\n  <link rel="stylesheet"[^>]+>/g,'').replace(/\n  <script defer[^>]+><\/script>/g,'').replace(/5\.0\.6(?:\.1)?/g,version).replace('</head>','  <link rel="stylesheet" href="./miyar-'+buildId+'.css">\n  <script defer src="./miyar-'+buildId+'.js"></script>\n</head>');
 const csp="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self' data: blob:; connect-src 'self' https://miyar-enterprise-api.onrender.com; object-src 'none'; base-uri 'self'; form-action 'self'";
