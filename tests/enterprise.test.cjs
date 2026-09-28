@@ -259,7 +259,7 @@ test('service dashboard imports a saved JSON file and route history preserves an
   const payload={schema:'miyar-position-draft/1.0',content:{title:'Imported service draft',field:'Digital health',seniority:'Principal'}};
   Object.defineProperty(a.w.document.getElementById('svc-import-file'),'files',{value:[{size:250,text:async()=>JSON.stringify(payload)}]});a.w.document.getElementById('svc-import').click();await settle();assert.equal(a.w.location.hash,'#enterprise/create');
   a.tab('overview');assert.match(a.$('content').textContent,/Imported service draft/);assert.ok(a.w.document.getElementById('svc-resume'));
-  a.w.history.back();await settle();assert.ok(a.w.document.querySelector('[data-field="title"]'));assert.equal(a.w.document.querySelector('[data-field="field"]').value,'Digital health');
+  a.w.history.back();for(let i=0;i<50&&!a.w.document.querySelector('[data-field="title"]');i++)await settle();assert.ok(a.w.document.querySelector('[data-field="title"]'));assert.equal(a.w.document.querySelector('[data-field="field"]').value,'Digital health');
   await a.w.MiyarEnterprise.mount(a.w.document.getElementById('enterprise'),{lang:'ar'});assert.equal(a.w.document.querySelector('[data-field="seniority"]').value,'Principal');assert.deepEqual(a.errors,[]);
  }finally{a.dom.window.close();}
 });

@@ -74,7 +74,7 @@ python -m pytest server/tests -q
 python -m server.start
 ```
 
-GitHub Actions gates publication on the complete browser suite and the PostgreSQL-backed server suite. Pages publishes only after all gates pass. The existing Render API has previously failed to auto-deploy despite its configured setting; check its live commit separately. Frontend 5.0.4 does not change the API or require a backend redeploy.
+GitHub Actions gates publication on the complete browser suite and the PostgreSQL-backed server suite. Pages publishes only after all gates pass. The existing Render API has previously failed to auto-deploy despite its configured setting; check its live commit separately. The restored strategic AI route in 5.0.4 requires a separate API redeploy and secure provider configuration; Pages publication alone does not activate it.
 
 ## Release 5.0 — September 2026
 
@@ -90,4 +90,4 @@ The supplied reference editions do not establish current regulatory requirements
 
 ## Expert review update 5.0.4
 
-See [release notes](docs/release-5.0.4.md). The shared catalog provides 79 proposed role/level mappings in 15 families. Each code is checked against the supplied snapshot. Business titles and education links still require domain-expert approval. Quick Trial and OD share field priority, Arabic normalization and seniority rules. No external LLM is enabled.
+See [release notes](docs/release-5.0.4.md). The shared catalog provides 79 proposed role/level mappings in 15 families. Each code is checked against the supplied snapshot. Business titles and education links still require domain-expert approval. Quick Trial and OD share field priority, Arabic normalization and seniority rules. The original objective Embedding → LLM pipeline is restored as a separate opt-in server path, with explicit unavailable states. No live inference is claimed. See [configuration and verification](docs/strategic-ai.md).

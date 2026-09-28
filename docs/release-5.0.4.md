@@ -16,9 +16,9 @@ Based on the 28 September technical handoff and the 5.0.3 source at `c995b82`.
 
 ## Scope and remaining external dependencies
 
-- The frontend is 5.0.4. This release does not modify the 5.0.3 enterprise API or its database. CI still gates Pages on PostgreSQL API tests and Chromium journeys.
-- E5/Gemini and optional external LLM refinement are not enabled. The catalog is a reviewable proposal, not a validated occupational prediction dataset. Domain experts should approve titles, education mappings and any broad fallback references before institutional use.
-- The supplied report names legacy `miyar.py` / Colab credentials. Those originals are absent from this repository, and a current-tree provider-token scan plus a history search for the Gemini key prefix found none. This does not prove that exposed credentials were revoked; the owner must revoke them in the originating provider accounts.
+- Frontend and API source are 5.0.4. The strategic AI route requires a separate API deployment; no database migration is needed. CI gates Pages on PostgreSQL API tests and Chromium journeys.
+- The original objective-embedding → generation → validation → final-title path is restored in server source and selectable in Quick Trial. It remains opt-in and requires a separately configured embedding service and a new Gemini credential. See [the setup and live verification boundaries](strategic-ai.md). No real-provider inference has been verified. The catalog is a reviewable proposal, not a validated occupational prediction dataset. Domain experts should approve titles, education mappings and any broad fallback references before institutional use.
+- The supplied report names legacy `miyar.py` / Colab credentials. The subsequently attached original code contains credentials; they were not reused or copied into this repository. This does not prove that exposed credentials were revoked; the owner must revoke them in the originating provider accounts.
 - The prior release records a free PostgreSQL expiry of 13 October 2026. A paid upgrade/migration and Render workspace administration are separate actions; this frontend release makes no billing or database changes.
 - Historical priority/fallback files remain in git for traceability but are no longer loaded. Wider legacy UI-module consolidation and replacement of the old pitch PDFs are separate follow-ups; they are not represented as completed here.
 

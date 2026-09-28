@@ -2,7 +2,7 @@
 (function(root){
 'use strict';
 const catalog=root.MiyarRoleCatalog||(typeof require==='function'?require('./role-catalog.js'):null);
-function normalize(value){return String(value??'').normalize('NFKC').toLowerCase().replace(/[\u064b-\u065f\u0670ـ]/g,'').replace(/[أإآٱ]/g,'ا').replace(/ى/g,'ي').replace(/[٠-٩۰-۹]/g,c=>'٠١٢٣٤٥٦٧٨٩'.includes(c)?'٠١٢٣٤٥٦٧٨٩'.indexOf(c):'۰۱۲۳۴۵۶۷۸۹'.indexOf(c)).replace(/[^\p{L}\p{N}\s]/gu,' ').split(/\s+/).filter(Boolean).map(w=>w.replace(/^ال(?=.{3,})/,'')).join(' ');}
+function normalize(value){return String(value??'').normalize('NFKC').toLowerCase().replace(/[\u064b-\u065f\u0670ـ]/g,'').replace(/[أإآٱ]/g,'ا').replace(/ى/g,'ي').replace(/[٠-٩۰-۹]/g,c=>'٠١٢٣٤٥٦٧٨٩'.includes(c)?'٠١٢٣٤٥٦٧٨٩'.indexOf(c):'۰۱۲۳۴۵۶۷۸۹'.indexOf(c)).replace(/[^\p{L}\p{N}\s]/gu,' ').split(/\s+/).filter(Boolean).map(w=>w.replace(/^(?:و|ب|ك)ال(?=.{3,})/,'ال').replace(/^لل(?=.{3,})/,'ال').replace(/^ب(?=شؤون)/,'').replace(/^ال(?=.{3,})/,'')).join(' ');}
 const has=(text,term)=>(' '+normalize(text)+' ').includes(' '+normalize(term)+' ');
 const anchors=(text,terms)=>[...new Set(terms.map(normalize))].filter(x=>x&&has(text,x));
 const score=(text,terms)=>anchors(text,terms).reduce((n,x)=>n+Math.min(50,x.length),0);
@@ -16,7 +16,8 @@ function level(input){return explicitLevel(input.seniority||input.requestedLevel
 function detect(input={}){
  const field=input.domain||input.department||'',text=[input.objective||input.strategyObjective,input.responsibilities].filter(Boolean).join(' ');
  const ranked=catalog.families.map(f=>({family:f,fieldScore:score(field,f.terms),textScore:score(text,f.terms)+Math.max(0,...catalog.roles.filter(r=>r.family===f.id&&r.level==='specialist').map(r=>score(text,r.taskKeywords)))}));
- const fieldHit=[...ranked].sort((a,b)=>b.fieldScore-a.fieldScore)[0];
+ const broadField=['ادارة عامة','عام','general administration','general','all'].some(x=>normalize(field)===normalize(x));
+ const fieldHit=broadField?null:[...ranked].sort((a,b)=>b.fieldScore-a.fieldScore)[0];
  const textHit=[...ranked].sort((a,b)=>b.textScore-a.textScore)[0];
  let selected=fieldHit?.fieldScore?fieldHit:textHit?.textScore?textHit:null;
  // Maintenance is an explicit sub-domain of operations, not HR operations.

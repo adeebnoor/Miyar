@@ -1,0 +1,46 @@
+{
+  "source": "Original author-supplied data.xlsx; five nonempty engineering objective rows",
+  "status": "original-prototype-corpus-not-complete-occupation-coverage",
+  "roles": [
+    {
+      "domain": "Engineer",
+      "objective": "Optimize organizational performance by eliminating task duplication, improving personnel and equipment utilization, developing KPIs and standards, enhancing work methods, controlling resources, leveraging data-driven analysis, and continuous ongoing improvement through reporting.",
+      "title": "Industrial Engineer",
+      "educationCode": "071903",
+      "ssco": "214101",
+      "sourcePage": 447
+    },
+    {
+      "domain": "Engineer",
+      "objective": "Ensure successful project delivery by assessing site and soil conditions, developing and reviewing designs and specs, overseeing materials and execution, and producing documentation to maintain quality, compliance, and informed decision-making.",
+      "title": "Civil Engineer",
+      "educationCode": "073201",
+      "ssco": "214201",
+      "sourcePage": 474
+    },
+    {
+      "domain": "Engineer",
+      "objective": "Ensure efficient, reliable mechanical systems by designing projects, planning assembly/installation, optimizing operations and preventive maintenance programs, and delivering technical documentation that supports safe performance and continuous improvement across industrial facilities.",
+      "title": "Mechanical Engineer",
+      "educationCode": "071501",
+      "ssco": "214401",
+      "sourcePage": 438
+    },
+    {
+      "domain": "Engineer",
+      "objective": "Achieve safe, efficient chemical production by improving manufacturing processes, optimizing unit operations, implementing preventive maintenance, monitoring execution, and generating technical documentation to guide performance, compliance, continuous improvement, and innovation.",
+      "title": "Chemical Engineer",
+      "educationCode": "071101",
+      "ssco": "214501",
+      "sourcePage": 419
+    },
+    {
+      "domain": "Engineer",
+      "objective": "Deliver efficient mining operations by locating ore bodies, planning extraction and explosives use, improving ore quality, modernizing methods, and maintaining accurate documentation and databases to support compliance, productivity, and decisions.",
+      "title": "Mining Engineer",
+      "educationCode": "072401",
+      "ssco": "214601",
+      "sourcePage": 461
+    }
+  ]
+}

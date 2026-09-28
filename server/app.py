@@ -37,6 +37,8 @@ class AnalyzeRequest(Input):
     constraints:str=Field(default='',max_length=4000)
     def retrieval_text(self):
         return '\n'.join([self.text,*[name+': '+value for name,value in [('Field',self.field),('Seniority',self.seniority)] if value.strip()]])
+class StrategicRequest(AnalyzeRequest):
+    consentExternalProcessing:bool=False
 class FrameworkRequest(Input):framework:dict;reason:str=Field(min_length=3,max_length=1000)
 class WorkflowRequest(Input):steps:list[dict];reason:str=Field(min_length=3,max_length=1000)
 class BrandingRequest(Input):nameAr:str=Field(max_length=200);nameEn:str=Field(max_length=200);color:str=Field(pattern=r'^#[0-9a-fA-F]{6}$');footer:str=Field(max_length=500)
@@ -52,7 +54,7 @@ def create_app(db_url=None,jwt_secret=None,catalog=None):
     engine,Session=database(url);Base.metadata.create_all(engine)
     from .audit import protect
     protect(engine);references=catalog or Catalog()
-    app=FastAPI(title='Miyar Enterprise Workforce API',version='5.0.3',description='Tenant-scoped positions, revision-bound approvals, versioned classification references and explicit integration boundaries.')
+    app=FastAPI(title='Miyar Enterprise Workforce API',version='5.0.4',description='Tenant-scoped positions, revision-bound approvals, versioned classification references and explicit integration boundaries.')
     app.state.sessions=Session;app.state.catalog=references;app.state.secret=secret
     origins=[x.strip() for x in os.getenv('MIYAR_CORS_ORIGINS','https://adeebnoor.github.io').split(',') if x.strip()]
     app.add_middleware(CORSMiddleware,allow_origins=origins,allow_credentials=False,allow_methods=['GET','POST','PATCH'],allow_headers=['Authorization','Content-Type','Idempotency-Key'])
@@ -403,6 +405,31 @@ def create_app(db_url=None,jwt_secret=None,catalog=None):
         return {**result,'request':body.model_dump(),'constraintsReviewRequired':bool(body.constraints.strip()),'decision':decision,'auditEventId':record.id,'auditDigest':record.digest}
     @app.post('/api/v1/analyze/skills')
     def skills(body:AnalyzeRequest,user=Depends(current)):return {'skills':references.extract_skills(body.text),'method':'dictionary-extraction','reviewRequired':True}
+    from .strategic import StrategicEngine,capability as strategic_capability,Unavailable as StrategicUnavailable
+    strategic_engine=StrategicEngine()
+    strategic_slot=__import__('threading').BoundedSemaphore(1)
+    strategic_recent={}
+    @app.get('/api/v1/analyze/strategic/status')
+    def strategic_status():return strategic_capability()
+    @app.post('/api/v1/analyze/strategic')
+    def strategic(body:StrategicRequest,user=Depends(current),db=Depends(session)):
+        require(user,'line_manager','od_specialist','admin')
+        if not body.consentExternalProcessing:raise HTTPException(422,'Consent is required before sending job inputs to the configured AI providers')
+        if not body.field.strip() or not body.seniority.strip():raise HTTPException(422,'Enter the job domain and seniority for the strategic AI pipeline')
+        if not strategic_capability()['configured']:raise HTTPException(503,'The original strategic AI pipeline is not configured. No rule-based result was substituted.')
+        stamp=time.monotonic();key=(user.org_id,user.id)
+        if stamp-strategic_recent.get(key,-1e9)<15:raise HTTPException(429,'Wait briefly before running another AI analysis')
+        if not strategic_slot.acquire(blocking=False):raise HTTPException(429,'The strategic AI service is busy; try again shortly')
+        try:
+            strategic_recent[key]=stamp
+            if len(strategic_recent)>2000:
+                for old in list(strategic_recent):
+                    if stamp-strategic_recent[old]>900:strategic_recent.pop(old,None)
+            try:result=strategic_engine.analyze(body.model_dump(exclude={'consentExternalProcessing'}),reference_for(db,user).occupations['nodes'],float(os.getenv('MIYAR_STRATEGIC_THRESHOLD','0.85')))
+            except (StrategicUnavailable,ValueError):raise HTTPException(503,'Strategic AI could not complete the embedding, generation or validation step. No result was fabricated.')
+            record=audit(db,user,'strategic-ai.analyzed',{'inputDigest':digest(body.model_dump()),'method':result['method'],'route':result['route'],'similarity':result['cosineSimilarity'],'status':result['status'],'occupationCode':result['occupationCode']});db.commit()
+            return {**result,'auditEventId':record.id}
+        finally:strategic_slot.release()
     @app.post('/api/v1/analyze/semantic')
     def semantic(body:AnalyzeRequest,user=Depends(current),db=Depends(session)):
         try:return {**reference_for(db,user).semantic(body.retrieval_text()),'request':body.model_dump(),'constraintsReviewRequired':bool(body.constraints.strip())}
