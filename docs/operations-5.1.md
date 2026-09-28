@@ -33,3 +33,7 @@ Use expert-labeled representative goals (existing, ambiguous and genuinely new r
 ## Demonstration
 
 Use synthetic examples and separate named test roles in an isolated organization: line manager → OD → Total Rewards evaluation → Finance → final authority → export and verify. CI creates isolated database schemas/accounts and tests this flow without accessing production employee data. Public expert review is a temporary quota-limited synthetic-data trial, not the approval sandbox. Provider outage fallback is the explicitly labeled local rules/manual workflow; do not display it as successful AI.
+
+## Dependency remediation (29 September 2026)
+
+The dependency scan identified two WeasyPrint advisories. The locked PDF renderer was upgraded from 68.1 to 70.0, with presentational hints explicitly disabled and the existing deny-all resource fetcher retained. Official upstream advisories: https://github.com/Kozea/WeasyPrint/security/advisories/GHSA-jhhc-3hcp-qhm5 and https://doc.courtbouillon.org/weasyprint/stable/changelog.html. Recheck public bilingual PDF rendering and signature fields when changing this dependency. No advisory is suppressed in the scan workflow.

@@ -2,6 +2,10 @@
 import logging,time,uuid
 from threading import Lock
 logger=logging.getLogger('miyar.requests')
+logger.setLevel(logging.INFO)
+if not logger.handlers:
+    handler=logging.StreamHandler();handler.setFormatter(logging.Formatter('%(asctime)s %(levelname)s %(message)s'));logger.addHandler(handler)
+logger.propagate=False
 def install(app):
     lock=Lock();stats={'started':time.time(),'requests':0,'serverErrors':0}
     def snapshot():

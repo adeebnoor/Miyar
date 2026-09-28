@@ -4,7 +4,7 @@ let template=fs.readFileSync('web/index.template.html','utf8');
 const scripts=[...template.matchAll(/<script defer src="\.\/([^?]+)\?[^\"]+"><\/script>/g)].map(m=>m[1]);
 const styles=[...template.matchAll(/<link rel="stylesheet" href="\.\/([^?]+)\?[^\"]+">/g)].map(m=>m[1]);
 scripts.push('audit-improvements.js');styles.push('audit-improvements.css');
-const all=[...scripts,...styles,'trust.js','trust.css',...fs.readdirSync('server').filter(x=>x.endsWith('.py')).map(x=>'../server/'+x)];
+const all=[...scripts,...styles,'trust.js','trust.css','../server/requirements-lock.txt',...fs.readdirSync('server').filter(x=>x.endsWith('.py')).map(x=>'../server/'+x)];
 const hash=crypto.createHash('sha256').update(version).update(template).update(fs.readFileSync(__filename)).update(fs.readFileSync('dist/assets/arabic.woff2')); for(const f of all)hash.update(f).update(fs.readFileSync(path.join('dist',f)));const buildId=hash.digest('hex').slice(0,16);
 const manifest={version,buildId,releasedAt:'2026-09-29',changes:['Separated strategic AI and skills status','Lazy references and compressed assets','Account recovery and framework preview','Salary band CSV import','Privacy, methodology, status and audit register'],assets:{scripts,styles}};
 fs.writeFileSync('dist/release.json',JSON.stringify(manifest,null,2)+'\n');fs.writeFileSync('dist/release-config.js','window.MIYAR_RELEASE='+JSON.stringify(manifest)+';\n');

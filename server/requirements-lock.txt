@@ -63,6 +63,6 @@ typing-inspection==0.4.4
 typing_extensions==4.16.0
 urllib3==2.7.0
 uvicorn==0.52.4
-weasyprint==68.1
+weasyprint==70.0
 webencodings==0.6.1
 zopfli==0.4.3
