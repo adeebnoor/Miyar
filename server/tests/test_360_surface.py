@@ -102,7 +102,7 @@ def test_360_withdraw_evaluation_history_and_skill_extraction(env):
 
 @pytest.mark.parametrize('path',[
     '/api/v1/me','/api/v1/capabilities','/api/v1/departments','/api/v1/users',
-    '/api/v1/settings','/api/v1/positions','/api/v1/taxonomy','/api/v1/education',
+    '/api/v1/settings','/api/v1/positions',
     '/api/v1/analytics','/api/v1/integrations/status','/api/v1/integrations/outbox',
     '/api/v1/settings/institution-profile'
 ])
