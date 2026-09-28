@@ -35,3 +35,15 @@ test('Phase 2 workspace calculates HC gap, saves the plan and hands a positive g
   assert.deepEqual(a.errors,[]);
  }finally{a.dom.window.close();}
 });
+
+test('required manpower numbers reject blanks instead of manufacturing zero supply',()=>{
+ for(const key of ['baselineWorkload','targetWorkload','capacityPerFte','currentFte','horizonYears','attritionPercent','committedHires','internalSupply','productivityGainPercent'])for(const value of ['', ' ',false])assert.throws(()=>M.plan({...M.example,[key]:value}),key);
+ for(const value of [null,undefined])assert.throws(()=>M.plan({...M.example,currentFte:value}));
+ assert.equal(M.plan({...M.example,currentFte:0}).input.currentFte,0);
+});
+
+test('fractional gaps use unrounded quantities consistently at headcount boundaries',()=>{
+ const p=M.plan({...M.example,targetWorkload:152,currentFte:2,horizonYears:1,attritionPercent:0,productivityGainPercent:0});
+ assert.equal(p.scenarios.base.final.rawGapFte,1.04);assert.equal(p.scenarios.base.final.gapHeadcount,2);assert.equal(p.actions[0].quantity,2);
+ const exact=M.plan({...M.example,targetWorkload:150,currentFte:2,horizonYears:3,attritionPercent:0,productivityGainPercent:0});assert.equal(exact.scenarios.base.final.gapHeadcount,1);
+});

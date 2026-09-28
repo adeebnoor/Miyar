@@ -26,5 +26,12 @@ test('Phase 3 workspace calculates and saves an illustrative organization-band s
 });
 
 test('manpower gap can hand headcount and institution grade into compensation without inventing a salary band',async()=>{
- const a=await app('#enterprise/manpower');try{const I=a.w.MiyarInstitutionProfile;I.saveLocal(I.profileExample(),true);const mp=a.w.document.querySelector('.mp-page');assert.ok(mp);mp.querySelector('[data-mp-example]').click();mp.querySelector('[data-mp-run]').click();await new Promise(r=>setTimeout(r,10));const button=a.w.document.querySelector('[data-cp-from-mp]');assert.ok(button);button.click();await settle();await new Promise(r=>setTimeout(r,10));assert.equal(a.w.location.hash,'#enterprise/compensation');assert.equal(a.$('cp-role').value,'Human Capital Projects & Operations Manager');assert.equal(a.$('cp-headcount').value,'1');assert.match(a.$('cp-grade').value,/G11/);assert.equal(a.$('cp-min').value,'');assert.equal(a.$('cp-mid').value,'');assert.equal(a.$('cp-max').value,'');assert.deepEqual(a.errors,[]);}finally{a.dom.window.close();}
+ const a=await app('#enterprise/manpower');try{const I=a.w.MiyarInstitutionProfile;I.saveLocal(I.profileExample(),true);const mp=a.w.document.querySelector('.mp-page');assert.ok(mp);mp.querySelector('[data-mp-example]').click();mp.querySelector('[data-mp-run]').click();await new Promise(r=>setTimeout(r,10));const button=a.w.document.querySelector('[data-cp-from-mp]');assert.ok(button);button.click();await settle();await new Promise(r=>setTimeout(r,10));assert.equal(a.w.location.hash,'#enterprise/compensation');for(let i=0;i<50&&!a.$('cp-role');i++)await new Promise(r=>setTimeout(r,20));assert.equal(a.$('cp-role').value,'Human Capital Projects & Operations Manager');assert.equal(a.$('cp-headcount').value,'1');assert.match(a.$('cp-grade').value,/G11/);assert.equal(a.$('cp-min').value,'');assert.equal(a.$('cp-mid').value,'');assert.equal(a.$('cp-max').value,'');assert.deepEqual(a.errors,[]);}finally{a.dom.window.close();}
+});
+
+test('required compensation numbers reject empty values while explicit zero stays valid',()=>{
+ for(const key of ['bandMin','bandMid','bandMax','targetPenetration','headcount','oncostPercent'])for(const value of ['', ' ',false])assert.throws(()=>C.evaluate({...C.example,[key]:value}),key);
+ for(const value of [null,undefined])assert.throws(()=>C.evaluate({...C.example,bandMin:value}));
+ assert.equal(C.evaluate({...C.example,bandMin:0,targetPenetration:0,oncostPercent:0}).result.targetSalary,0);
+ assert.equal(C.evaluate({...C.example,currentSalary:' '}).result.compaRatio,null);
 });
