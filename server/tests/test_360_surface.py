@@ -130,7 +130,7 @@ def test_360_public_reference_catalogs_are_intentionally_readable_without_sign_i
     app,c,auth,position=env
     taxonomy=c.get('/api/v1/taxonomy',params={'q':'مهندس مدني','limit':5})
     assert taxonomy.status_code==200
-    assert any(str(row.get('code'))=='214201' for row in taxonomy.json())
+    assert any(str(row.get('code'))=='214201' for row in taxonomy.json()['items'])
     education=c.get('/api/v1/education',params={'limit':5})
     assert education.status_code==200
     assert education.json()['release']
