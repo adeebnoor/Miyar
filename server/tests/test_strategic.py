@@ -97,6 +97,8 @@ def test_endpoint_success_audits_only_digest_and_rate_limits(env,monkeypatch):
     path='/api/v1/analyze/strategic';body={**CONTEXT,'consentExternalProcessing':True}
     r=c.post(path,headers=auth(),json=body);assert r.status_code==200,r.text
     assert r.json()['occupationCode']=='214201' and r.json()['auditEventId']
+    observed=c.get(path+'/status').json();assert observed['liveVerified'] and observed['lastSuccessfulRunAt']
+    assert r.json()['embeddingModel']==E5_MODEL
     assert c.post(path,headers=auth(),json=body).status_code==429
     with app.state.sessions() as db:
         event=db.scalar(select(AuditEvent).where(AuditEvent.action=='strategic-ai.analyzed'))
@@ -115,3 +117,32 @@ def test_provider_failure_is_redacted_and_no_fabricated_title(env,monkeypatch):
 def test_exact_arabic_reference_alias_retains_source_code():
     e,_,_=engine(title='مهندس مدني')
     assert e.analyze(CONTEXT,[{**NODES[0],'titleAr':'مهندس مدني'}])['occupationCode']=='214201'
+
+@pytest.mark.parametrize('kind,task',[('query','RETRIEVAL_QUERY'),('passage','RETRIEVAL_DOCUMENT')])
+def test_gemini_embeddings_use_one_server_key_and_preserve_real_vector_order(monkeypatch,kind,task):
+    import server.strategic as module
+    seen=[]
+    monkeypatch.setenv('MIYAR_STRATEGIC_EMBEDDING_MODE','gemini');monkeypatch.setenv('MIYAR_STRATEGIC_EMBEDDING_MODEL','gemini-embedding-001');monkeypatch.setenv('MIYAR_STRATEGIC_GEMINI_KEY','private-test-generation')
+    class Response:
+        content=b'{}'
+        def raise_for_status(self):pass
+        def json(self):return {'embeddings':[{'values':[3,0]},{'values':[0,2]}]}
+    class Client:
+        def __init__(self,**kw):pass
+        def __enter__(self):return self
+        def __exit__(self,*a):pass
+        def post(self,url,**kw):seen.append((url,kw));return Response()
+    monkeypatch.setattr(module.httpx,'Client',Client)
+    assert Embeddings()(['Objective A','Objective B'],kind)==[[1.,0.],[0.,1.]]
+    url,kw=seen[0];assert url=='https://generativelanguage.googleapis.com/v1beta/models/gemini-embedding-001:batchEmbedContents'
+    assert 'key=' not in url and kw['headers']['x-goog-api-key']=='private-test-generation'
+    assert [x['content']['parts'][0]['text'] for x in kw['json']['requests']]==['Objective A','Objective B']
+    assert all(x['taskType']==task for x in kw['json']['requests'])
+
+def test_one_key_configuration_does_not_claim_live_inference(monkeypatch):
+    from server.strategic import capability
+    configure(monkeypatch);monkeypatch.setenv('MIYAR_STRATEGIC_EMBEDDING_MODE','gemini');monkeypatch.setenv('MIYAR_STRATEGIC_EMBEDDING_MODEL','gemini-embedding-001')
+    monkeypatch.delenv('MIYAR_STRATEGIC_EMBEDDING_KEY');monkeypatch.delenv('MIYAR_STRATEGIC_EMBEDDING_ENDPOINT')
+    r=capability();assert r['configured'] and r['embeddingConfigured'] and r['generationConfigured']
+    assert not r['liveVerified'] and r['embeddingModel']=='gemini-embedding-001' and r['provider']=='Google Gemini'
+    monkeypatch.delenv('MIYAR_STRATEGIC_GEMINI_KEY');assert not capability()['configured']

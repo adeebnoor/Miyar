@@ -1,6 +1,7 @@
 """Tenant-scoped API. Approval checks are enforced here, never by UI role selectors."""
-import copy,json,os,re,secrets,time,math,csv,zipfile
+import copy,json,os,re,secrets,time,math,csv,zipfile,threading
 from contextlib import asynccontextmanager
+from datetime import datetime,timezone
 from typing import Annotated,Literal
 from fastapi import FastAPI,Depends,HTTPException,UploadFile,File,Request,Header,Query
 from fastapi.middleware.cors import CORSMiddleware
@@ -54,7 +55,7 @@ def create_app(db_url=None,jwt_secret=None,catalog=None):
     engine,Session=database(url);Base.metadata.create_all(engine)
     from .audit import protect
     protect(engine);references=catalog or Catalog()
-    app=FastAPI(title='Miyar Enterprise Workforce API',version='5.0.4',description='Tenant-scoped positions, revision-bound approvals, versioned classification references and explicit integration boundaries.')
+    app=FastAPI(title='Miyar Enterprise Workforce API',version='5.0.5',description='Tenant-scoped positions, revision-bound approvals, versioned classification references and explicit integration boundaries.')
     app.state.sessions=Session;app.state.catalog=references;app.state.secret=secret
     origins=[x.strip() for x in os.getenv('MIYAR_CORS_ORIGINS','https://adeebnoor.github.io').split(',') if x.strip()]
     app.add_middleware(CORSMiddleware,allow_origins=origins,allow_credentials=False,allow_methods=['GET','POST','PATCH'],allow_headers=['Authorization','Content-Type','Idempotency-Key'])
@@ -407,10 +408,11 @@ def create_app(db_url=None,jwt_secret=None,catalog=None):
     def skills(body:AnalyzeRequest,user=Depends(current)):return {'skills':references.extract_skills(body.text),'method':'dictionary-extraction','reviewRequired':True}
     from .strategic import StrategicEngine,capability as strategic_capability,Unavailable as StrategicUnavailable
     strategic_engine=StrategicEngine()
-    strategic_slot=__import__('threading').BoundedSemaphore(1)
+    strategic_slot=threading.BoundedSemaphore(1)
     strategic_recent={}
+    strategic_verified={}
     @app.get('/api/v1/analyze/strategic/status')
-    def strategic_status():return strategic_capability()
+    def strategic_status():return {**strategic_capability(),**strategic_verified}
     @app.post('/api/v1/analyze/strategic')
     def strategic(body:StrategicRequest,user=Depends(current),db=Depends(session)):
         require(user,'line_manager','od_specialist','admin')
@@ -428,7 +430,9 @@ def create_app(db_url=None,jwt_secret=None,catalog=None):
             try:result=strategic_engine.analyze(body.model_dump(exclude={'consentExternalProcessing'}),reference_for(db,user).occupations['nodes'],float(os.getenv('MIYAR_STRATEGIC_THRESHOLD','0.85')))
             except (StrategicUnavailable,ValueError):raise HTTPException(503,'Strategic AI could not complete the embedding, generation or validation step. No result was fabricated.')
             record=audit(db,user,'strategic-ai.analyzed',{'inputDigest':digest(body.model_dump()),'method':result['method'],'route':result['route'],'similarity':result['cosineSimilarity'],'status':result['status'],'occupationCode':result['occupationCode']});db.commit()
-            return {**result,'auditEventId':record.id}
+            strategic_verified.update(liveVerified=True,lastSuccessfulRunAt=datetime.now(timezone.utc).isoformat())
+            caps=strategic_capability()
+            return {**result,'auditEventId':record.id,'embeddingModel':caps['embeddingModel'],'generationModel':caps['generationModel'],'embeddingMode':caps['embeddingMode']}
         finally:strategic_slot.release()
     @app.post('/api/v1/analyze/semantic')
     def semantic(body:AnalyzeRequest,user=Depends(current),db=Depends(session)):

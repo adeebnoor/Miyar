@@ -91,3 +91,7 @@ The supplied reference editions do not establish current regulatory requirements
 ## Expert review update 5.0.4
 
 See [release notes](docs/release-5.0.4.md). The shared catalog provides 79 proposed role/level mappings in 15 families. Each code is checked against the supplied snapshot. Business titles and education links still require domain-expert approval. Quick Trial and OD share field priority, Arabic normalization and seniority rules. The original objective Embedding → LLM pipeline is restored as a separate opt-in server path, with explicit unavailable states. No live inference is claimed. See [configuration and verification](docs/strategic-ai.md).
+
+## Hosted AI setup 5.0.5
+
+[Strategic AI configuration](docs/strategic-ai.md) now supports one server-side Gemini key for objective embeddings and title generation. The hosted configuration uses Gemini Embedding rather than E5 and displays the actual model IDs; the E5 mode remains available. A successful real-provider request is still required before declaring AI ready. Team reviewers sign in using their Miyar organization accounts, select the semantic pipeline and accept the data-processing notice.
