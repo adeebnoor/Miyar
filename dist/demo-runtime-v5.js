@@ -46,7 +46,7 @@ const HR_INTENTS=[
  ['od',['تطوير تنظيمي','تطوير مؤسسي','الهياكل التنظيمية','هيكل تنظيمي','الهيكل التنظيمي','تصميم الهيكل','تصميم الهياكل','تصميم تنظيمي','نطاقات المسؤولية','organizational development','organization development','organization design','organizational design','organization structure','organizational structure']],
  ['jobAnalysis',['تحليل وظائف','تحليل الوظائف','تصنيف وظائف','تصنيف مهن','job analysis','job classification']],
  ['personnel',['شؤون الموظفين','شؤون موظفين','شؤون الافراد','شؤون الأفراد','personnel affairs','personnel']],
- ['hrOperations',['عمليات الموارد البشرية','عمليات رأس المال البشري','hr operations','human resources operations']],
+ ['hrOperations',['عمليات الموارد البشرية','عمليات رأس المال البشري','خدمات الموارد البشرية','خدمة الموارد البشرية','تشغيل خدمات الموارد البشرية','الخدمات المشتركة للموارد البشرية','الخدمات المشتركة','خدمات الموظفين','hr operations','human resources operations','hr services','human resources services','hr shared services']],
  ['attendance',['دوام','حضور وانصراف','الحضور والانصراف','attendance','timekeeping']]
 ];
 const HR_ROLE_LEVELS={
