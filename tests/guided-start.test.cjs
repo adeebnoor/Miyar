@@ -53,7 +53,7 @@ test('HR public directory is derived from the bundled HR taxonomy units and supp
 
 test('HR payroll recommendation separates the business title from the classification title',()=>{
  const src=fs.readFileSync(path.join(dist,'demo-runtime-v5.js'),'utf8');
- assert.match(src,/payroll:\{ar:'أخصائي رواتب'/);
+ assert.match(src,/payroll:\{specialist:\{ar:'أخصائي رواتب'/);
  assert.match(src,/code:'242322'/);
  assert.match(src,/CLASSIFICATION REFERENCE/);
 });
