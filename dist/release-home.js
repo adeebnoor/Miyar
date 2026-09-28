@@ -12,6 +12,12 @@ function apply(){
  const home=document.getElementById('view-home');if(!home||home.hidden||!home.querySelector('.lp-hero'))return false;
  const copy=home.querySelector('.lp-hero-copy');
  if(copy){
+  if(!copy.querySelector('[data-full-site-ai]')){
+   const entry=document.createElement('div');entry.className='release-ai-entry';
+   entry.innerHTML='<a class="lp-button lp-primary" href="#demo" data-full-site-ai>'+t('جرّب الهدف الاستراتيجي بالذكاء الاصطناعي','Try strategic-objective AI')+'</a><p>'+t('للخبراء: الهدف ← المسمى والرمز ← تصميم الوظيفة، ثم أكمل التخطيط والتعويضات من القائمة.','For experts: objective → title and code → job design, then continue planning and compensation from the menu.')+'</p>';
+   entry.querySelector('a').addEventListener('click',()=>{try{sessionStorage.setItem('miyar-open-ai','1');}catch{}});
+   copy.append(entry);
+  }
   const eyebrow=copy.querySelector('.lp-eyebrow');if(eyebrow)eyebrow.textContent=t('ابدأ هنا · أقل مدخل ممكن','START HERE · MINIMUM INPUT');
  }
  home.querySelectorAll('.lp-nav [data-release-nav]').forEach(x=>x.remove());

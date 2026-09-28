@@ -28,3 +28,17 @@ The trial is for role design, not decisions about employees. Matching coverage
 is the five original engineering objective examples. Generated titles and codes
 remain proposals requiring professional review; low similarity is not proof
 that a role is new or lacks a code in the complete occupation directory.
+
+## Full website integration (5.0.6)
+
+The main website now exposes **Try strategic-objective AI** on its homepage.
+This opens the existing analysis screen with AI selected. Reviewers can load a
+synthetic payroll example, consent to provider processing, run the same bounded
+public expert endpoint and transfer the resulting title and source-linked codes
+to OD. Generated unmapped roles carry empty codes into OD. The result card also
+exports input, output and optional reviewer comments locally as JSON.
+
+All existing site sections remain in the main navigation. Organization accounts
+continue using the authenticated strategic endpoint. Public expert access does
+not log users in or grant organizational approval privileges. Its expiry affects
+only public AI requests, not the local OD, manpower or compensation tools.
