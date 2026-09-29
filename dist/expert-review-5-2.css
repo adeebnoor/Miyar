@@ -1,0 +1,42 @@
+/* 5.2 expert review: WCAG AA text contrast, calmer programmatic focus and small-screen fixes. */
+/* Hero: the direct-design link sits on the white guided card; the steps and expert note sit on the dark hero. */
+.lp-guided-start .lp-secondary{color:#146954;text-decoration-color:rgba(20,105,84,.45)}
+.lp-guided-start .lp-secondary:hover{color:#0e4f3f}
+.lp-hero .lp-guided-steps>div{background:rgba(255,255,255,.07);border-color:rgba(255,255,255,.16)}
+.lp-hero .lp-guided-steps span{color:#9bd5be}
+.lp-hero .lp-guided-steps strong{color:#fff}
+.lp-hero .lp-guided-steps small{color:#cfe0da}
+.lp-hero .release-ai-entry{border-top-color:rgba(255,255,255,.16)}
+.lp-hero .release-ai-entry p{color:#cfe0da}
+.lp-hero .lp-preview-label>span:last-child{color:#b9cdc7}
+.lp-proof small{color:#5a6e71}
+/* Workspace chrome */
+.sidebar .nav-group-label,.sidebar .sidebar-label{color:#9db8b0}
+.main-footer a,.main-footer span,.main-footer .audit-links a{color:#5a6e71}
+.page-heading .edition,.ent-service-heading .edition,.edition{color:#5a6e71}
+.section-index{color:#5a6e71}
+.breadcrumb .slash{color:#5a6e71}
+.breadcrumb>span:first-child{color:#56696c}
+.context-strip small{color:#56696c}
+.context-strip i,.scenario-arrow{color:#5a6e71}
+.ent-directory small,.ent-card small{color:#5b7069}
+.od-engine-sidebar-link small,.nav-link small{color:#b9cdc7}
+.mp-heading>div>span,.cp-heading>div>span,.mp-result-head>div>span,.cp-result-head>div>span{color:#0f5a47}
+.institution-card small,.od-setup-grid small{color:#56696c}
+/* Programmatic focus targets (route headings, main) are not controls; keep the ring for keyboard controls only. */
+h1[tabindex="-1"]:focus,h2[tabindex="-1"]:focus,h3[tabindex="-1"]:focus,main[tabindex="-1"]:focus,[id$="-heading"][tabindex="-1"]:focus{outline:none}
+/* Short action links must not break mid-word on narrow cards. */
+[data-inst-open]{white-space:nowrap}
+/* Muted text token: 5:1 on the paper background (was 4.0:1). */
+:root{--muted:#5a6e71}
+.small-badge{color:#4f6360}
+.required{color:#146954}
+#session-count{color:#5a6e71}
+.breadcrumb .slash{opacity:1;color:#8a9b9e}
+/* Phases 2 and 3 are live workspaces, so the OD roadmap chips link to them. */
+.od-roadmap a{padding:10px;border-radius:10px;background:#fff;border:1px solid #cfe3da;color:#146954;text-align:center;font-size:.8rem;font-weight:700;text-decoration:none}
+.od-roadmap a:hover{background:#eef6f2}
+.od-engine-sidebar-link small{color:#c5edac}
+/* One primary action in the hero: the AI entry is a secondary path for experts. */
+.lp-hero .release-ai-entry .lp-button{background:transparent;color:#e3f3d8;border:1px solid rgba(197,237,172,.6);box-shadow:none}
+.lp-hero .release-ai-entry .lp-button:hover{background:rgba(197,237,172,.12);color:#fff}

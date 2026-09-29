@@ -11,10 +11,10 @@ function mount(host,{t,lang,icon,switchLanguage,example}){
   ['shield',t('الاعتماد','Approval'),t('مرّر الإصدار نفسه عبر المراجعات واحفظ أثر القرار.','Move the same revision through reviews and retain the decision trail.')]
  ];
  const stages=[
-  [t('التطوير التنظيمي','Organization development'),t('هل الدور مطلوب ومصمم بصورة سليمة؟','Is the role needed and well designed?')],
-  [t('التعويضات والمزايا','Total Rewards'),t('ما قيمة الدور ودرجته؟','How should the role be evaluated?')],
-  [t('المالية والتخطيط','Finance & Planning'),t('هل العدد والتكلفة منسجمان مع الخطة؟','Do headcount and cost fit the plan?')],
-  [t('صاحب الصلاحية','Final authority'),t('هل اكتملت أدلة القرار؟','Is the decision evidence complete?')]
+  [t('التطوير التنظيمي','Organization development'),t('هل الدور مطلوب ومصمم بصورة سليمة؟','Is the role needed and well designed?'),t('يتحقق من المبرر والبدائل وموقع الدور في الهيكل ونطاق الإشراف وربطه بالمرجع المهني.','Checks the business case, alternatives, position in the structure, span of control and occupation reference.')],
+  [t('التعويضات والمزايا','Total Rewards'),t('ما قيمة الدور ودرجته؟','How should the role be evaluated?'),t('يوثّق أدلة التقييم الوظيفي والدرجة ونطاق الراتب المعتمد وموضع العرض داخل النطاق.','Documents job-evaluation evidence, the grade, the approved salary band and offer positioning.')],
+  [t('المالية والتخطيط','Finance & Planning'),t('هل العدد والتكلفة منسجمان مع الخطة؟','Do headcount and cost fit the plan?'),t('يطابق العدد والتكلفة السنوية مع الميزانية المعتمدة وخطة القوى العاملة.','Reconciles headcount and annual cost with the approved budget and workforce plan.')],
+  [t('صاحب الصلاحية','Final authority'),t('هل اكتملت أدلة القرار؟','Is the decision evidence complete?'),t('يعتمد الطلب أو يعيده وفق مصفوفة الصلاحيات؛ ولا يعتمد مقدم الطلب طلبه بنفسه.','Approves or returns the request under the delegation of authority; requesters cannot approve their own requests.')]
  ];
  host.innerHTML=`
  <header class="lp-header"><div class="lp-wrap lp-header-inner">${brand}
@@ -88,7 +88,7 @@ function mount(host,{t,lang,icon,switchLanguage,example}){
 
   <section id="lp-governance" class="lp-governance" aria-labelledby="lp-governance-title"><div class="lp-wrap">
    <div class="lp-governance-intro"><div><span class="lp-eyebrow">${t('بعد أن نحدد الدور، تبدأ الحوكمة','GOVERNANCE FOLLOWS THE ROLE DECISION')}</span><h2 id="lp-governance-title">${t('لا يتوقف معيار<br><em>عند الترشيح.</em>','Miyar does not stop<br><em>at the suggestion.</em>')}</h2></div><p>${t('بعد تحديد الاحتياج والدور، ينتقل نفس القرار إلى تصميم المنصب والتقييم والتمويل والاعتماد، مع ربط كل مراجعة بالإصدار الذي راجعته.','After the need and role are defined, the same decision moves into position design, evaluation, finance and approval, with every review tied to the revision that was assessed.')}</p></div>
-   <ol class="lp-workflow">${stages.map(([title,question],i)=>`<li><span class="lp-flow-number">0${i+1}</span><h3>${title}</h3><strong>${question}</strong><p>${t('مراجعة مستقلة مع حالة واضحة وأثر محفوظ على الإصدار.','An independent review with explicit status and a retained revision trail.')}</p></li>`).join('')}</ol>
+   <ol class="lp-workflow">${stages.map(([title,question,evidence],i)=>`<li><span class="lp-flow-number">0${i+1}</span><h3>${title}</h3><strong>${question}</strong><p>${evidence}</p></li>`).join('')}</ol>
    <div class="lp-governance-foot">${icon('route')}<p>${t('إذا كان لديك هدف ولم تعرف الدور بعد، ابدأ بالمحرك الاستراتيجي. إذا كان لديك منصب محدد بالفعل، ابدأ مباشرة من مساحة العمل.','If you have an objective but not the role, start with the strategic engine. If the position is already defined, start directly in the workspace.')}</p><a href="#demo">${t('ابدأ بالمحرك','Start with the engine')} <span aria-hidden="true">${t('←','→')}</span></a></div>
   </div></section>
 

@@ -68,6 +68,8 @@ function connectionEditor(){const host=document.getElementById('ent-admin');if(!
 document.addEventListener('click',event=>{if(event.target.closest('[data-od-apply]'))setTimeout(()=>{applyInstitution();decorateOD();},0);});
 window.addEventListener('miyar:od-generated',()=>{decorateOD();renderContext();});
 window.addEventListener('miyar:navigate',event=>{const tab=event.detail?.tab;if(tab==='create')setTimeout(renderContext,0);if(tab==='connection')setTimeout(connectionEditor,0);});window.addEventListener('miyar:institution-profile',()=>{renderContext();decorateOD();});
+// A modal setup dialog must not stay open over a different route (browser back/forward or deep links).
+window.addEventListener('hashchange',()=>{const dialog=document.querySelector('dialog.institution-dialog');if(dialog?.open)dialog.close();});
 window.MiyarInstitutionProfile={KEY,SCHEMA,read,saveLocal,matchUnit,matchGrade,unitPath,profileExample,normalizeProfile,validateProfile};
 setTimeout(()=>{const current=window.MiyarEnterprise?.session?.();if(current&&!session)setSession(current);renderContext();connectionEditor();},0);
 })();

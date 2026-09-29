@@ -27,9 +27,9 @@ for(const lang of ['ar','en'])for(const [kind,prefix,result,invalid,value] of [[
 test('exact manpower gap reaches both compensation and OD without rounding away headcount',async({page})=>{
  await setup(page,'#enterprise/manpower');await page.locator('[data-mp-example]').click();
  for(const [key,value] of Object.entries({target:152,current:2,horizon:1,attrition:0,productivity:0}))await page.locator('#mp-'+key).fill(String(value));
- await page.locator('[data-mp-run]').click();await expect(page.locator('.mp-actions')).toContainText('HIRE · 2');await page.locator('[data-cp-from-mp]').click();await expect(page.locator('#cp-headcount')).toHaveValue('2');
+ await page.locator('[data-mp-run]').click();await expect(page.locator('[data-mp-option="buy"]')).toContainText('Up to 2 position');await page.locator('[data-cp-from-mp]').click();await expect(page.locator('#cp-headcount')).toHaveValue('2');
  await page.goto(BASE+'#enterprise/manpower');await page.locator('[data-mp-od]').click();await expect(page.locator('[data-number="headcount"]')).toHaveValue('2');
- await page.goto(BASE+'#enterprise/manpower');await page.locator('#mp-current').fill('10');await page.locator('[data-mp-run]').click();await expect(page.locator('[data-cp-from-mp]')).toHaveCount(0);await expect(page.locator('[data-mp-od]')).toHaveCount(0);await expect(page.locator('.mp-actions')).toContainText('MOVE');
+ await page.goto(BASE+'#enterprise/manpower');await page.locator('#mp-current').fill('10');await page.locator('[data-mp-run]').click();await expect(page.locator('[data-cp-from-mp]')).toHaveCount(0);await expect(page.locator('[data-mp-od]')).toHaveCount(0);await expect(page.locator('.mp-hold')).toContainText('Redeploy before hiring');
 });
 
 test('financial reporting recommendations exclude unrelated labor inspection',async({page})=>{

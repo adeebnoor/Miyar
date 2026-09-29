@@ -1,6 +1,14 @@
-## Current release: 5.1.0
+## Current release: 5.2.0
 
-The full website remains at https://adeebnoor.github.io/Miyar/?v=5.1.0#home. See [consultant audit response](docs/audit-remediation-5.1.0.md) for implemented, partial and pending findings and [operations](docs/operations-5.1.md) for release gates, recovery and key rotation. Strategic Gemini objective matching and semantic skill matching are separate capabilities. Public [status and methodology](https://adeebnoor.github.io/Miyar/trust.html#status) describe current limits. Run `npm run build` after changes; commit the generated release and assets together.
+The full website is at https://adeebnoor.github.io/Miyar/?v=5.2.0#home. Release 5.2 follows an [HR expert review](docs/hr-expert-review-5.2.md) of every service.
+
+- **Manpower planning:** a workforce bridge (backfill vs. growth), known retirements, Buy/Build/Borrow/Bind/Bot options, gap sensitivity and an organization-entered localization target.
+- **Compensation:** band design checks, compa-ratio zones, bring-to-minimum cost and fixed allowances.
+- **Job evaluation:** points map to the approved institution grade.
+- **Structure check:** spans of control.
+- **Experience:** WCAG AA contrast fixes and a UTF-8 production bundle.
+
+The [5.1.0 consultant audit response](docs/audit-remediation-5.1.0.md) and [operations](docs/operations-5.1.md) guides still apply for release gates, recovery and key rotation. Strategic Gemini objective matching and semantic skill matching are separate capabilities. Public [status and methodology](https://adeebnoor.github.io/Miyar/trust.html#status) pages describe current limits. Run `npm run build` after changes and commit the generated release and assets together.
 
 # معيار | MI’YĀR 5.0
 

@@ -1,13 +1,13 @@
 {
-  "version": "5.1.0",
-  "buildId": "ac0922aadf004af7",
+  "version": "5.2.0",
+  "buildId": "353bc144d8880652",
   "releasedAt": "2026-09-29",
   "changes": [
-    "Separated strategic AI and skills status",
-    "Lazy references and compressed assets",
-    "Account recovery and framework preview",
-    "Salary band CSV import",
-    "Privacy, methodology, status and audit register"
+    "Workforce bridge, Buy/Build/Borrow/Bind/Bot options, gap sensitivity and localization target",
+    "Salary band diagnostics, compa-ratio zones, bring-to-minimum cost and fixed allowances",
+    "Job evaluation mapped to the approved institution grade with factor breakdown",
+    "Spans of control in the structure check",
+    "WCAG AA contrast, localized labels and UTF-8 production bundle"
   ],
   "assets": {
     "scripts": [
@@ -60,6 +60,7 @@
       "guided-start-v5.css",
       "qa-ui-v5.css",
       "accessibility-perf-v5.css",
+      "expert-review-5-2.css",
       "audit-improvements.css"
     ]
   }
