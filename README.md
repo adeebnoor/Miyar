@@ -1,6 +1,6 @@
-## Current release: 6.0.0
+## Current release: 6.0.1
 
-The full website is at https://adeebnoor.github.io/Miyar/?v=6.0.0#home. Release 6.0 answers the technical requirements document; the [requirements response register](docs/requirements-response-6.0.md) maps every item to what was done, what remains and who owns it. It adds:
+The full website is at https://adeebnoor.github.io/Miyar/?v=6.0.1#home. 6.0.1 makes the changes visible to returning users: a what's-new panel, New badges, a guided 10-minute tour with demo data and plain decision summaries ([team update](docs/team-update-6.0.md)). Release 6.0 answers the technical requirements document; the [requirements response register](docs/requirements-response-6.0.md) maps every item to what was done, what remains and who owns it. It adds:
 
 - Two-step sign-in (TOTP) with audited administrator reset.
 - An isolated synthetic demo tenant, rebuilt with `python -m server.cli seed-demo` or the operator-token endpoint, plus one-click local demo data.
