@@ -165,7 +165,7 @@ test('homepage approval stages describe distinct reviewer evidence and one prima
 test('production bundle keeps Arabic as UTF-8 text and loads the 5.2 accessibility styles last',()=>{
  const release=JSON.parse(fs.readFileSync(path.join(dir,'release.json'),'utf8'));
  const js=fs.readFileSync(path.join(dir,'miyar-'+release.buildId+'.js'),'utf8');assert.ok(js.includes('تخطيط القوى العاملة'));assert.ok((js.match(/\\u06[0-9a-f]{2}/gi)||[]).length<100,'only regex ranges stay escaped');assert.ok(!js.includes('\\u062A\\u062E\\u0637\\u064A\\u0637'));
- assert.equal(release.assets.styles.at(-1),'audit-improvements.css');assert.equal(release.assets.styles.at(-2),'expert-review-5-2.css');
+ const styles=release.assets.styles;assert.equal(styles.at(-1),'audit-improvements.css');assert.ok(styles.indexOf('expert-review-5-2.css')>styles.indexOf('accessibility-perf-v5.css'));
  const css=fs.readFileSync(path.join(dir,'expert-review-5-2.css'),'utf8');assert.match(css,/--muted:#5a6e71/);assert.match(css,/\.lp-guided-start \.lp-secondary\{color:#146954/);
  assert.doesNotMatch(fs.readFileSync(path.join(dir,'enterprise.js'),'utf8'),/ChatGPT/);
 });

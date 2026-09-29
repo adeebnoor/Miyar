@@ -1,0 +1,29 @@
+/* 6.0 visible-change layer: what's-new panel, New badges, version badge and guided tour bar. */
+.whats-new{background:#eef6f2;border-bottom:1px solid #cfe3da}
+#main>.whats-new{margin:18px 42px 0;border:1px solid #cfe3da;border-radius:16px}
+.whats-new-inner{max-width:1200px;margin:0 auto;padding:18px 24px;display:grid;gap:10px}
+.whats-new-head{display:flex;flex-wrap:wrap;align-items:baseline;gap:6px 14px}
+.whats-new h2{margin:0;font-size:1.15rem;color:#123136}
+.whats-new-head p{margin:0;color:#3f5a53}
+.whats-new ul{margin:0;padding:0;list-style:none;display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:8px}
+.whats-new li{display:flex}
+.whats-new-link{flex:1;display:block;padding:10px 12px;border-radius:10px;background:#fff;border:1px solid #d3e5de;color:#173b42;text-decoration:none;font:inherit;font-size:.9rem;line-height:1.55;text-align:start;cursor:pointer}
+.whats-new-link:hover{border-color:#146954}
+.whats-new-actions{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.whats-new-dismiss{background:none;border:0;color:#3f5a53;text-decoration:underline;font:inherit;cursor:pointer;padding:8px}
+.new-badge{display:inline-block;margin-inline-start:6px;padding:1px 7px;border-radius:999px;background:#c5edac;color:#113c32;font-size:.68rem;font-weight:800;line-height:1.6;vertical-align:middle}
+.version-badge{display:inline-flex;align-items:center;padding:4px 10px;border-radius:999px;border:1px solid #bdd5cd;background:#f7fbf9;color:#146954;font-size:.78rem;font-weight:800;text-decoration:none;white-space:nowrap}
+.tour-bar{position:fixed;inset-inline:16px;bottom:16px;z-index:900;max-width:760px;margin-inline:auto;display:flex;flex-wrap:wrap;gap:12px 18px;align-items:center;justify-content:space-between;padding:14px 18px;border-radius:16px;background:#123136;color:#fff;box-shadow:0 14px 40px rgba(18,49,54,.35)}
+.tour-bar>div:first-child{flex:1 1 320px;display:grid;gap:3px}
+.tour-bar p{margin:0;color:#d7e4e1;font-size:.9rem;line-height:1.6}
+.tour-bar a{color:#c5edac}
+.tour-count{font-size:.75rem;letter-spacing:.06em;color:#9bd5be}
+.tour-actions{display:flex;gap:8px;align-items:center}
+.tour-bar .button-outline{background:transparent;color:#fff;border-color:rgba(255,255,255,.4)}
+.tour-close{background:none;border:0;color:#fff;font-size:1.4rem;line-height:1;cursor:pointer;padding:4px 8px}
+.decision-summary{padding:14px 16px;border-radius:12px;background:#123136;color:#fff;display:grid;gap:4px}
+.decision-summary strong{color:#c5edac;font-size:.85rem;letter-spacing:.02em}
+.decision-summary p{margin:0;line-height:1.7}
+@media(max-width:700px){#main>.whats-new{margin:12px 12px 0}.whats-new-inner{padding:14px}.tour-bar{inset-inline:8px;bottom:8px}}
+.sidebar .nav-link{position:relative}.sidebar .nav-link .new-badge{position:absolute;top:4px;inset-inline-end:6px;margin:0;font-size:.6rem;padding:0 6px}
+@media(max-width:700px){.tour-bar p{font-size:.82rem}.tour-bar{padding:12px 14px}}

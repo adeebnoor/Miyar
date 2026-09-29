@@ -1,13 +1,13 @@
 {
-  "version": "6.0.0",
-  "buildId": "2d1f3ac646402a2b",
+  "version": "6.0.1",
+  "buildId": "d3684233000e4721",
   "releasedAt": "2026-09-29",
   "changes": [
-    "Two-step sign-in (TOTP) with audited administrator reset",
-    "Isolated synthetic demo tenant and one-click local demo data",
-    "AI window countdown and quota usage on the status page",
-    "Release-drift monitoring, secret scanning, CDN security headers and share card",
-    "Threshold-calibration tool and release identity with signature block in exports"
+    "What is new panel, New badges and a version badge for returning users",
+    "Guided 10-minute tour that loads labelled demo data",
+    "Plain decision summaries on planning and compensation results",
+    "Two-step sign-in, isolated demo tenant and AI window countdown (6.0.0)",
+    "Release-drift monitoring, secret scanning, CDN headers, share card and signature block (6.0.0)"
   ],
   "assets": {
     "scripts": [
@@ -44,6 +44,7 @@
       "qa-ui-v5.js",
       "value-proposition-v5.js",
       "demo-workspace-6.js",
+      "whats-new-6.js",
       "audit-improvements.js"
     ],
     "styles": [
@@ -62,6 +63,7 @@
       "qa-ui-v5.css",
       "accessibility-perf-v5.css",
       "expert-review-5-2.css",
+      "whats-new-6.css",
       "audit-improvements.css"
     ]
   }
