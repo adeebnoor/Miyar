@@ -1,5 +1,7 @@
 # Investor and HR demonstration guide
 
+> Release 5.2: the updated ten-minute flow, including the workforce bridge, the grade link and pay positioning, is in [hr-expert-review-5.2.md](hr-expert-review-5.2.md#سيناريو-عرض-من-10-دقائق-52).
+
 Release 4.2.0 · 13 September 2026
 
 Open [Miyar](https://adeebnoor.github.io/Miyar/). **Start here** explains the buyer problem and deliverable. **Investor presentation** opens the bilingual seven-slide story. The original five-role views are grouped under earlier examples in the sidebar.

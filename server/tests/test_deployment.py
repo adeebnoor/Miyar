@@ -12,12 +12,12 @@ def test_hosted_ui_resolves_assets_without_exposing_server_files(tmp_path,monkey
     with TestClient(app) as c:
         health=c.get('/health').json()
         assert health['status']=='ok'
-        assert health['version']=='5.1.0'
+        assert health['version']=='5.2.0'
         assert health['services']['approvals'] is True
         assert {item['format'] for item in health['services']['exports']}=={'DOCX','XLSX','PDF'}
         assert {'strategicAI','skillsSemantic','recovery','approvals','exports'}.issubset(health['services'])
         page=c.get('/',follow_redirects=False);assert page.status_code==307
-        assert page.headers['location']=='https://adeebnoor.github.io/Miyar/?v=5.1.0#home'
+        assert page.headers['location']=='https://adeebnoor.github.io/Miyar/?v=5.2.0#home'
         assert c.get('/config.js').status_code==404
         assert c.get('/classifications/ssco-2019.json').status_code==404
         assert c.get('/api/v1/positions').status_code==401
