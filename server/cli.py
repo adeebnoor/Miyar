@@ -6,11 +6,16 @@ from .models import Organization,User,Department
 from .security import password_hash
 
 def main():
-    parser=argparse.ArgumentParser();parser.add_argument('command',choices=['bootstrap','reset-password','warm-model','seed-demo']);parser.add_argument('--email');parser.add_argument('--name',default='Miyar Administrator');parser.add_argument('--organization',default='Miyar');args=parser.parse_args()
+    parser=argparse.ArgumentParser();parser.add_argument('command',choices=['bootstrap','reset-password','warm-model','seed-demo','ensure-demo']);parser.add_argument('--email');parser.add_argument('--name',default='Miyar Administrator');parser.add_argument('--organization',default='Miyar');args=parser.parse_args()
     if args.command=='warm-model':
         from .taxonomy import Catalog
         c=Catalog();c.load_semantic();print('Indexed',len(c.roles),'occupation references; fingerprint',c.model_fingerprint);return
     app=create_app()
+    if args.command=='ensure-demo':
+        # Runs on start when MIYAR_DEMO_PASSWORD is set: builds the demo tenant once, rebuilds it if the password changes.
+        from .demo import ensure
+        summary=ensure(app,os.getenv('MIYAR_DEMO_PASSWORD',''))
+        print('Demo tenant already current' if summary is None else 'Demo tenant ready: '+str(summary['positions'])+' positions');return
     if args.command=='seed-demo':
         # Synthetic investor tenant; re-running archives the previous one and rebuilds it.
         from .demo import seed

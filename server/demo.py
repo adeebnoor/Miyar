@@ -132,6 +132,17 @@ def seed(app, password):
     return {'organizationId': org_id, 'archivedTenants': archived, 'accounts': emails, 'positions': len(POSITIONS), 'byStage': counts}
 
 
+def ensure(app, password):
+    """Build the demo tenant only when none is active or its password changed; otherwise leave it alone.
+    Lets a host without a shell keep the tenant in step with MIYAR_DEMO_PASSWORD on every start."""
+    from .security import verify_password
+    with app.state.sessions() as db:
+        current = db.scalar(select(User).where(User.email == 'admin@' + DOMAIN, User.active.is_(True)))
+        if current and verify_password(password, current.password_hash):
+            return None
+    return seed(app, password)
+
+
 def install(app):
     """Operator-only remote trigger for hosts without a shell (disabled unless MIYAR_DEMO_SEED_TOKEN is set)."""
     import hmac
