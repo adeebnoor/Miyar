@@ -19,6 +19,20 @@ jobs:
           print('Point-in-time observation:', h['version'], h.get('buildId','legacy'))
           print('Process-only counters:', h.get('operations',{}))
           PY
+      - name: Detect frontend/API release drift and an unreachable homepage
+        run: |
+          curl --fail --silent --show-error --retry 2 --max-time 60 -o /tmp/home.html -w 'Homepage HTTP %{http_code} in %{time_total}s\n' https://adeebnoor.github.io/Miyar/
+          curl --fail --silent --show-error --retry 2 --max-time 60 https://adeebnoor.github.io/Miyar/release.json > /tmp/release.json
+          python - <<'PY'
+          import json
+          h=json.load(open('/tmp/health.json'));r=json.load(open('/tmp/release.json'))
+          drift={k:(r[k],h.get(k)) for k in ['version','buildId'] if r[k]!=h.get(k)}
+          if h.get('frontendVersion')!=r['version']:drift['frontendVersion']=(r['version'],h.get('frontendVersion'))
+          assert not drift,'Release drift between GitHub Pages and the API: %s'%drift
+          review=h.get('services',{}).get('expertReview',{})
+          if review.get('expiringSoon'):print('::warning::Expert AI window ends in %s days (%s)'%(review.get('daysRemaining'),review.get('expiresAt')))
+          print('Pages and API agree on', r['version'], r['buildId'])
+          PY
   dependency-review:
     runs-on: ubuntu-latest
     steps:
@@ -36,3 +50,13 @@ jobs:
         run: |
           pip install pip-audit==2.9.0
           pip-audit -r server/requirements-lock.txt --progress-spinner off
+  secret-scan:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Scan the full git history for committed secrets
+        run: |
+          curl -sSfL https://github.com/gitleaks/gitleaks/releases/download/v8.28.0/gitleaks_8.28.0_linux_x64.tar.gz | tar -xz gitleaks
+          ./gitleaks git --redact --no-banner --exit-code 1 .

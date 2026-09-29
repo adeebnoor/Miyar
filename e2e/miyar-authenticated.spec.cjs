@@ -31,3 +31,15 @@ test('session expiry clears the server institution profile and authenticated sce
  await page.goto(BASE+'#enterprise/create');await expect(page.locator('[data-institution-context]')).toContainText('Not configured');
  expect(await page.evaluate(()=>Object.values(localStorage).some(x=>x.includes('G11-A')))).toBeFalsy();
 });
+
+function totp(secret,offset=0){const crypto=require('node:crypto'),alphabet='ABCDEFGHIJKLMNOPQRSTUVWXYZ234567';let bits='';for(const c of secret.replace(/\s|=/g,'').toUpperCase())bits+=alphabet.indexOf(c).toString(2).padStart(5,'0');const key=Buffer.from(bits.match(/.{8}/g).map(b=>parseInt(b,2)));const step=Math.floor(Date.now()/30000)+offset,counter=Buffer.alloc(8);counter.writeBigUInt64BE(BigInt(step));const h=crypto.createHmac('sha1',key).update(counter).digest(),o=h[h.length-1]&15;return String((h.readUInt32BE(o)&0x7fffffff)%1e6).padStart(6,'0');}
+
+test('two-step sign-in is enrolled from account settings and then required at sign-in',async({page})=>{
+ await setup(page);await login(page,'b-line_manager@audit.test');await page.goto(BASE+'#enterprise/connection');
+ await page.locator('#ent-mfa summary').click();await page.locator('#ent-mfa-password').fill('isolated-test-password-928');await page.locator('#ent-mfa-setup').click();
+ await expect(page.locator('#ent-mfa-secret')).not.toBeEmpty();const secret=(await page.locator('#ent-mfa-secret').textContent()).trim();await expect(page.locator('#ent-mfa-link')).toHaveAttribute('href',/^otpauth:\/\/totp\//);
+ await page.locator('#ent-mfa-code').fill(totp(secret));await page.locator('#ent-mfa-confirm').click();await expect(page.locator('#ent-mfa summary')).toContainText('On');
+ await page.locator('#ent-logout').click();await page.goto(BASE+'#enterprise/connection');
+ await page.locator('#ent-email').fill('b-line_manager@audit.test');await page.locator('#ent-password').fill('isolated-test-password-928');await page.locator('#ent-login button[type=submit]').click();
+ await expect(page.locator('#ent-otp-field')).toBeVisible();await page.locator('#ent-otp').fill(totp(secret,1));await page.locator('#ent-login button[type=submit]').click();await page.waitForURL(/#enterprise\/overview$/);
+});

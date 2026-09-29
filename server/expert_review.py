@@ -18,9 +18,20 @@ from sqlalchemy.exc import IntegrityError
 from .models import ExpertReviewQuota
 from .strategic import Unavailable, capability
 
-DAILY_LIMIT = 60
-HOURLY_LIMIT = 12
+def _limit(name, default, low, high):
+    try:
+        value = int(os.getenv(name, default))
+    except ValueError:
+        return default
+    return min(high, max(low, value))
+
+
+# Operators can raise the shared quota for a demonstration window without a code change.
+DAILY_LIMIT = _limit('MIYAR_EXPERT_REVIEW_DAILY_LIMIT', 60, 1, 2000)
+HOURLY_LIMIT = _limit('MIYAR_EXPERT_REVIEW_HOURLY_LIMIT', 12, 1, 500)
 COOLDOWN = 20
+EXPIRY_WARNING_DAYS = 14
+NEAR_LIMIT_PERCENT = 80
 
 
 class ReviewRequest(BaseModel):
@@ -39,8 +50,12 @@ def availability():
         end = datetime.fromisoformat(expires.replace('Z', '+00:00'))
         active = configured and end.tzinfo is not None and end > datetime.now(timezone.utc)
     except ValueError:
-        active = False
-    return {'enabled': bool(active), 'expiresAt': expires if configured else None}
+        active, end = False, None
+    days = None
+    if active:
+        days = max(0, (end - datetime.now(timezone.utc)).days)
+    return {'enabled': bool(active), 'expiresAt': expires if configured else None,
+            'daysRemaining': days, 'expiringSoon': days is not None and days <= EXPIRY_WARNING_DAYS}
 
 
 def install(app, sessions, secret, references, engine, slot):
@@ -92,6 +107,7 @@ def install(app, sessions, secret, references, engine, slot):
                 'embeddingModel': caps['embeddingModel'], 'generationModel': caps['generationModel'],
                 'corpusRecords': caps['corpusRecords'], 'dailyLimit': DAILY_LIMIT,
                 'remainingToday': max(0, DAILY_LIMIT - used), 'hourlyLimit': HOURLY_LIMIT,
+                'usagePercent': round(100 * used / DAILY_LIMIT), 'nearLimit': used * 100 >= NEAR_LIMIT_PERCENT * DAILY_LIMIT,
                 'cooldownSeconds': COOLDOWN, 'organizationAccess': False,
                 'inputStored': False, 'provider': 'Google Gemini'}
 
