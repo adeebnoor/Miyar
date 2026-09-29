@@ -136,3 +136,12 @@ class ExpertReviewQuota(Base):
     started:Mapped[int]=mapped_column(Integer)
     requests:Mapped[int]=mapped_column(Integer,default=0)
     last_request:Mapped[int]=mapped_column(Integer,default=0)
+
+class UserMfa(Base):
+    """Second factor per user; kept in its own table so existing deployments gain it without a migration."""
+    __tablename__='user_mfa'
+    user_id:Mapped[str]=mapped_column(ForeignKey('users.id'),primary_key=True)
+    secret:Mapped[str]=mapped_column(Text)
+    enabled:Mapped[bool]=mapped_column(Boolean,default=False)
+    last_step:Mapped[int]=mapped_column(Integer,default=0)
+    created_at:Mapped[str]=mapped_column(String(40),default=now)

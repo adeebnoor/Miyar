@@ -1,4 +1,4 @@
-"""Operator-only initialization and password reset. Never seed public demo passwords."""
+"""Operator-only initialization, password reset and synthetic demo tenant. Never seed or print public demo passwords."""
 import argparse,base64,getpass,os,secrets
 from sqlalchemy import select
 from .app import create_app
@@ -6,11 +6,16 @@ from .models import Organization,User,Department
 from .security import password_hash
 
 def main():
-    parser=argparse.ArgumentParser();parser.add_argument('command',choices=['bootstrap','reset-password','warm-model']);parser.add_argument('--email');parser.add_argument('--name',default='Miyar Administrator');parser.add_argument('--organization',default='Miyar');args=parser.parse_args()
+    parser=argparse.ArgumentParser();parser.add_argument('command',choices=['bootstrap','reset-password','warm-model','seed-demo']);parser.add_argument('--email');parser.add_argument('--name',default='Miyar Administrator');parser.add_argument('--organization',default='Miyar');args=parser.parse_args()
     if args.command=='warm-model':
         from .taxonomy import Catalog
         c=Catalog();c.load_semantic();print('Indexed',len(c.roles),'occupation references; fingerprint',c.model_fingerprint);return
     app=create_app()
+    if args.command=='seed-demo':
+        # Synthetic investor tenant; re-running archives the previous one and rebuilds it.
+        from .demo import seed
+        password=os.getenv('MIYAR_DEMO_PASSWORD') or getpass.getpass('Demo account password (12+ characters): ')
+        summary=seed(app,password);print('Demo tenant ready:',summary['positions'],'positions',summary['byStage'],'| archived tenants:',summary['archivedTenants']);print('Accounts (shared demo password, not printed):',', '.join(summary['accounts'].values()));return
     email=args.email or os.getenv('MIYAR_BOOTSTRAP_EMAIL','')
     if '@' not in email:raise SystemExit('Provide --email or MIYAR_BOOTSTRAP_EMAIL')
     password=os.getenv('MIYAR_BOOTSTRAP_PASSWORD') or getpass.getpass('New account password (12+ characters): ')

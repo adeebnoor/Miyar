@@ -1,4 +1,17 @@
-## Current release: 5.2.0
+## Current release: 6.0.0
+
+The full website is at https://adeebnoor.github.io/Miyar/?v=6.0.0#home. Release 6.0 answers the technical requirements document; the [requirements response register](docs/requirements-response-6.0.md) maps every item to what was done, what remains and who owns it. It adds:
+
+- Two-step sign-in (TOTP) with audited administrator reset.
+- An isolated synthetic demo tenant, rebuilt with `python -m server.cli seed-demo` or the operator-token endpoint, plus one-click local demo data.
+- AI-window countdown and quota usage on the status page.
+- Scheduled release-drift monitoring and gitleaks secret scanning.
+- CDN-ready security headers (`dist/_headers`).
+- A threshold-calibration tool (`scripts/calibrate-thresholds.py`).
+- A share card.
+- Release identity and a signature block in exports.
+
+## Release 5.2.0
 
 The full website is at https://adeebnoor.github.io/Miyar/?v=5.2.0#home. Release 5.2 follows an [HR expert review](docs/hr-expert-review-5.2.md) of every service.
 

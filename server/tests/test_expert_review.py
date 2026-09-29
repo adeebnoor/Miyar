@@ -86,3 +86,28 @@ def test_provider_errors_are_redacted_and_consume_quota(env,monkeypatch):
     assert r.status_code==503 and 'private-provider-test-key' not in r.text
     assert 'finalTitle' not in r.json()
     assert c.get(PATH+'/status').json()['remainingToday']==59
+
+
+def test_status_reports_expiry_countdown_and_quota_usage(env,monkeypatch):
+    _,c,_,_=env;setup(monkeypatch)
+    monkeypatch.setenv('MIYAR_EXPERT_REVIEW_EXPIRES_AT',(datetime.now(timezone.utc)+timedelta(days=5,hours=1)).isoformat())
+    state=c.get(PATH+'/status').json()
+    assert state['enabled'] and state['daysRemaining']==5 and state['expiringSoon']
+    assert state['usagePercent']==0 and not state['nearLimit']
+    monkeypatch.setenv('MIYAR_EXPERT_REVIEW_EXPIRES_AT',(datetime.now(timezone.utc)+timedelta(days=95)).isoformat())
+    assert not c.get(PATH+'/status').json()['expiringSoon']
+    assert c.post(PATH,json=BODY,headers=ORIGIN).status_code==200
+    assert c.get(PATH+'/status').json()['usagePercent']==2
+    assert c.get('/health').json()['services']['expertReview']['daysRemaining']>=94
+
+
+def test_quota_limits_are_operator_configurable_within_bounds(monkeypatch):
+    import importlib, server.expert_review as module
+    monkeypatch.setenv('MIYAR_EXPERT_REVIEW_DAILY_LIMIT','300');monkeypatch.setenv('MIYAR_EXPERT_REVIEW_HOURLY_LIMIT','not-a-number')
+    try:
+        reloaded=importlib.reload(module)
+        assert reloaded.DAILY_LIMIT==300 and reloaded.HOURLY_LIMIT==12
+        monkeypatch.setenv('MIYAR_EXPERT_REVIEW_DAILY_LIMIT','999999')
+        assert importlib.reload(module).DAILY_LIMIT==2000
+    finally:
+        monkeypatch.delenv('MIYAR_EXPERT_REVIEW_DAILY_LIMIT');monkeypatch.delenv('MIYAR_EXPERT_REVIEW_HOURLY_LIMIT');importlib.reload(module)

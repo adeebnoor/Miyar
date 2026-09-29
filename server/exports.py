@@ -7,6 +7,12 @@ LABELS.update({'department': ('الإدارة', 'Department'), 'directReports': 
 
 LABELS.update({'salaryGrade':('الدرجة المرتبطة بنطاق الراتب','Salary-linked grade'),'salaryMin':('الحد الأدنى للراتب المقترح','Proposed minimum salary'),'salaryMax':('الحد الأعلى للراتب المقترح','Proposed maximum salary'),'salaryCurrency':('عملة الراتب','Salary currency'),'salaryPeriod':('فترة الراتب','Salary period'),'salarySource':('مصدر نطاق الراتب','Salary range source'),'evaluationSummary':('حساب التقييم للمسودة - غير معتمد','Draft evaluation calculation - unapproved')})
 
+def identity(card):
+    """Printed provenance line tying a paper copy to its digital release and revision."""
+    from datetime import datetime,timezone
+    from .release import RELEASE
+    ar=card['lang']=='ar';stamp=datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M UTC')
+    return ('تصدير '+stamp+' · معيار '+RELEASE['version']+' · بناء '+RELEASE['buildId']+' · تصنيف: داخلي') if ar else ('Exported '+stamp+' · Miyar '+RELEASE['version']+' · build '+RELEASE['buildId']+' · Classification: Internal')
 def signing_key():
     from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
     raw=os.getenv('MIYAR_SIGNING_KEY','')
@@ -85,6 +91,7 @@ def docx(card,brand):
     section.header.paragraphs[0].text=brand.get('nameAr' if ar else 'nameEn','Miyar')
     para('بطاقة الوصف الوظيفي' if ar else 'Job description','Title');para(card['content']['title'],'Heading 1')
     para(f"{card['internalCode']} • v{card['revision']} • "+(('معتمد' if ar else 'Approved') if card['approved'] else ('مسودة غير معتمدة' if ar else 'Unapproved draft')))
+    para(identity(card))
     for k,label in LABELS.items():
         if k!='title' and card['content'].get(k) is not None and card['content'].get(k)!='':para(label[0 if ar else 1],'Heading 2');para(card['content'][k])
     if card.get('evaluation'):
@@ -104,6 +111,13 @@ def docx(card,brand):
                 cell._tc.get_or_add_tcPr().append(borders)
     para('سجل الاعتماد' if ar else 'Approval record','Heading 2')
     for a in card['approvals']:para(a['actorName']+' • '+a['role']+' • '+a['createdAt'])
+    from .domain import DEFAULT_WORKFLOW
+    para('كتلة التوقيع' if ar else 'Signature block','Heading 2')
+    sign=d.add_table(rows=1,cols=5);sign.style='Table Grid'
+    for i,h in enumerate(['المرحلة' if ar else 'Stage','الاسم' if ar else 'Name','الدور' if ar else 'Role','التاريخ' if ar else 'Date','التوقيع' if ar else 'Signature']):sign.rows[0].cells[i].text=h
+    for stage in DEFAULT_WORKFLOW:
+        approval=next((a for a in card.get('approvals',[]) if a['role']==stage['role'] and a.get('decision')=='approve'),None)
+        for cell,value in zip(sign.add_row().cells,[stage['nameAr' if ar else 'nameEn'],approval['actorName'] if approval else '',stage['role'],approval['createdAt'][:10] if approval else '','']):cell.text=value
     section.footer.paragraphs[0].text=brand.get('footer','')+' | '+card['internalCode']
     out=io.BytesIO();d.save(out);return out.getvalue()
 def pdf(card,brand):
@@ -140,7 +154,7 @@ def pdf(card,brand):
     markup=f'''<!doctype html><html lang="{card['lang']}" dir="{'rtl' if ar else 'ltr'}"><meta charset="utf-8"><style>
 @page{{size:A4;margin:20mm 18mm 20mm;@bottom-left{{content:"MIYAR | {esc(card['internalCode'])}";font:8pt sans-serif;color:#59716c}}@bottom-right{{content:counter(page) " / " counter(pages);font:9pt sans-serif;color:#59716c;direction:ltr;unicode-bidi:bidi-override}}}}
 body{{font:10.5pt 'DejaVu Sans',sans-serif;color:#193c38;line-height:1.7}}header{{color:{color};font-size:11pt;font-weight:bold;border-bottom:2pt solid {color};padding-bottom:10pt}}h1{{font-size:24pt;line-height:1.4;margin:16pt 0 10pt}}h2{{font-size:12pt;margin:13pt 0 4pt;break-after:avoid;color:{color}}}h3{{font-size:11pt;margin:0 0 5pt;break-after:avoid}}p{{margin:3pt 0;overflow-wrap:anywhere}}section{{orphans:3;widows:3}}table{{width:100%;table-layout:fixed;border-collapse:collapse;font-size:8.5pt}}thead{{display:table-header-group}}tr{{break-inside:avoid}}th,td{{padding:6pt;border:1px solid #cbdad5;vertical-align:top;overflow-wrap:anywhere}}th{{background:#edf5f1}}.facts{{display:grid;grid-template-columns:1fr 1fr;gap:8pt 16pt;margin:14pt 0}}.facts>div{{padding:5pt 0;border-bottom:1px solid #e0e9e5;break-inside:avoid}}.facts b{{font-size:9pt;color:{color}}}.meta,.muted{{font-size:9pt;color:#596f68}}.status{{padding:8pt 10pt;background:#edf5f1;border-inline-start:3pt solid {color}}}.section-title{{margin-top:22pt;border-bottom:1pt solid #cbdad5;padding-bottom:5pt}}.kpi-intro{{break-after:avoid}}.kpi{{border:1px solid #cbdad5;padding:11pt;margin:9pt 0;break-inside:avoid}}.evaluation{{background:#edf5f1;padding:10pt}}.approvals-page{{break-before:page}}.signature-grid{{display:grid;grid-template-columns:1fr 1fr;gap:12pt}}.signature-box{{border:1px solid #afc6bd;padding:12pt;break-inside:avoid;min-height:145pt}}.signature-field{{display:block;height:25pt;margin-top:6pt;border:1px dashed #94ada3}}footer{{font-size:8pt;overflow-wrap:anywhere;margin-top:16pt}}
-</style><header>{esc(brand.get('nameAr' if ar else 'nameEn','MIYAR'))}</header><h1>{esc(content['title'])}</h1><p class="meta" dir="ltr">{esc(card['internalCode'])} · v{card['revision']}</p><p class="status">{t('معتمد مؤسسيًا','Approved by organization') if card['approved'] else t('مسودة للمراجعة - غير معتمدة','Review draft - not approved')}</p>{fields}<div class="approvals-page"><header>MIYAR / {t('سجل الاعتماد','APPROVAL RECORD')}</header><h1>{t('مراحل الاعتماد الأربع','Four-stage approval')}</h1><p class="meta">{esc(content['title'])} · {esc(card['internalCode'])} · v{card['revision']}</p><div class="signature-grid">{boxes}</div><footer><p>{esc(seal_text)}</p><p>{t('الخانات جاهزة لإضافة توقيع رقمي في قارئ PDF يدعم التوقيع. تركها فارغة لا يمثل توقيعًا. الاعتمادات المؤسسية تُراجع في سجل النظام.','Fields are ready for a digital signature in a compatible PDF reader. Empty fields are unsigned. Organization approvals are verified in the system record.')}</p><p>{esc(brand.get('footer',''))}</p></footer></div></html>'''
+</style><header>{esc(brand.get('nameAr' if ar else 'nameEn','MIYAR'))}</header><h1>{esc(content['title'])}</h1><p class="meta" dir="ltr">{esc(card['internalCode'])} · v{card['revision']}</p><p class="meta">{esc(identity(card))}</p><p class="status">{t('معتمد مؤسسيًا','Approved by organization') if card['approved'] else t('مسودة للمراجعة - غير معتمدة','Review draft - not approved')}</p>{fields}<div class="approvals-page"><header>MIYAR / {t('سجل الاعتماد','APPROVAL RECORD')}</header><h1>{t('مراحل الاعتماد الأربع','Four-stage approval')}</h1><p class="meta">{esc(content['title'])} · {esc(card['internalCode'])} · v{card['revision']}</p><div class="signature-grid">{boxes}</div><footer><p>{esc(seal_text)}</p><p>{t('الخانات جاهزة لإضافة توقيع رقمي في قارئ PDF يدعم التوقيع. تركها فارغة لا يمثل توقيعًا. الاعتمادات المؤسسية تُراجع في سجل النظام.','Fields are ready for a digital signature in a compatible PDF reader. Empty fields are unsigned. Organization approvals are verified in the system record.')}</p><p>{esc(brand.get('footer',''))}</p></footer></div></html>'''
     def deny_fetch(url,*args,**kwargs):raise ValueError('External resources are disabled for document exports')
     document=HTML(string=markup,url_fetcher=deny_fetch).render(presentational_hints=False)
     reader=PdfReader(io.BytesIO(document.write_pdf()));writer=PdfWriter();writer.clone_document_from_reader(reader)

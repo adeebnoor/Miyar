@@ -15,13 +15,13 @@ from pydantic import BaseModel,Field,ConfigDict
 from sqlalchemy import select,func
 from sqlalchemy.exc import IntegrityError,SQLAlchemyError
 from sqlalchemy.orm.exc import StaleDataError
-from .models import Base,Organization,Department,User,Position,PositionVersion,AuditEvent,Approval,OutboxEvent,Evaluation,LoginWindow,TaxonomyRelease,IntegrationReceipt,database,uid,now
+from .models import Base,Organization,Department,User,Position,PositionVersion,AuditEvent,Approval,OutboxEvent,Evaluation,LoginWindow,TaxonomyRelease,IntegrationReceipt,UserMfa,database,uid,now
 from .security import bearer,actor,require,position_for,scoped_positions,password_hash,verify_password,issue_token,hasher
 from .domain import DEFAULT_WORKFLOW,DEFAULT_FRAMEWORK,ROLES,CORE,normalized,canonical,digest,required_content,validate_workflow,validate_framework,validate_regulatory,valid_date,grade
 from .taxonomy import Catalog,read_rows,bulk_diagnosis
 
 class Input(BaseModel):model_config=ConfigDict(extra='forbid',allow_inf_nan=False)
-class Login(Input):email:str=Field(min_length=3,max_length=254);password:str=Field(min_length=1,max_length=256)
+class Login(Input):email:str=Field(min_length=3,max_length=254);password:str=Field(min_length=1,max_length=256);otp:str|None=Field(default=None,max_length=10)
 class PasswordChange(Input):currentPassword:str=Field(min_length=1,max_length=256);newPassword:str=Field(min_length=12,max_length=256)
 class NewUser(Input):email:str=Field(min_length=3,max_length=254);name:str=Field(min_length=1,max_length=200);password:str=Field(min_length=12,max_length=256);role:str;departmentId:str|None=None
 class NewDepartment(Input):name:str=Field(min_length=1,max_length=200)
@@ -194,6 +194,11 @@ def create_app(db_url=None,jwt_secret=None,catalog=None):
             if not window:window=LoginWindow(key=key,started=ts,failures=0);db.add(window)
             if ts-window.started>=900:window.started=ts;window.failures=0
             window.failures+=1;db.commit();raise HTTPException(401,'Invalid sign-in details')
+        from .mfa import check_login
+        if check_login(db,user,body.otp,app.state.mfa_cipher) is False:
+            if not window:window=LoginWindow(key=key,started=ts,failures=0);db.add(window)
+            if ts-window.started>=900:window.started=ts;window.failures=0
+            window.failures+=1;db.commit();raise HTTPException(401,{'message':'Invalid authenticator code','mfaRequired':True})
         if window:db.delete(window)
         audit(db,user,'auth.login',{});db.commit();return {'accessToken':issue_token(user,secret),'tokenType':'Bearer','expiresIn':1800}
     app.state.dummy_hash=hasher.hash(secrets.token_urlsafe(32))
@@ -216,7 +221,7 @@ def create_app(db_url=None,jwt_secret=None,catalog=None):
         return {'accessToken':issue_token(user,secret),'tokenType':'Bearer','expiresIn':1800}
     @app.get('/api/v1/me')
     def me(user=Depends(current),db=Depends(session)):
-        org=organization(db,user);return {'id':user.id,'name':user.name,'email':user.email,'role':user.role,'departmentId':user.department_id,'organization':{'id':org.id,'name':org.name},'capabilities':{'approveAs':user.role if user.role in ['od_specialist','total_rewards','finance','chro'] else None,'configure':user.role=='admin'}}
+        org=organization(db,user);mfa=db.get(UserMfa,user.id);return {'id':user.id,'name':user.name,'email':user.email,'role':user.role,'mfaEnabled':bool(mfa and mfa.enabled),'departmentId':user.department_id,'organization':{'id':org.id,'name':org.name},'capabilities':{'approveAs':user.role if user.role in ['od_specialist','total_rewards','finance','chro'] else None,'configure':user.role=='admin'}}
     def service_capabilities():
         from importlib.util import find_spec
         from .exports import public_key
@@ -225,7 +230,7 @@ def create_app(db_url=None,jwt_secret=None,catalog=None):
         except (ValueError,TypeError):pass
         from .strategic import capability as strategic_capability
         from .expert_review import availability as expert_availability
-        return {'strategicAI':{**strategic_capability(),'purpose':'strategic-objective-to-role'},'expertReview':expert_availability(),'skillsSemantic':{'enabled':os.getenv('MIYAR_ENABLE_EMBEDDINGS')=='true','modelReady':references.model is not None,'purpose':'occupation-skill-matching'},'recovery':{'mode':'administrator-assisted','selfServiceEmail':False,'tokenLifetimeSeconds':900},'version':app.version,'storage':engine.dialect.name,'approvals':True,'kpiGenerationEnabled':bool(os.getenv('MIYAR_KPI_ENDPOINT') and os.getenv('MIYAR_KPI_MODEL') and os.getenv('MIYAR_KPI_API_KEY')),'semanticEnabled':os.getenv('MIYAR_ENABLE_EMBEDDINGS')=='true','semanticModelReady':references.model is not None,'signingConfigured':signing,'exports':[{'format':kind,'available':find_spec(module) is not None} for kind,module in [('DOCX','docx'),('XLSX','openpyxl'),('PDF','weasyprint')]],'externalConnectors':'Require organization-authorized endpoint configuration'}
+        return {'strategicAI':{**strategic_capability(),'purpose':'strategic-objective-to-role'},'expertReview':expert_availability(),'skillsSemantic':{'enabled':os.getenv('MIYAR_ENABLE_EMBEDDINGS')=='true','modelReady':references.model is not None,'purpose':'occupation-skill-matching'},'recovery':{'mode':'administrator-assisted','selfServiceEmail':False,'tokenLifetimeSeconds':900},'mfa':{'method':'totp','available':True,'sso':False},'version':app.version,'storage':engine.dialect.name,'approvals':True,'kpiGenerationEnabled':bool(os.getenv('MIYAR_KPI_ENDPOINT') and os.getenv('MIYAR_KPI_MODEL') and os.getenv('MIYAR_KPI_API_KEY')),'semanticEnabled':os.getenv('MIYAR_ENABLE_EMBEDDINGS')=='true','semanticModelReady':references.model is not None,'signingConfigured':signing,'exports':[{'format':kind,'available':find_spec(module) is not None} for kind,module in [('DOCX','docx'),('XLSX','openpyxl'),('PDF','weasyprint')]],'externalConnectors':'Require organization-authorized endpoint configuration'}
     @app.get('/api/v1/capabilities')
     def capabilities(user=Depends(current)):
         return service_capabilities()
@@ -239,7 +244,7 @@ def create_app(db_url=None,jwt_secret=None,catalog=None):
         require(user,'admin');dep=Department(org_id=user.org_id,name=body.name);db.add(dep);db.flush();audit(db,user,'department.created',{'departmentId':dep.id,'name':dep.name});db.commit();return {'id':dep.id,'name':dep.name}
     @app.get('/api/v1/users')
     def users(user=Depends(current),db=Depends(session)):
-        require(user,'admin');return [{'id':u.id,'email':u.email,'name':u.name,'role':u.role,'departmentId':u.department_id,'active':u.active} for u in db.scalars(select(User).where(User.org_id==user.org_id))]
+        require(user,'admin');enrolled={m.user_id for m in db.scalars(select(UserMfa).where(UserMfa.enabled.is_(True)))};return [{'id':u.id,'email':u.email,'name':u.name,'role':u.role,'departmentId':u.department_id,'active':u.active,'mfaEnabled':u.id in enrolled} for u in db.scalars(select(User).where(User.org_id==user.org_id))]
     @app.post('/api/v1/users',status_code=201)
     def add_user(body:NewUser,user=Depends(current),db=Depends(session)):
         require(user,'admin')
@@ -478,6 +483,10 @@ def create_app(db_url=None,jwt_secret=None,catalog=None):
     install_recovery(app,session,current,audit,secret)
     from .enterprise import install
     install(app,session,current,organization,audit,present,content,department,snapshot,revise)
+    from .mfa import install as install_mfa
+    install_mfa(app,session,current,audit,secret)
+    from .demo import install as install_demo
+    install_demo(app)
     from .institution import install_institution
     install_institution(app)
     @app.get('/',include_in_schema=False)

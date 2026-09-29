@@ -86,6 +86,9 @@ def test_export_is_scoped_editable_and_signed(env,monkeypatch):
     from docx import Document
     from openpyxl import load_workbook
     d=c.get(url+'docx',headers=auth());assert d.status_code==200;assert any('مهندس' in p.text for p in Document(io.BytesIO(d.content)).paragraphs)
+    from server.release import RELEASE
+    document=Document(io.BytesIO(d.content));assert any(RELEASE['buildId'] in p.text for p in document.paragraphs)
+    sign=document.tables[-1];assert len(sign.rows)==5 and all(row.cells[1].text for row in sign.rows[1:])  # every approved stage carries its signer
     x=c.get(url+'xlsx',headers=auth());assert x.status_code==200;w=load_workbook(io.BytesIO(x.content));assert set(w.sheetnames)=={'Position','RACI','Skills','KPIs'};assert w['RACI']['C2'].value=='Manager'
     pdf=c.get(url+'pdf',headers=auth());assert pdf.status_code==200;assert pdf.content.startswith(b'%PDF')
 

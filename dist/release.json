@@ -1,13 +1,13 @@
 {
-  "version": "5.2.0",
-  "buildId": "353bc144d8880652",
+  "version": "6.0.0",
+  "buildId": "2d1f3ac646402a2b",
   "releasedAt": "2026-09-29",
   "changes": [
-    "Workforce bridge, Buy/Build/Borrow/Bind/Bot options, gap sensitivity and localization target",
-    "Salary band diagnostics, compa-ratio zones, bring-to-minimum cost and fixed allowances",
-    "Job evaluation mapped to the approved institution grade with factor breakdown",
-    "Spans of control in the structure check",
-    "WCAG AA contrast, localized labels and UTF-8 production bundle"
+    "Two-step sign-in (TOTP) with audited administrator reset",
+    "Isolated synthetic demo tenant and one-click local demo data",
+    "AI window countdown and quota usage on the status page",
+    "Release-drift monitoring, secret scanning, CDN security headers and share card",
+    "Threshold-calibration tool and release identity with signature block in exports"
   ],
   "assets": {
     "scripts": [
@@ -43,6 +43,7 @@
       "release-version.js",
       "qa-ui-v5.js",
       "value-proposition-v5.js",
+      "demo-workspace-6.js",
       "audit-improvements.js"
     ],
     "styles": [

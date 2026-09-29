@@ -1,0 +1,4 @@
+# Reviewed false positives: browser localStorage key names, not credentials.
+c98ce0a7037da95618f6035e53b9cf4787ab78c5:dist/compensation-workbench.js:generic-api-key:4
+db3adbf7fd8cf4da545adf878e16fe1fec7a04a0:dist/compensation-workbench.js:generic-api-key:4
+1350e3b0e269c14816fd27a19c84b65f1764a5de:dist/compensation-workbench.js:generic-api-key:4
