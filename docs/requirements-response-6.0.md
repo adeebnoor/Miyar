@@ -41,13 +41,9 @@
 
 1. **استمرارية AI:** اضبط `MIYAR_EXPERT_REVIEW_EXPIRES_AT=2027-01-06T20:59:59Z`، وهو تاريخ بعد 90 يومًا من نهاية النافذة الحالية في 6 أكتوبر. يمكن رفع `MIYAR_EXPERT_REVIEW_DAILY_LIMIT` (مثل 200) إذا سمحت فوترة Gemini.
 2. **بيئة العرض:**
-   1. أضف `MIYAR_DEMO_SEED_TOKEN` بقيمة عشوائية من 40 محرفًا فأكثر.
-   2. بعد النشر نفّذ:
-      ```
-      curl -X POST https://miyar-enterprise-api.onrender.com/api/v1/operator/demo-tenant -H "X-Operator-Token: <الرمز>" -H "Content-Type: application/json" -d '{"password":"<كلمة مرور العرض 12+>"}'
-      ```
-   3. الحسابات هي `admin@demo.miyar.invalid` و`line-manager@` و`od-specialist@` و`total-rewards@` و`finance@` و`chro@` على النطاق نفسه، بكلمة المرور التي اخترتها.
-   4. أعد الأمر قبل كل عرض لإعادة البيئة إلى حالتها المرجعية.
+   1. أضف `MIYAR_DEMO_PASSWORD` بكلمة مرور من 12 محرفًا فأكثر، واحفظ. عند إعادة التشغيل تُبنى المؤسسة التجريبية تلقائيًا مرة واحدة، ولا يُعاد بناؤها إلا إذا غيّرت كلمة المرور.
+   2. الحسابات هي `admin@demo.miyar.invalid` و`line-manager@` و`od-specialist@` و`total-rewards@` و`finance@` و`chro@` على النطاق نفسه، بكلمة المرور التي اخترتها.
+   3. لإعادة البيئة إلى حالتها المرجعية قبل عرض: غيّر كلمة المرور. أو اضبط `MIYAR_DEMO_SEED_TOKEN` (40 محرفًا فأكثر) واستدعِ `POST /api/v1/operator/demo-tenant` بالترويسة `X-Operator-Token`.
 3. **التحقق بخطوتين:** لا يحتاج ضبطًا. يفعّله كل مستخدم من «الحساب والإعدادات». تنبيه: مفتاح تشفير أسرار التحقق مشتق من `MIYAR_JWT_SECRET`؛ تدوير هذا السر يتطلب إعادة ضبط التحقق بخطوتين للمستخدمين المفعّلين من شاشة المسؤول.
 
 ## التحقق

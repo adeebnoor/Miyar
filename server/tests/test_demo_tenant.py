@@ -58,3 +58,13 @@ def test_remote_demo_reset_is_disabled_without_a_strong_operator_token(env,monke
     assert c.post(path,json={'password':PASSWORD},headers={'X-Operator-Token':'x'*40}).status_code==403
     r=c.post(path,json={'password':PASSWORD},headers={'X-Operator-Token':'o'*40});assert r.status_code==200 and r.json()['positions']==len(POSITIONS)
     assert PASSWORD not in r.text
+
+
+def test_ensure_builds_once_and_rebuilds_only_when_the_password_changes(env):
+    from server.demo import ensure
+    app,c,_,_=env
+    first=ensure(app,PASSWORD);assert first and first['positions']==len(POSITIONS)
+    assert ensure(app,PASSWORD) is None
+    changed=ensure(app,PASSWORD+'-new');assert changed and changed['archivedTenants']==1
+    assert login(c,'admin@'+DOMAIN).status_code==401
+    assert c.post('/api/v1/auth/login',json={'email':'admin@'+DOMAIN,'password':PASSWORD+'-new'}).status_code==200

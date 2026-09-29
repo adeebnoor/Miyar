@@ -3,6 +3,9 @@ from pathlib import Path
 Path('.runtime').mkdir(exist_ok=True)
 if os.getenv('MIYAR_BOOTSTRAP_EMAIL') and os.getenv('MIYAR_BOOTSTRAP_PASSWORD'):
     subprocess.run([sys.executable,'-m','server.cli','bootstrap'],check=True)
+if len(os.getenv('MIYAR_DEMO_PASSWORD',''))>=12:
+    # A failed demo build must never keep the API from starting.
+    subprocess.run([sys.executable,'-m','server.cli','ensure-demo'],check=False)
 if os.getenv('MIYAR_STRATEGIC_STARTUP_CHECK') == 'true':
     from .strategic_check import REPORT
     REPORT.unlink(missing_ok=True)
