@@ -34,7 +34,7 @@ async function exportedDraft(page){const event=page.waitForEvent('download');awa
 
 for(const lang of ['ar','en']){
  test('public semantic skill matching renders real source references and nullable overlap: '+lang,async({page})=>{
-  await setup(page,lang);await page.locator('#ent-analysis-text').fill(lang==='ar'?'البرمجة وتحليل الاحتياجات واختبار الحلول البرمجية':'Programming, analyze requirements and test software solutions');
+  await setup(page,lang,'create');await page.locator('[data-field="title"]').fill('Synthetic provisional title');await page.locator('#ent-provisional').check();await page.goto(BASE+'#enterprise/intelligence');await page.locator('#ent-analysis-text').fill(lang==='ar'?'البرمجة وتحليل الاحتياجات واختبار الحلول البرمجية':'Programming, analyze requirements and test software solutions');
   await page.locator('#ent-analysis-constraints').fill('Synthetic constraint requiring human review');
   const done=responseFor(page,'semantic');await page.locator('#ent-semantic').click();const response=await done;expect(response.status()).toBe(200);const body=await response.json();
   expect(response.request().postDataJSON().consentExternalProcessing).toBe(true);expect(body.mode).toBe('expert-review');expect(body.organizationAccess).toBe(false);expect(body.inputStored).toBe(false);expect(body.constraintsReviewRequired).toBe(true);
@@ -42,6 +42,8 @@ for(const lang of ['ar','en']){
   expect(body.candidates.every(x=>x.sourcePage>0&&x.taskOverlapPercent===null)).toBe(true);expect(body.semanticSkills).toHaveLength(1);expect(body.semanticSkills[0]).toMatchObject({id:'onet:2.B.3.e',source:'O*NET',method:'multilingual-embedding-cosine',humanReviewRequired:true});
   await expect(page.locator('#ent-candidates [data-candidate-code]')).toHaveCount(3);await expect(page.locator('#ent-candidates')).toContainText('251204');await expect(page.locator('#ent-candidates')).toContainText('—');
   await expect(page.locator('#ent-skills')).toContainText(lang==='ar'?'مهارات مقترحة بالمعنى':'Skills suggested by meaning');await expect(page.locator('#ent-skills')).toContainText('O*NET');await expect(page.locator('#ent-skills')).toContainText('0.96');await expect(page.locator('#ent-message')).not.toHaveClass(/error/);
+  await page.locator('[data-candidate-code="251204"]').click();await expect(page).toHaveURL(/#enterprise\/create$/);await expect(page.locator('#ent-provisional')).not.toBeChecked();await expect(page.locator('[data-field="occupationCode"]')).toHaveValue('251204');await expect(page.locator('[data-field="title"]')).toHaveValue('Synthetic provisional title');
+  const draft=await exportedDraft(page);expect(draft.provisional).toBe(false);expect(draft.occupationCode).toBe('251204');expect(draft.provisionalParent).toBe('');
  });
 
  test('public AI KPI schema produces three editable rows and preserves authored edit in JSON: '+lang,async({page})=>{
@@ -65,6 +67,18 @@ for(const lang of ['ar','en']){
   await expect(page.locator('#ent-message')).toHaveClass(/error/);await expect(page.locator('#ent-message')).toContainText(lang==='ar'?'تغيّر وصف العمل':'Work description changed');await expect(page.locator('#ent-candidates')).toBeEmpty();await expect(page.locator('#ent-skills')).toBeEmpty();await expect(page.locator('#ent-semantic')).toBeEnabled();
   await page.goto(BASE+'#enterprise/create');await enterRole(page,lang,'AI_TEST_DELAY Complete 95% of requests monthly');const kpiRequested=page.waitForRequest(r=>isPost(r,'kpis')),kpiDone=responseFor(page,'kpis');await page.locator('#ent-ai-kpis').click();await kpiRequested;await page.locator('[data-field="successMeasures"]').fill('Current target is 90% with revised measurement');expect((await kpiDone).status()).toBe(200);
   await expect(page.locator('#ent-message')).toHaveClass(/error/);await expect(page.locator('#ent-message')).toContainText(lang==='ar'?'تغيّرت المدخلات':'Input changed');await expect(page.locator('[data-matrix-key="kpis"]')).toHaveCount(0);await expect(page.locator('#ent-ai-kpis')).toBeEnabled();
+ });
+
+ test('leaving an AI form during provider work preserves the destination calculator: '+lang,async({page})=>{
+  const errors=[];page.on('pageerror',error=>errors.push(String(error)));await setup(page,lang);
+  await page.locator('#ent-analysis-text').fill('AI_TEST_DELAY Programming and software analysis');const semanticRequested=page.waitForRequest(r=>isPost(r,'semantic')),semanticDone=responseFor(page,'semantic');await page.locator('#ent-semantic').click();await semanticRequested;
+  await page.goto(BASE+'#enterprise/compensation');await expect(page.locator('[data-cp-run]')).toBeVisible();const semanticResponse=await semanticDone;expect(semanticResponse.status()).toBe(200);await semanticResponse.finished();
+  await page.evaluate(()=>new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve))));
+  await expect(page).toHaveURL(BASE+'#enterprise/compensation');await expect(page.locator('[data-cp-run]')).toBeVisible();await expect(page.locator('#ent-candidates')).toHaveCount(0);await expect(page.locator('#ent-message')).not.toHaveClass(/error/);
+  await page.goto(BASE+'#enterprise/create');await enterRole(page,lang,'AI_TEST_DELAY Complete 95% of requests monthly');const kpiRequested=page.waitForRequest(r=>isPost(r,'kpis')),kpiDone=responseFor(page,'kpis');await page.locator('#ent-ai-kpis').click();await kpiRequested;
+  await page.goto(BASE+'#enterprise/manpower');await expect(page.locator('[data-mp-run]')).toBeVisible();const kpiResponse=await kpiDone;expect(kpiResponse.status()).toBe(200);await kpiResponse.finished();
+  await page.evaluate(()=>new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve))));
+  await expect(page).toHaveURL(BASE+'#enterprise/manpower');await expect(page.locator('[data-mp-run]')).toBeVisible();await expect(page.locator('[data-matrix-key="kpis"]')).toHaveCount(0);await expect(page.locator('#ent-ai-kpis')).toHaveCount(0);await expect(page.locator('#ent-message')).not.toHaveClass(/error/);expect(errors).toEqual([]);
  });
 
  test('provider 503 failures surface errors without fabricated semantic or KPI success: '+lang,async({page})=>{
