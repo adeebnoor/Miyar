@@ -171,6 +171,42 @@ def test_existing_percentage_scale_is_never_applied_twice(scale):
     assert normalize_percentage_metric(metric) == metric
 
 
+@pytest.mark.parametrize('metric', [
+    'Percentage of completed cases (completed cases / eligible cases) × 100.5',
+    'Percentage of completed cases (completed cases / eligible cases) × 100,5',
+    'Percentage of completed cases (completed cases / eligible cases) × 100e2',
+    'Percentage of completed cases (completed cases / eligible cases) × 100%',
+    'Percentage of completed cases (completed cases / eligible cases × 100)',
+    'Percentage of completed cases (completed cases × 100 / eligible cases)',
+    'Percentage × 100 of completed cases (completed cases / eligible cases)',
+    'Percentage of completed cases (completed cases / eligible cases) × 100 × 0.01',
+    'Percentage of completed cases (completed cases / eligible cases) × 100 + 3',
+    'Percentage of completed cases (completed cases / eligible cases) × 100 - 3',
+    'Percentage of completed cases: completed cases / eligible cases × 100.5',
+    'نسبة إغلاق الحالات (الحالات المغلقة ÷ الحالات المؤهلة) × ١٠٠٫٥',
+    'نسبة إغلاق الحالات (الحالات المغلقة ÷ الحالات المؤهلة × ١٠٠)',
+    'نسبة إغلاق الحالات (الحالات المغلقة ÷ الحالات المؤهلة) × ١٠٠ × ٠٫٠١',
+])
+def test_wrong_scale_position_or_additional_arithmetic_is_rejected_without_rewriting(metric):
+    assert normalize_percentage_metric(metric) == metric
+    with pytest.raises(KpiFormulaError) as failure:
+        validate_kpis([KPI, {**KPI, 'metric': metric}, KPI])
+    assert failure.value.row_indices == (2,)
+
+
+@pytest.mark.parametrize('metric', [
+    'Percentage of completed cases (completed cases / eligible cases) × 100.0',
+    'Percentage of completed cases (completed cases / eligible cases) multiplied by 100 per month',
+    'Percentage of completed cases: completed cases / eligible cases × 100',
+    'Percentage of completed cases = completed cases divided by eligible cases times 100; reviewed monthly',
+    'نسبة إغلاق الحالات (الحالات المغلقة ÷ الحالات المؤهلة) × ١٠٠٫٠',
+    'نسبة إغلاق الحالات = الحالات المغلقة ÷ الحالات المؤهلة مضروبة في ١٠٠',
+])
+def test_exact_scale_after_complete_ratio_preserves_valid_natural_language_and_decimal_zero(metric):
+    row = {**KPI, 'metric': metric}
+    assert validate_kpis([row] * 3) == [row] * 3
+
+
 def test_normalization_preserves_existing_structural_response_size_limit():
     metric = 'Percentage of cases (' + 'eligible completed case ' * 60 + '/ eligible cases)'
     metric += ' ' * (1500 - len(metric))

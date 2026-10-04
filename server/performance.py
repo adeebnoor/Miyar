@@ -7,7 +7,7 @@ from .strategic import provider_post
 FIELDS={'outcome','metric','target','frequency','deliverable'}
 PERCENTAGE_METRIC=re.compile(r'\bpercent(?:age)?\b|(?:^|[\s(])(?:ال)?نسبة(?:[\s):]|$)|مئوي[ةه]?|^\s*[%٪]|\([%٪]\)',re.IGNORECASE)
 PERCENTAGE_POINTS=re.compile(r'\bpercent(?:age)?[-\s]*points?\b|(?:ال)?(?:نقطة|نقاط)\s*(?:ال)?مئوي[ةه]',re.IGNORECASE)
-PERCENTAGE_SCALE=re.compile(r'(?:×|\*|(?<![a-z])[x]|\btimes\s+|\bmultiplied\s+by\s+|مضروب[ةه]?\s+في\s+|ضرب\s+)(?:\s*)(?:100|١٠٠|۱۰۰)(?!\d)',re.IGNORECASE)
+PERCENTAGE_SCALE=re.compile(r'(?:×|\*|(?<![a-z])[x]|\btimes\s+|\bmultiplied\s+by\s+|مضروب[ةه]?\s+في\s+|ضرب\s+)(?:\s*)(?:100|١٠٠|۱۰۰)(?:[.٫][0٠۰]+)?(?![\d.٫٬%٪]|,\d|[eE][+-]?\d)',re.IGNORECASE)
 NUMERIC_SCALE=re.compile(r'(?:×|\*|(?<![a-z])[x]|\btimes\s+|\bmultiplied\s+by\s+|مضروب[ةه]?\s+في\s+|ضرب\s+)\s*\d',re.IGNORECASE)
 RATIO_OPERATOR=re.compile(r'[/÷]|\bdivided\s+by\b|مقسوم[\u064b-\u065f]*[اةه]?[\u064b-\u065f]*\s+على',re.IGNORECASE)
 
@@ -46,6 +46,27 @@ def normalize_percentage_metric(metric):
         return metric[:first]+' ('+metric[first:last].strip()+') × 100'+metric[last:]
     return metric
 
+def complete_percentage_formula(metric):
+    """Require one exact 100 scale applied to the complete delimited ratio.
+
+    This checks formula syntax only, not operand meaning or cohort validity.
+    A scale inside the denominator or a second scale must remain a provider
+    error instead of being silently rewritten as a valid percentage.
+    """
+    ratio=clear_ratio(metric)
+    scales=list(PERCENTAGE_SCALE.finditer(metric))
+    if ratio is None or len(scales)!=1 or len(NUMERIC_SCALE.findall(metric))!=1:return False
+    first,last,parenthesized=ratio;scale=scales[0]
+    if parenthesized:
+        if scale.start()<last or metric[last:scale.start()].strip():return False
+    else:
+        if not first<=scale.start()<last:return False
+        operands=RATIO_OPERATOR.split(metric[first:scale.start()])
+        if len(operands)!=2 or not all(operand.strip() for operand in operands):return False
+    # Natural-language explanations may follow the formula, but an additional
+    # arithmetic operation would change its value and needs regeneration.
+    return not re.match(r'\s*(?:[+*×÷/%٪]|[-−]\s*\d)',metric[scale.end():])
+
 def capability():
     provider=os.getenv('MIYAR_KPI_PROVIDER','openai-compatible')
     model=os.getenv('MIYAR_KPI_MODEL','') or (os.getenv('MIYAR_STRATEGIC_GEMINI_MODEL','') if provider=='gemini' else '')
@@ -64,7 +85,7 @@ def validate_kpis(rows):
         if len(metric)>1500:raise ValueError('The normalized KPI formula exceeds the field limit')
         normalized.append({**row,'metric':metric})
     missing=[index for index,row in enumerate(normalized,1) if percentage_metric(row['metric'])
-             and (clear_ratio(row['metric']) is None or not PERCENTAGE_SCALE.search(row['metric']))]
+             and not complete_percentage_formula(row['metric'])]
     if missing:raise KpiFormulaError(missing)
     return normalized
 
