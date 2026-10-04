@@ -1,8 +1,11 @@
 import json
+from pathlib import Path
 from fastapi.testclient import TestClient
 from sqlalchemy import select
 from server.app import create_app
 from server.models import AuditEvent
+
+RELEASE_VERSION = (Path(__file__).resolve().parents[2] / 'VERSION').read_text().strip()
 
 
 def test_hosted_ui_resolves_assets_without_exposing_server_files(tmp_path,monkeypatch):
@@ -12,12 +15,12 @@ def test_hosted_ui_resolves_assets_without_exposing_server_files(tmp_path,monkey
     with TestClient(app) as c:
         health=c.get('/health').json()
         assert health['status']=='ok'
-        assert health['version']=='6.1.3'
+        assert health['version']==RELEASE_VERSION
         assert health['services']['approvals'] is True
         assert {item['format'] for item in health['services']['exports']}=={'DOCX','XLSX','PDF'}
         assert {'strategicAI','skillsSemantic','recovery','approvals','exports'}.issubset(health['services'])
         page=c.get('/',follow_redirects=False);assert page.status_code==307
-        assert page.headers['location']=='https://adeebnoor.github.io/Miyar/?v=6.1.3#home'
+        assert page.headers['location']==f'https://adeebnoor.github.io/Miyar/?v={RELEASE_VERSION}#home'
         assert c.get('/config.js').status_code==404
         assert c.get('/classifications/ssco-2019.json').status_code==404
         assert c.get('/api/v1/positions').status_code==401

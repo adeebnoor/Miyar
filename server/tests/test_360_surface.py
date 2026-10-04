@@ -1,5 +1,8 @@
 import pytest
+from pathlib import Path
 from .conftest import submit,decide
+
+RELEASE_VERSION = (Path(__file__).resolve().parents[2] / 'VERSION').read_text().strip()
 
 def test_360_admin_department_user_branding_and_institution_profile_surface(env):
     app,c,auth,position=env
@@ -117,7 +120,7 @@ def test_360_health_reports_real_storage_and_does_not_claim_unconfigured_ai(env)
     assert health.status_code==200
     body=health.json()
     assert body['status']=='ok'
-    assert body['version']=='6.1.3'
+    assert body['version']==RELEASE_VERSION
     assert body['services']['version']==body['version']
     assert body['occupations']==5041
     assert body['semanticModelReady'] is False
