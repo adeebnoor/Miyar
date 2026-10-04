@@ -28,7 +28,7 @@ test('every service and trust route renders and every linked first-party file re
   const links=await page.locator('a[href]').evaluateAll(nodes=>nodes.map(n=>n.href));for(const href of links){const u=new URL(href);if(u.origin===new URL(BASE).origin){u.hash='';files.add(u.href);}}
  }
  for(const lang of ['en','ar'])for(const route of ['privacy','terms','dpa','retention','security','methodology','status','changes','recovery']){
-  await page.evaluate(v=>localStorage.setItem('miyar-language',v),lang);await page.goto(BASE+'trust.html#'+route);await expect(page.locator('html')).toHaveAttribute('lang',lang);await expect(page.locator('#trust-main h1')).toBeVisible();expect((await page.locator('#trust-main').innerText()).length).toBeGreaterThan(100);
+  await page.goto(BASE+'trust.html#'+route);if(await page.locator('html').getAttribute('lang')!==lang)await page.locator('#trust-language').click();await expect(page.locator('html')).toHaveAttribute('lang',lang);await expect(page.locator('#trust-main h1')).toBeVisible();expect((await page.locator('#trust-main').innerText()).length).toBeGreaterThan(100);
   const links=await page.locator('a[href]').evaluateAll(nodes=>nodes.map(n=>n.href));for(const href of links){const u=new URL(href);if(u.origin===new URL(BASE).origin){u.hash='';files.add(u.href);}}
  }
  for(const url of files){const r=await request.get(url);expect(r.ok(),'Broken first-party link '+url+' status '+r.status()).toBeTruthy();}
