@@ -1,8 +1,9 @@
 {
-  "version": "6.2.1",
-  "buildId": "6c012f466ac831e8",
+  "version": "6.2.2",
+  "buildId": "120a4039f5299d67",
   "releasedAt": "2026-10-04",
   "changes": [
+    "Keep supplied KPI targets mandatory and expose undefined clocks and inferred periods for review",
     "Preserve duties after reporting recipients and separate collaboration context in complex descriptions",
     "Generate typed KPI proportions from explicit operands and repair the actual rejected draft once",
     "Refined bilingual experience: decision-first entrance, navy and teal identity, consistent forms and results, accessible RTL and responsive layouts",
