@@ -14,18 +14,36 @@ function explicitLevel(text){
  if(['مدير','رئيس قسم','رئيس ادارة','manager','director','head'].some(x=>has(text,x)))return'manager';
  return null;
 }
+// A boundary is an independently stated action, not a noun such as
+// "development" in "permits and development stage gates".
+const englishAction='(?:manage(?:s|d|ing)?|lead(?:s|ing)?|led|develop(?:s|ed|ing)?|evaluat(?:e|es|ed|ing)|analy[sz](?:e|es|ed|ing)|prepar(?:e|es|ed|ing)|coordinat(?:e|es|ed|ing)|perform(?:s|ed|ing)?|conduct(?:s|ed|ing)?|oversee(?:s|ing)?|deliver(?:s|ed|ing)?|test(?:s|ed|ing)?|document(?:s|ed|ing)?|monitor(?:s|ed|ing)?|track(?:s|ed|ing)?|control(?:s|led|ling)?|assess(?:es|ed|ing)?|review(?:s|ed|ing)?|follow(?:s|ed|ing)?\\s+up|align(?:s|ed|ing)?|improv(?:e|es|ed|ing)|cascad(?:e|es|ed|ing)|maintain(?:s|ed|ing)?|design(?:s|ed|ing)?|process(?:es|ed|ing)?|support(?:s|ed|ing)?)';
+const arabicAction='(?:يقوم|يتولى|يعد|يراجع|يدير|يحلل|يطور|ينسق|يختبر|يوثق|يرفع|يتابع|يراقب|يقيم|يصمم|يربط|يضبط|يخطط|يعالج|يشرف|ينفذ|يحسن|يقود)';
+const arabicTask='(?:إعداد|اعداد|رفع|اختبار|توثيق|متابعة|مراقبة|تحليل|تقييم|تطوير|صياغة|تصميم|ربط|ضبط|تنسيق|معالجة|إدارة|ادارة|الإشراف|الاشراف|تنفيذ|تحسين|قيادة|تخطيط)';
+const actionBoundary=new RegExp('\\s+(?:and|but|while)\\s+(?='+englishAction+'\\b)|\\s+(?:و\\s*|(?:و?لكن(?:ه|ها)?)\\s+)(?=(?:'+arabicAction+'|'+arabicTask+')\\s)','i');
+// With a negated Arabic noun list, a conjunction alone is ambiguous. A new
+// finite verb or an explicit "لكن" establishes a positive independent duty.
+const exclusionBoundary=new RegExp('\\s+(?:and|but|while)\\s+(?='+englishAction+'\\b)|\\s+و\\s*(?='+arabicAction+'\\s)|\\s+(?:و?لكن(?:ه|ها)?)\\s+(?=(?:'+arabicAction+'|'+arabicTask+')\\s)','i');
+function contextualScope(value,boundary){const at=value.search(boundary);return at<0?[value,'']:[value.slice(0,at),value.slice(at).replace(/^\s*(?:and|but|while|و?لكن(?:ه|ها)?|و)\s*/i,'')];}
 function interpret(input={}){
- const raw=[input.objective||input.strategyObjective,input.responsibilities].filter(Boolean).join('\n'),reporting=[],excluded=[];
- // Recipients and exclusions remain visible as context; they are not evidence
- // that the requested role owns the recipient's function or excluded work.
- const reportingPattern=/\b(?:report(?:s|ing)?(?:\s+(?:findings|results|progress|status|monthly|weekly))*\s+(?:to|for)|(?:submit|send|provide|prepare|present|deliver)\w*\s+(?:\w+\s+){0,4}reports?\s+(?:to|for))\s+[^,;.!?\n]+|(?:و?يرفع|و?ترفع|و?ارفع|و?رفع|و?تقديم|و?إعداد|و?اعداد|و?إرسال|و?ارسال)\s+(?:تقارير|التقارير|تقرير|التقرير)(?:\s+(?:دورية|شهرية|أسبوعية|شهريا|شهريًا))?\s+(?:إلى|الى|لـ?)\s*[^،,;؛.\n]+|(?:للمدير|لرئيس|للجنة)\s+[^،,;؛.\n]+/gi;
- const separated=raw.replace(/\s+(?:and|but|while)\s+(?=(?:manage|lead|develop|evaluate|analy[sz]e|prepare|coordinate|perform|conduct|oversee|deliver)\w*\b)/gi,'\n').replace(/\s+(?=و(?:يقوم|يتولى|يعد|يراجع|يدير|يحلل|يطور|ينسق)\s)/g,'\n');
- let text=separated;
+ const raw=[input.objective||input.strategyObjective,input.responsibilities].filter(Boolean).join('\n'),reporting=[],excluded=[],collaboration=[];
+ // Recipients, stakeholders and exclusions remain visible as context. They do
+ // not establish ownership of a recipient's function or level.
+ const reportingPattern=/\b((?:report(?:s|ing)?(?:\s+(?:findings|results|progress|status|monthly|weekly))*|(?:submit|send|provide|prepare|present|deliver)\w*\s+(?:\w+\s+){0,4}reports?)\s+(?:to|for))\s+[^,;.!?\n]+|((?:و?يرفع|و?ترفع|و?ارفع|و?رفع|و?تقديم|و?إعداد|و?اعداد|و?إرسال|و?ارسال)\s+(?:تقارير|التقارير|تقرير|التقرير)(?:\s+[^\s،,;؛.]+){0,4}?\s+(?:إلى|الى|لـ?))\s*[^،,;؛.\n]+|(?:للمدير|لرئيس|للجنة)\s+[^،,;؛.\n]+/gi;
  const exclusionPattern=/\b(?:not responsible for|does not (?:own|manage|perform)|no responsibility for|without|excluding|exclude|no)\s+[^,;.!?\n]+|(?:و?لا يتولى|و?لا تشمل|و?لا يشمل|و?ليس مسؤول[اًا]? عن|و?دون|و?بدون|باستثناء)\s+[^،,;؛.\n]+/gi;
- text=text.replace(exclusionPattern,x=>{excluded.push(x.trim());return ' ';});
- text=text.replace(reportingPattern,x=>{reporting.push(x.trim());return ' ';});
- const clauses=text.split(/[\n;؛،,.!?]+/).map(x=>x.trim()).filter(Boolean);
- return {raw,text:clauses.join('\n'),clauses,reporting,excluded,method:'context-aware-rules-not-semantic-inference'};
+ let text=raw.replace(exclusionPattern,value=>{const [scope,tail]=contextualScope(value,exclusionBoundary);excluded.push(scope.trim());return '\n'+tail;});
+ text=text.replace(reportingPattern,(value,englishPrefix,arabicPrefix)=>{
+  const [scope,tail]=contextualScope(value,actionBoundary);reporting.push(scope.trim());
+  // Keep the reporting activity and its work-specific modifiers, while removing
+  // the recipient (e.g. "prepare project status reports for Strategy Director").
+  const prefix=englishPrefix||arabicPrefix||'';
+  const activity=prefix.replace(/\s+(?:to|for|إلى|الى|لـ?)$/i,'');
+  return activity+'\n'+tail;
+ });
+ const stakeholder='(?:the\\s+)?(?:Finance Director|Finance Manager|Chief Executive|Audit Committee|Engineering|Investment|Procurement|Finance|PMO|Strategy|Human Resources|Human Capital|Internal Audit|GRC|Legal|Operations|HR|HC|المدير المالي|مدير المالية|الرئيس التنفيذي|لجنة المراجعة|الهندسة|الاستثمار|المشتريات|المالية|الاستراتيجية|الموارد البشرية|رأس المال البشري|راس المال البشري|المراجعة الداخلية|الشؤون القانونية|العمليات)(?![\\p{L}\\p{N}])';
+ const stakeholderPattern=new RegExp('(?:\\bin (?:coordination|collaboration) with|\\bwith|بالتنسيق مع|بالتعاون مع|مع)\\s+'+stakeholder+'(?:\\s*(?:and|&|و)\\s*'+stakeholder+')*','giu');
+ text=text.replace(stakeholderPattern,value=>{collaboration.push(value.trim());return ' ';});
+ const clauses=text.split(new RegExp(actionBoundary.source+'|[\\n;؛،,.!?]+','gi')).map(x=>x.trim()).filter(Boolean);
+ return {raw,text:clauses.join('\n'),clauses,reporting,excluded,collaboration,method:'context-aware-rules-not-semantic-inference'};
 }
 function level(input){return explicitLevel(input.seniority||input.requestedLevel)||explicitLevel(interpret(input).text)||'specialist';}
 function detect(input={}){
@@ -41,7 +59,11 @@ function detect(input={}){
  const secondary=[...ranked].filter(x=>x.family.id!==selected.family.id&&x.textScore>0).sort((a,b)=>b.textScore-a.textScore)[0];
  const secondaryHR=selected.family.id==='finance'&&secondary?.family.id==='hc'&&['رواتب','payroll'].some(x=>has(text,x));
  const conflict=secondaryHR||Boolean(fieldHit?.fieldScore&&textHit?.textScore&&fieldHit.family.id!==textHit.family.id&&!(fieldHit.family.id==='operations'&&textHit.family.id==='maintenance'));
- const clauseFamilies=new Set(interpretation.clauses.map(clause=>catalog.families.map(f=>({id:f.id,value:score(clause,f.terms)+Math.max(0,...catalog.roles.filter(r=>r.family===f.id&&r.level==='specialist').map(r=>score(clause,r.taskKeywords)))})).sort((a,b)=>b.value-a.value)[0]).filter(x=>x?.value>=12).map(x=>x.id));
+ const actionCue=new RegExp('(?:^|\\s)(?:'+englishAction+'|'+arabicAction+'|'+arabicTask+')(?:\\s|$)','i');
+ const clauseFamilies=new Set(interpretation.clauses.map(clause=>{
+  const action=actionCue.test(clause);
+  return catalog.families.map(f=>({id:f.id,action,value:score(clause,f.terms)+Math.max(0,...catalog.roles.filter(r=>r.family===f.id&&r.level==='specialist').map(r=>score(clause,r.taskKeywords)))})).sort((a,b)=>b.value-a.value)[0];
+ }).filter(x=>x?.value>=12||(x?.value>0&&x.action)).map(x=>x.id));
  const workstreams=[...ranked].filter(x=>x.textScore>0&&(x.family.id===selected.family.id||clauseFamilies.has(x.family.id)||x.textScore>=Math.max(18,(textHit?.textScore||0)*.65))).sort((a,b)=>b.textScore-a.textScore).map(x=>({family:x.family,anchors:anchors(text,[...x.family.terms,...catalog.roles.filter(r=>r.family===x.family.id&&r.level==='specialist').flatMap(r=>r.taskKeywords)])}));
  return {family:selected.family,fieldFamily:fieldHit?.fieldScore?fieldHit.family:null,textFamily:secondaryHR?secondary.family:textHit?.textScore?textHit.family:null,conflict,text,field,interpretation,workstreams};
 }
@@ -53,7 +75,12 @@ function recommend(input={},nodes=null,education=null){
  let intent=ranked[0]?.score?ranked[0].role.intent:'general';
  // Preserve the expert's mixed HC portfolio only for genuinely multi-workstream scope.
  if(family.id==='hc'&&['hc projects','human capital projects','مشاريع راس المال البشري'].some(x=>has(text,x))&&['procurement','rfp','مشتريات','opex','ميزانية'].some(x=>has(text,x))){intent='portfolio';if(!explicitLevel(input.seniority||input.requestedLevel))requested='manager';}
- const noManagement=/(?:no|without|exclude|avoid)\s+(?:any\s+)?(?:admin(?:istrative)?|manage\w*|director|executive)|(?:دون|بدون|لا)\s+(?:مهام\s+)?(?:اداري|إداري|ادارية|إدارية|قيادي|إشراف|ادارة فريق|إدارة فريق)/i.test([input.constraints,...detection.interpretation.excluded].join(' '));
+ // A manager may exclude payroll ownership while still managing an audit
+ // team. Constrain level only for excluded management scope, including lists.
+ const noManagement=[input.constraints,...detection.interpretation.excluded].filter(Boolean).some(value=>{
+  if(!/\b(?:no|without|exclude|excluding|avoid|not responsible|does not)\b|دون|بدون|لا|باستثناء/i.test(value))return false;
+  return /(?:\b(?:no|without|exclude|excluding|avoid|no responsibility for|not responsible for)\s+(?:any\s+)?|\bor\s+)(?:(?:admin(?:istrative)?|management|managerial|director|executive)(?:\s+(?:duties|responsibilities|authority|role|level))?(?=\s*(?:$|[,;.!]|\bor\b))|(?:manage|managing|supervise|supervising)\s+(?:a\s+|the\s+)?(?:team|staff|employees)\b)|(?:دون|بدون|لا(?:\s+يتولى)?|باستثناء|أو)\s+(?:مهام\s+)?(?:اداري|إداري|ادارية|إدارية|قيادي|إشراف|ادارة فريق|إدارة فريق|قيادة فريق)/i.test(value);
+ });
  let chosenLevel=noManagement?'specialist':requested;
  let candidate=roles.find(r=>r.intent===intent&&r.level===chosenLevel);
  if(!candidate)candidate=roles.find(r=>r.intent==='general'&&r.level===chosenLevel);

@@ -13,6 +13,17 @@ CONTENT = {'title': 'Synthetic Operations Specialist', 'field': 'Operations',
            'responsibilities': 'Review processing records', 'purpose': 'Improve service delivery'}
 
 
+def typed_payload(payload):
+    """Encode fixture labels without correcting their deliberately bad math."""
+    if not isinstance(payload,dict) or not isinstance(payload.get('kpis'),list):return payload
+    rows=[]
+    for row in payload['kpis']:
+        if isinstance(row,dict) and isinstance(row.get('metric'),str):
+            row={**row,'metric':{'kind':'direct','label':row['metric'],'numerator':'','denominator':''}}
+        rows.append(row)
+    return {**payload,'kpis':rows}
+
+
 def configure(monkeypatch):
     monkeypatch.setenv('MIYAR_KPI_PROVIDER', 'gemini')
     monkeypatch.setenv('MIYAR_STRATEGIC_GEMINI_KEY', 'private-synthetic-test-key')
@@ -36,7 +47,7 @@ def provider(monkeypatch, result, finish='STOP', responses=None):
             payload=responses[min(len(seen)-1,len(responses)-1)] if responses is not None else result
             return {'candidates': [{'finishReason': finish, 'content': {'parts': [
                 {'text': 'This thought must not become output', 'thought': True},
-                {'text': json.dumps(payload, ensure_ascii=False)}]}}]}
+                {'text': json.dumps(typed_payload(payload), ensure_ascii=False)}]}}]}
 
     class Client:
         def __init__(self, **kw):
@@ -79,6 +90,9 @@ def test_opt_in_gemini_kpis_use_schema_and_bounded_job_data_only(monkeypatch, la
     assert schema['properties']['kpis']['minItems'] == 3 and schema['properties']['kpis']['maxItems'] == 5
     assert schema['additionalProperties'] is False
     guidance = schema['properties']['kpis']['items']['properties']['metric']['description']
+    metric_schema=schema['properties']['kpis']['items']['properties']['metric']
+    assert metric_schema['type']=='object' and set(metric_schema['required'])=={'kind','label','numerator','denominator'}
+    assert metric_schema['properties']['kind']['enum']==['direct','percentage']
     assert 'same eligible cohort and measurement period' in guidance
     assert 'outside the complete ratio' in guidance and 'exactly one division operator' in guidance
     assert 'plain count or duration metric cannot have an absolute percentage target' in guidance
@@ -374,7 +388,7 @@ def test_observed_third_row_formula_omission_gets_one_bounded_correction_with_st
              if lang=='en' else 'نسبة نماذج التقييم المراجعة التي تستوفي معايير الجودة الداخلية')
     corrected=(missing+' (models meeting quality standards / eligible reviewed models) × 100'
                if lang=='en' else missing+' (النماذج المستوفية لمعايير الجودة ÷ النماذج المراجعة المؤهلة) × 100')
-    bad={**KPI,'outcome':'GENERATED_CONTENT_MUST_NOT_BE_FORWARDED','metric':missing,'target':'Proposed: 90% for manager review'}
+    bad={**KPI,'outcome':'UNTRUSTED_PREVIOUS_MODEL_DRAFT','metric':missing,'target':'Proposed: 90% for manager review'}
     good={**bad,'metric':corrected}
     rows=[KPI,KPI,bad,KPI]
     seen=provider(monkeypatch,None,responses=[{'kpis':rows},{'kpis':[KPI,KPI,good,KPI]}])
@@ -382,10 +396,14 @@ def test_observed_third_row_formula_omission_gets_one_bounded_correction_with_st
     assert result==[KPI,KPI,good,KPI] and len(seen)==2
     first,second=seen
     assert first['json']['generationConfig']==second['json']['generationConfig']
-    assert first['json']['contents']==second['json']['contents']
-    feedback=second['json']['systemInstruction']['parts'][0]['text']
+    assert first['json']['contents'][0]==second['json']['contents'][0]
+    assert first['json']['systemInstruction']==second['json']['systemInstruction']
+    assert [part['role'] for part in second['json']['contents']]==['user','model','user']
+    assert json.loads(second['json']['contents'][1]['parts'][0]['text'])==typed_payload({'kpis':rows})
+    feedback=second['json']['contents'][2]['parts'][0]['text']
     assert 'in rows 3.' in feedback and 'Server validation feedback' in feedback
     assert missing not in feedback and bad['outcome'] not in feedback
+    assert missing not in second['json']['systemInstruction']['parts'][0]['text']
 
 
 def test_repeated_percentage_formula_omission_stops_after_one_correction_without_fabrication(monkeypatch):
@@ -410,8 +428,9 @@ def test_absolute_percent_target_with_count_metric_gets_one_correction_and_prese
     good = {**bad, 'metric': corrected}
     seen = provider(monkeypatch, None, responses=[{'kpis': [KPI, bad, KPI]}, {'kpis': [KPI, good, KPI]}])
     assert generate_kpis(CONTENT, lang) == [KPI, good, KPI]
-    assert len(seen) == 2 and seen[0]['json']['contents'] == seen[1]['json']['contents']
-    feedback = seen[1]['json']['systemInstruction']['parts'][0]['text']
+    assert len(seen) == 2 and seen[0]['json']['contents'][0] == seen[1]['json']['contents'][0]
+    assert seen[0]['json']['systemInstruction']==seen[1]['json']['systemInstruction']
+    feedback = seen[1]['json']['contents'][-1]['parts'][0]['text']
     assert 'in rows 2.' in feedback and 'absolute percentage target/metric units' in feedback
     assert metric not in feedback and target not in feedback
 
@@ -465,7 +484,7 @@ def test_terminal_generation_diagnostics_emit_only_allowlisted_categories_and_bo
             bad = {**KPI, 'outcome': 'PRIVATE_PROVIDER_OUTPUT_SECRET', 'metric': 'Number of documented assumptions', 'target': '100%'}
             rows = [KPI, bad, KPI] if scenario == 'formula' else [KPI] * 3
             payload = {'kpis': [{**KPI, 'target': 20}] * 3} if scenario == 'schema' else {'kpis': rows}
-            text = 'PRIVATE_PROVIDER_OUTPUT_SECRET invalid JSON' if scenario == 'json' else json.dumps(payload)
+            text = 'PRIVATE_PROVIDER_OUTPUT_SECRET invalid JSON' if scenario == 'json' else json.dumps(typed_payload(payload))
             return {'candidates': [{'finishReason': 'MAX_TOKENS' if scenario == 'unfinished' else 'STOP', 'content': {'parts': [{'text': text}]}}]}
 
     def post(*args, **kwargs):

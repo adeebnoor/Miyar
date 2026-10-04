@@ -1,6 +1,6 @@
 # Expert review trial
 
-## Current full-site review (6.2.0)
+## Current full-site review (6.2.1)
 
 The bilingual entrance and workspace use a shared navy/teal design, clearer task
 navigation, readable fields and a consistent hierarchy for decisions and evidence.
@@ -21,10 +21,15 @@ It returns three to five editable proposals, validates proportional percentage
 formulas, and makes at most one corrective provider generation. A failed response
 does not become a fabricated result. Targets and eligible cohorts need HR review.
 
-Known live limitation: a complex synthetic workforce-planning KPI example failed
-row validation even after the single corrective generation. The service withheld
-the invalid output and returned a temporary failure. Local KPI generation remains
-available; this case should be included in the expert's review.
+A complex synthetic workforce-planning KPI example failed row validation on
+6.2.0 even after a corrective generation. Release 6.2.1 requests typed percentage
+measurements with explicit numerator and denominator and renders their formula
+before the same strict local validation. A single correction receives the actual
+bounded rejected draft as model data, with the original job input and fixed system
+rules preserved. Invalid or repeated failures remain withheld; local generation
+remains available. Retest the 30-day plan, 95% monthly job-data completeness and
+auditable gaps-and-assumptions register together. Automated provider fixtures do
+not establish live-model accuracy or professional acceptance.
 
 The three public AI endpoints share the same persisted trial window, quotas and
 concurrency guard. Check the live **Service status** before arranging a review;
