@@ -207,6 +207,51 @@ def test_exact_scale_after_complete_ratio_preserves_valid_natural_language_and_d
     assert validate_kpis([row] * 3) == [row] * 3
 
 
+@pytest.mark.parametrize('metric,target', [
+    ('عدد الافتراضات الموثقة في السجل القابل للمراجعة', '100% من الافتراضات المستخدمة في التخطيط كهدف مقترح'),
+    ('متوسط أيام المعالجة', '٩٥٪ من المعاملات خلال ثلاثين يوماً'),
+    ('Number of documented assumptions', 'Proposed: 100% of assumptions used in planning'),
+    ('Median completion days', 'At least 95 percent of eligible cases'),
+    ('Number of documented assumptions', 'توثيق ١٠٠ بالمئة من الافتراضات'),
+    ('Number of completed cases', '20% reduction and at least 95% of cases completed on time'),
+    ('عدد الحالات المتأخرة', 'خفض بنسبة ٢٠٪ وتوثيق ١٠٠٪ من الافتراضات'),
+    ('Completed cases (completed cases / eligible cases)', 'Proposed: 95%'),
+])
+def test_absolute_percentage_targets_reject_unscaled_count_or_duration_metrics_without_inference(metric, target):
+    row = {**KPI, 'metric': metric, 'target': target}
+    with pytest.raises(KpiFormulaError) as failure:
+        validate_kpis([KPI, row, KPI])
+    assert failure.value.row_indices == (2,)
+    assert row['metric'] == metric and row['target'] == target
+
+
+@pytest.mark.parametrize('metric,target', [
+    ('Number of documented assumptions', 'Proposed 20% reduction within 90 days'),
+    ('Median completion days', 'Proposed: 20% below baseline within 90 days'),
+    ('Number of documented assumptions', 'Reduce undocumented assumptions by 20% within 90 days'),
+    ('Median completion days', 'Improve processing time by 20 percent'),
+    ('عدد الحالات المتأخرة', 'خفض بنسبة 20% خلال تسعين يوماً'),
+    ('متوسط أيام المعالجة', 'خفض مدة المعالجة بنسبة ٢٠٪ خلال تسعين يوماً'),
+    ('عدد الافتراضات الموثقة', 'زيادة الافتراضات الموثقة بنسبة ١٠ بالمئة'),
+    ('Number of documented assumptions', 'At least 40 documented assumptions'),
+    ('متوسط أيام المعالجة', 'أقل من ثلاثين يوماً'),
+    ('Percentage-point improvement from baseline', '20 percentage points improvement'),
+])
+def test_explicit_relative_percentage_changes_and_nonpercentage_targets_preserve_count_duration_units(metric, target):
+    row = {**KPI, 'metric': metric, 'target': target}
+    assert validate_kpis([row] * 3) == [row] * 3
+
+
+@pytest.mark.parametrize('metric,target', [
+    ('(Number of documented assumptions / Total eligible assumptions used in planning) × 100', 'Proposed: 100%'),
+    ('Documented assumptions: (documented eligible assumptions / total eligible assumptions) × 100', 'Proposed: 95 percent'),
+    ('(عدد الافتراضات الموثقة ÷ إجمالي الافتراضات المستخدمة في التخطيط) × ١٠٠', '١٠٠٪ من الافتراضات'),
+])
+def test_complete_proportional_formulas_without_percentage_label_accept_absolute_percentage_targets(metric, target):
+    row = {**KPI, 'metric': metric, 'target': target}
+    assert validate_kpis([row] * 3) == [row] * 3
+
+
 def test_normalization_preserves_existing_structural_response_size_limit():
     metric = 'Percentage of cases (' + 'eligible completed case ' * 60 + '/ eligible cases)'
     metric += ' ' * (1500 - len(metric))
@@ -262,6 +307,33 @@ def test_repeated_percentage_formula_omission_stops_after_one_correction_without
     assert len(seen)==2
     assert isinstance(failure.value.__cause__,KpiFormulaError)
     assert failure.value.__cause__.row_indices==(3,)
+
+
+@pytest.mark.parametrize('lang', ['ar', 'en'])
+def test_absolute_percent_target_with_count_metric_gets_one_correction_and_preserves_supplied_job_data(monkeypatch, lang):
+    configure(monkeypatch)
+    metric = 'عدد الافتراضات الموثقة في السجل القابل للمراجعة' if lang == 'ar' else 'Number of documented assumptions'
+    target = '100% من الافتراضات المستخدمة في التخطيط كهدف مقترح' if lang == 'ar' else 'Proposed: 100% of assumptions used in planning'
+    corrected = ('(عدد الافتراضات الموثقة ÷ إجمالي الافتراضات المستخدمة في التخطيط) × 100' if lang == 'ar' else
+                 '(Number of documented assumptions / Total eligible assumptions used in planning) × 100')
+    bad = {**KPI, 'metric': metric, 'target': target}
+    good = {**bad, 'metric': corrected}
+    seen = provider(monkeypatch, None, responses=[{'kpis': [KPI, bad, KPI]}, {'kpis': [KPI, good, KPI]}])
+    assert generate_kpis(CONTENT, lang) == [KPI, good, KPI]
+    assert len(seen) == 2 and seen[0]['json']['contents'] == seen[1]['json']['contents']
+    feedback = seen[1]['json']['systemInstruction']['parts'][0]['text']
+    assert 'in rows 2.' in feedback and 'absolute percentage target/metric units' in feedback
+    assert metric not in feedback and target not in feedback
+
+
+def test_repeated_absolute_percent_target_with_count_metric_fails_after_one_correction(monkeypatch):
+    configure(monkeypatch)
+    bad = {**KPI, 'metric': 'Number of documented assumptions', 'target': '100% of planning assumptions'}
+    seen = provider(monkeypatch, {'kpis': [KPI, bad, KPI]})
+    with pytest.raises(ValueError, match='no results were fabricated') as failure:
+        generate_kpis(CONTENT, 'en')
+    assert len(seen) == 2 and isinstance(failure.value.__cause__, KpiFormulaError)
+    assert failure.value.__cause__.row_indices == (2,)
 
 
 def test_complete_worded_ratio_is_accepted_without_correction(monkeypatch):
