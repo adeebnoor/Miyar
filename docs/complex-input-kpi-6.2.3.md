@@ -20,6 +20,12 @@ All four responses required human review, denied organization access and reporte
 that trial input was not stored. These are real provider requests using synthetic
 text, not offline fixtures or expert approval.
 
+The exact Arabic planning case was rechecked on the published 6.2.3 build
+`20c781e25aadcc06` at 23:12:10Z and returned HTTP 200 with three valid rows in
+13.28 seconds. Generation from the real public website also succeeded, with the
+original generation input displayed beside the editable result. The underlying
+model output retained the semantic limitations described below.
+
 ## Meaning review
 
 The planning input supplied a 30-day deadline, 95% monthly job-data completeness,
@@ -31,9 +37,12 @@ strings. The planning case therefore passed the transport/formula contract, not
 complete semantic acceptance.
 
 Both investment outputs preserved the stated 30 calendar days from receipt of ALL
-required documents, a due-deadline cohort including unfinished overdue cases, the
-95% target, and BOTH valuation-model and risk documentation. Inferred monthly
-measurement periods still require explicit manager confirmation. The 100%
+required documents, the 95% target, and BOTH valuation-model and risk documentation.
+Their denominators use cases with deadlines in the measurement period; only the
+English output explicitly includes unfinished overdue cases. Neither numerator
+explicitly restricts its completed cases to that same due-deadline cohort, so cohort
+and period alignment still need confirmation. Inferred monthly measurement periods
+also require explicit manager confirmation. The 100%
 recommendation-coverage target is a quantification of the supplied “every”
 requirement; it must not be confused with an independently supplied numeric target.
 
