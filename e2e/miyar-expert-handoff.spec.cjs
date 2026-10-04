@@ -1,4 +1,5 @@
 const {test,expect}=require('@playwright/test');
+const fs=require('node:fs');
 const BASE='http://127.0.0.1:4173/';
 async function start(page,route='#demo'){
  await page.addInitScript(()=>localStorage.setItem('miyar-language','en'));
@@ -53,7 +54,8 @@ test('full website keeps generated roles unmapped and downloads expert feedback 
  await page.locator('#demo-ai-consent').check();await page.locator('#role-form button[type=submit]').click();
  await expect(page.locator('#result-content')).toContainText('Unmapped');
  await page.locator('.demo-expert-feedback summary').click();await page.locator('#demo-expert-comment').fill('Synthetic UI test feedback');
- const download=page.waitForEvent('download');await page.locator('[data-ai-download]').click();expect((await download).suggestedFilename()).toMatch(/^Miyar-full-site-review-.*\.json$/);
+ const download=page.waitForEvent('download');await page.locator('[data-ai-download]').click();const exported=await download;expect(exported.suggestedFilename()).toMatch(/^Miyar-full-site-review-.*\.json$/);
+ const result=JSON.parse(fs.readFileSync(await exported.path(),'utf8'));expect(result.application).toBe('Miyar');expect(result.feedback).toBe('Synthetic UI test feedback');expect(result.result.finalTitle).toBe('Payroll Innovation Specialist');expect(result.result.occupationCode).toBeNull();expect(result.input.objective).toBeTruthy();
  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBeTruthy();
  await page.locator('[data-ai-use]').click();await expect(page.locator('[data-field=title]')).toHaveValue('Payroll Innovation Specialist');await expect(page.locator('[data-field=occupationCode]')).toHaveValue('');
 });

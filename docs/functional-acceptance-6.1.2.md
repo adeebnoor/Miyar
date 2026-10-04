@@ -36,6 +36,8 @@ This is a test specification and coverage map, not a claim of expert-validated r
 ## Changes triggered by acceptance testing
 
 - Corrected calculations clear earlier error messages and recalculation hints.
+- Framework preview inserts its panel after the actual file control; the control has no enclosing label.
+- The public expert feedback download attaches its link to the document before clicking.
 - Editing skill inputs removes prior skill/candidate evidence.
 - Selecting a replacement bulk or pilot file removes its previous report/export; an invalid file cannot leave a stale successful report.
 - A malformed scenario import removes the computed output while preserving saved records.

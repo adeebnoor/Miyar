@@ -1,20 +1,22 @@
 const {test,expect}=require('@playwright/test');
 const {spawn,execFileSync}=require('node:child_process');
-const fs=require('node:fs'),path=require('node:path'),crypto=require('node:crypto');
-const BASE='http://127.0.0.1:4173/',HOST='https://miyar-enterprise-api.onrender.com',API='http://127.0.0.1:8193';
-let server,logs='';
+const fs=require('node:fs'),path=require('node:path'),crypto=require('node:crypto'),os=require('node:os'),https=require('node:https');
+const BASE='http://127.0.0.1:4173/',API='https://127.0.0.1:8193';
+let server,certificateDirectory,logs='';
+function fixtureHealthy(){return new Promise(resolve=>{const request=https.get(API+'/health',{rejectUnauthorized:false},response=>{response.resume();resolve(response.statusCode===200);});request.setTimeout(1500,()=>request.destroy());request.on('error',()=>resolve(false));});}
 test.beforeAll(async()=>{
- server=spawn(process.env.MIYAR_TEST_PYTHON||'python3',['-m','uvicorn','e2e.fixtures.api_seed:app','--host','127.0.0.1','--port','8193'],{cwd:path.join(__dirname,'..'),env:{...process.env,MIYAR_ENV:'test',MIYAR_SIGNING_KEY:Buffer.from('0123456789abcdef0123456789abcdef').toString('base64')}});
+ certificateDirectory=fs.mkdtempSync(path.join(os.tmpdir(),'miyar-acceptance-tls-'));const key=path.join(certificateDirectory,'localhost.key'),certificate=path.join(certificateDirectory,'localhost.crt');
+ execFileSync('openssl',['req','-x509','-newkey','rsa:2048','-nodes','-days','1','-keyout',key,'-out',certificate,'-subj','/CN=localhost','-addext','subjectAltName=IP:127.0.0.1,DNS:localhost'],{stdio:'ignore'});
+ server=spawn(process.env.MIYAR_TEST_PYTHON||'python3',['-m','uvicorn','e2e.fixtures.api_seed:app','--host','127.0.0.1','--port','8193','--ssl-keyfile',key,'--ssl-certfile',certificate],{cwd:path.join(__dirname,'..'),env:{...process.env,MIYAR_ENV:'test',MIYAR_CORS_ORIGINS:BASE.replace(/\/$/,''),MIYAR_SIGNING_KEY:Buffer.from('0123456789abcdef0123456789abcdef').toString('base64')}});
  server.stdout.on('data',x=>logs+=x);server.stderr.on('data',x=>logs+=x);
- for(let i=0;i<100;i++){try{if((await fetch(API+'/health')).ok)return;}catch{}if(server.exitCode!==null)throw Error(logs);await new Promise(r=>setTimeout(r,200));}throw Error(logs);
+ for(let i=0;i<100;i++){if(await fixtureHealthy())return;if(server.exitCode!==null)throw Error(logs);await new Promise(r=>setTimeout(r,200));}throw Error(logs);
 });
-test.use({screenshot:'only-on-failure'});
-test.afterAll(()=>server?.kill());
-test.afterEach(async({page})=>{await page.unrouteAll({behavior:'wait'});});
+// This disposable localhost fixture uses a one-day self-signed certificate.
+test.use({screenshot:'only-on-failure',ignoreHTTPSErrors:true});
+test.afterAll(async()=>{if(server&&server.exitCode===null)await new Promise(resolve=>{server.once('exit',resolve);server.kill();});if(certificateDirectory)fs.rmSync(certificateDirectory,{recursive:true,force:true});});
 async function setup(page,lang='en'){
- await page.addInitScript(v=>localStorage.setItem('miyar-language',v),lang);
- // Preserve multipart bytes when forwarding a browser upload to the disposable API.
- await page.route(HOST+'/**',async r=>{const response=await r.fetch({url:r.request().url().replace(HOST,API),postData:r.request().postDataBuffer()??undefined});await r.fulfill({response});});
+ // Use the real browser network path, including CORS and native multipart uploads.
+ await page.addInitScript(({language,api})=>{localStorage.setItem('miyar-language',language);window.MIYAR_CONFIG={apiBase:api};},{language:lang,api:API});
  page.on('dialog',d=>d.accept());await page.goto(BASE+'#enterprise/connection');
 }
 async function login(page,role='line_manager',org='a'){
