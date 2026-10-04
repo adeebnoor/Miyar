@@ -2,7 +2,7 @@ import json
 
 import pytest
 
-from server.performance import capability, generate_kpis, validate_kpis, normalize_percentage_metric
+from server.performance import capability, generate_kpis, validate_kpis, normalize_percentage_metric, KpiFormulaError
 
 KPI = {'outcome': 'Reduce processing delay', 'metric': 'Median completion days',
        'target': 'Proposed: 20% below baseline within 90 days', 'frequency': 'Monthly',
@@ -20,7 +20,7 @@ def configure(monkeypatch):
     monkeypatch.delenv('MIYAR_KPI_ENDPOINT', raising=False)
 
 
-def provider(monkeypatch, result, finish='STOP'):
+def provider(monkeypatch, result, finish='STOP', responses=None):
     import server.performance as module
     seen = []
 
@@ -32,9 +32,10 @@ def provider(monkeypatch, result, finish='STOP'):
             pass
 
         def json(self):
+            payload=responses[min(len(seen)-1,len(responses)-1)] if responses is not None else result
             return {'candidates': [{'finishReason': finish, 'content': {'parts': [
                 {'text': 'This thought must not become output', 'thought': True},
-                {'text': json.dumps(result, ensure_ascii=False)}]}}]}
+                {'text': json.dumps(payload, ensure_ascii=False)}]}}]}
 
     class Client:
         def __init__(self, **kw):
@@ -70,6 +71,7 @@ def test_opt_in_gemini_kpis_use_schema_and_bounded_job_data_only(monkeypatch, la
     assert '× 100' in prompt and 'same eligible cohort and measurement period' in prompt
     assert 'including overdue unfinished cases' in prompt and 'receipt of ALL required documents' in prompt
     assert 'calendar days versus working days' in prompt
+    assert 'all explicit mandatory components and AND/OR conditions' in prompt
     data = json.loads(request['json']['contents'][0]['parts'][0]['text'])
     assert data['successMeasures'] == CONTENT['successMeasures'] and 'employeeIdentity' not in data
     schema = request['json']['generationConfig']['responseJsonSchema']
@@ -82,9 +84,10 @@ def test_opt_in_gemini_kpis_use_schema_and_bounded_job_data_only(monkeypatch, la
                                     {'kpis': [{**KPI, 'target': ''}] * 3}, []])
 def test_invalid_gemini_kpi_payload_is_rejected_without_fabricated_output(monkeypatch, result):
     configure(monkeypatch)
-    provider(monkeypatch, result)
+    seen=provider(monkeypatch, result)
     with pytest.raises(ValueError, match='no results were fabricated'):
         generate_kpis(CONTENT, 'en')
+    assert len(seen)==1  # Structural defects never trigger a formula correction.
 
 
 def test_kpi_generation_requires_explicit_provider_valid_config_success_measures_and_finished_response(monkeypatch):
@@ -113,6 +116,10 @@ def test_kpi_generation_requires_explicit_provider_valid_config_success_measures
      'Percentage of complete investment papers: (complete papers / submitted papers) × 100'),
     ('نسبة اكتمال الأدلة = الأدلة المكتملة ÷ الأدلة المستحقة',
      'نسبة اكتمال الأدلة = (الأدلة المكتملة ÷ الأدلة المستحقة) × 100'),
+    ('Percentage of complete papers (complete eligible papers divided by eligible submitted papers)',
+     'Percentage of complete papers (complete eligible papers divided by eligible submitted papers) × 100'),
+    ('نسبة اكتمال الملفات (عدد الملفات المكتملة مقسوماً على عدد الملفات المستحقة)',
+     'نسبة اكتمال الملفات (عدد الملفات المكتملة مقسوماً على عدد الملفات المستحقة) × 100'),
 ])
 def test_clear_percentage_ratios_receive_only_missing_scaling_without_changing_operands(metric, expected):
     assert normalize_percentage_metric(metric) == expected
@@ -130,7 +137,19 @@ def test_clear_percentage_ratios_receive_only_missing_scaling_without_changing_o
     'عدد الملفات المكتملة خلال الشهر',
     'Median completion days (20% improvement target)',
     'Percentage-point improvement from baseline',
+    'Percentage points improvement from baseline',
+    'Percentagepoints improvement from baseline',
+    'التغير بالنقاط المئوية عن خط الأساس',
+    'التحسن بنقطةمئوية عن خط الأساس',
+])
+def test_ambiguous_formulas_and_nonpercentage_units_are_not_rewritten_or_inferred_from_target(metric):
+    row = {**KPI, 'metric': metric, 'target': 'Proposed: 20% below baseline within 90 days'}
+    assert validate_kpis([row] * 3) == [row] * 3
+
+
+@pytest.mark.parametrize('metric', [
     'Percentage of completed cases',
+    'Percentage of completed cases × 100',
     'Percentage of completed cases ( / eligible cases)',
     'Percentage of completed cases (completed cases / )',
     'Percentage of completed cases ((eligible completions) / eligible cases)',
@@ -138,9 +157,12 @@ def test_clear_percentage_ratios_receive_only_missing_scaling_without_changing_o
     'Percentage of completed cases (completed cases / eligible cases) × 1000',
     'Percentage of completed cases (completed cases / eligible cases) × 0.01',
 ])
-def test_ambiguous_formulas_and_nonpercentage_units_are_not_rewritten_or_inferred_from_target(metric):
-    row = {**KPI, 'metric': metric, 'target': 'Proposed: 20% below baseline within 90 days'}
-    assert validate_kpis([row] * 3) == [row] * 3
+def test_explicit_percentage_without_complete_unambiguous_scaled_formula_fails_closed(metric):
+    assert normalize_percentage_metric(metric)==metric
+    with pytest.raises(KpiFormulaError) as failure:
+        validate_kpis([KPI, {**KPI,'metric':metric}, KPI])
+    assert failure.value.row_indices==(2,)
+    assert metric not in str(failure.value)
 
 
 @pytest.mark.parametrize('scale', ['× 100', '*100', 'x100', 'X 100', '× ١٠٠', 'multiplied by 100', 'مضروبة في ١٠٠'])
@@ -172,3 +194,44 @@ def test_live_style_percentage_response_is_normalized_with_one_provider_call_and
     assert all('received' in r['metric'] if lang == 'en' else 'المستلمة' in r['metric'] for r in result)
     data = json.loads(seen[0]['json']['contents'][0]['parts'][0]['text'])
     assert data['successMeasures'] == content['successMeasures']
+
+
+@pytest.mark.parametrize('lang', ['en','ar'])
+def test_observed_third_row_formula_omission_gets_one_bounded_correction_with_static_feedback(monkeypatch,lang):
+    configure(monkeypatch)
+    missing=('Percentage of valuation models reviewed by senior staff that meet internal quality standards'
+             if lang=='en' else 'نسبة نماذج التقييم المراجعة التي تستوفي معايير الجودة الداخلية')
+    corrected=(missing+' (models meeting quality standards / eligible reviewed models) × 100'
+               if lang=='en' else missing+' (النماذج المستوفية لمعايير الجودة ÷ النماذج المراجعة المؤهلة) × 100')
+    bad={**KPI,'outcome':'GENERATED_CONTENT_MUST_NOT_BE_FORWARDED','metric':missing,'target':'Proposed: 90% for manager review'}
+    good={**bad,'metric':corrected}
+    rows=[KPI,KPI,bad,KPI]
+    seen=provider(monkeypatch,None,responses=[{'kpis':rows},{'kpis':[KPI,KPI,good,KPI]}])
+    result=generate_kpis(CONTENT,lang)
+    assert result==[KPI,KPI,good,KPI] and len(seen)==2
+    first,second=seen
+    assert first['json']['generationConfig']==second['json']['generationConfig']
+    assert first['json']['contents']==second['json']['contents']
+    feedback=second['json']['systemInstruction']['parts'][0]['text']
+    assert 'in rows 3.' in feedback and 'Server validation feedback' in feedback
+    assert missing not in feedback and bad['outcome'] not in feedback
+
+
+def test_repeated_percentage_formula_omission_stops_after_one_correction_without_fabrication(monkeypatch):
+    configure(monkeypatch)
+    bad={**KPI,'metric':'Percentage of valuation models reviewed that meet quality standards','target':'Proposed: 90%'}
+    seen=provider(monkeypatch,{'kpis':[KPI,KPI,bad]})
+    with pytest.raises(ValueError,match='no results were fabricated') as failure:
+        generate_kpis(CONTENT,'en')
+    assert len(seen)==2
+    assert isinstance(failure.value.__cause__,KpiFormulaError)
+    assert failure.value.__cause__.row_indices==(3,)
+
+
+def test_complete_worded_ratio_is_accepted_without_correction(monkeypatch):
+    configure(monkeypatch)
+    row={**KPI,'metric':'Percentage of quality models (eligible quality models divided by eligible reviewed models) multiplied by 100',
+         'target':'Proposed: 90%'}
+    seen=provider(monkeypatch,{'kpis':[row]*3})
+    assert generate_kpis(CONTENT,'en')==[row]*3
+    assert len(seen)==1
