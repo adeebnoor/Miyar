@@ -1,9 +1,9 @@
 {
   "version": "6.1.3",
-  "buildId": "3728d3e4ad3a8991",
+  "buildId": "85e51184897aa6e6",
   "releasedAt": "2026-10-04",
   "changes": [
-    "Enable Gemini semantic occupation and skill matching with explicit consent",
+    "Enable locally hosted multilingual semantic occupation and skill matching",
     "Enable validated Arabic and English AI KPI proposals",
     "Resolve external sources and verify 44 official reference links",
     "Functional acceptance: distinct-role approval workflows and inspected exports",

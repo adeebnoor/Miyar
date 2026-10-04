@@ -3,7 +3,7 @@ from collections import Counter,defaultdict
 from pathlib import Path
 import numpy as np
 from .domain import normalized,digest
-from .semantic_provider import capability as semantic_capability, GeminiOccupationEmbeddings, BATCH_SIZE
+from .semantic_provider import capability as semantic_capability, GeminiOccupationEmbeddings, BATCH_SIZE, failure_details
 
 ROOT=Path(__file__).resolve().parent.parent
 class Catalog:
@@ -34,6 +34,7 @@ class Catalog:
         return found
     def load_semantic(self):
         caps=semantic_capability()
+        if caps['provider']=='local-e5-small':return self._load_e5_semantic(caps)
         if caps['provider']=='gemini':return self._load_remote_semantic(caps)
         if caps['provider']!='local':raise RuntimeError('Unsupported semantic embedding provider')
         name=os.getenv('MIYAR_EMBEDDING_MODEL','sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2')
@@ -60,9 +61,42 @@ class Catalog:
         status=self.semantic_index_status if caps['configured'] else ('disabled' if not caps['enabled'] else 'not-configured')
         return {**caps,'modelReady':self.model is not None,'indexStatus':status,
                 'indexedDocuments':self.semantic_indexed_documents,
-                'totalDocuments':len(self.roles)+(len(self.skills) if caps['provider']=='gemini' else 0),
+                'totalDocuments':len(self.roles)+(len(self.skills) if caps['provider'] in {'gemini','local-e5-small'} else 0),
                 'occupationRecords':len(self.roles),'skillRecords':len(self.skills),
                 'lastFailure':self.semantic_failure}
+    def _load_e5_semantic(self,caps):
+        if not caps['configured']:raise RuntimeError('Local semantic embeddings are disabled')
+        with self.model_lock:
+            if self.model is not None:return
+            self.semantic_index_status='indexing';self.semantic_indexed_documents=0;self.semantic_failure=None
+            try:
+                from .local_semantic_provider import LocalE5Embeddings
+                model=LocalE5Embeddings();roles=list(self.roles.values())
+                documents=[r['titleAr']+' '+self.nodes.get(r.get('parent'),{}).get('titleAr','')+' '+r.get('titleEn','') for r in roles]
+                documents += [' '.join([s.get('labelAr',''),s.get('labelEn',''),*s.get('aliases',[])]) for s in self.skills]
+                cache=Path(os.getenv('MIYAR_MODEL_CACHE',str(ROOT/'.model-cache')));cache.mkdir(parents=True,exist_ok=True)
+                key=digest({'release':self.occupations['sha256'],'model':model.name,'fingerprint':model.fingerprint,'text':documents})
+                filename=cache/('local-e5-corpus-vectors-'+key[:24]+'.npy');matrix=None
+                if filename.exists() and filename.stat().st_size<=len(documents)*model.dimensions*4+4096:
+                    try:
+                        loaded=np.load(filename,allow_pickle=False,mmap_mode='r')
+                        if loaded.shape==(len(documents),model.dimensions) and loaded.dtype==np.float32 and np.isfinite(loaded).all() and np.all(np.abs(loaded)<=1.0001) and np.allclose(np.linalg.norm(loaded,axis=1),1,atol=1e-4):matrix=loaded
+                    except (OSError,ValueError):pass
+                if matrix is None:
+                    matrix=np.empty((len(documents),model.dimensions),dtype=np.float32)
+                    for first,document in enumerate(documents):
+                        matrix[first]=np.asarray(model([document],'passage')[0],dtype=np.float32)
+                        self.semantic_indexed_documents=first+1
+                    temporary=filename.with_suffix('.tmp')
+                    with temporary.open('wb') as target:np.save(target,matrix,allow_pickle=False)
+                    temporary.replace(filename)
+                    matrix=np.load(filename,allow_pickle=False,mmap_mode='r')
+                self.matrix=matrix[:len(roles)];self.skill_matrix=matrix[len(roles):];self.vector_roles=roles
+                self.model_name=model.name;self.model_fingerprint=model.fingerprint
+                self.semantic_indexed_documents=len(documents);self.semantic_index_status='ready';self.model=model
+            except Exception as error:
+                self.semantic_index_status='failed';self.semantic_failure=failure_details(error)
+                raise
     def _load_remote_semantic(self,caps):
         if not caps['configured']:raise RuntimeError('Configure the server-side semantic embedding provider')
         with self.model_lock:
@@ -84,9 +118,20 @@ class Catalog:
                     except (OSError,ValueError):pass
                 if matrix is None:
                     matrix=np.empty((len(documents),model.dimensions),dtype=np.float32)
+                    parts=cache/(filename.stem+'-parts');parts.mkdir(exist_ok=True)
                     for first in range(0,len(documents),BATCH_SIZE):
-                        batch=documents[first:first+BATCH_SIZE];vectors=model(batch,'passage')
-                        matrix[first:first+len(batch)]=np.asarray(vectors,dtype=np.float32)
+                        batch=documents[first:first+BATCH_SIZE];part=parts/(str(first).zfill(6)+'-'+str(len(batch))+'.npy');vectors=None
+                        if part.exists() and part.stat().st_size<=len(batch)*model.dimensions*4+4096:
+                            try:
+                                loaded=np.load(part,allow_pickle=False)
+                                if loaded.shape==(len(batch),model.dimensions) and loaded.dtype==np.float32 and np.isfinite(loaded).all() and np.all(np.abs(loaded)<=1.0001) and np.all(np.linalg.norm(loaded,axis=1)>0):vectors=loaded
+                            except (OSError,ValueError):pass
+                        if vectors is None:
+                            vectors=np.asarray(model(batch,'passage'),dtype=np.float32)
+                            temporary=part.with_suffix('.tmp')
+                            with temporary.open('wb') as target:np.save(target,vectors,allow_pickle=False)
+                            temporary.replace(part)
+                        matrix[first:first+len(batch)]=vectors
                         self.semantic_indexed_documents=first+len(batch)
                     temporary=filename.with_suffix('.tmp')
                     with temporary.open('wb') as target:np.save(target,matrix,allow_pickle=False)
@@ -97,19 +142,12 @@ class Catalog:
                 self.model_name=model.name;self.model_fingerprint=model.fingerprint
                 self.semantic_indexed_documents=len(documents);self.semantic_index_status='ready';self.model=model
             except Exception as error:
-                upstream_status=None;cause=error
-                for _ in range(8):
-                    status=getattr(getattr(cause,'response',None),'status_code',None)
-                    if isinstance(status,int) and not isinstance(status,bool) and 100<=status<=599:
-                        upstream_status=status;break
-                    cause=getattr(cause,'__cause__',None)
-                    if cause is None:break
-                self.semantic_index_status='failed';self.semantic_failure={'kind':'semantic-index-unavailable','upstreamStatus':upstream_status}
+                self.semantic_index_status='failed';self.semantic_failure=failure_details(error)
                 raise
     def semantic(self,text,candidate_codes=None):
         caps=semantic_capability()
         if not caps['configured']:raise RuntimeError('Semantic model is disabled or its provider is not configured')
-        if caps['provider']=='gemini' and self.model is None:raise RuntimeError('Semantic index is warming up or unavailable; retry after readiness succeeds')
+        if caps['provider'] in {'gemini','local-e5-small'} and self.model is None:raise RuntimeError('Semantic index is warming up or unavailable; retry after readiness succeeds')
         if self.model is None:self.load_semantic()
         vector=np.asarray(next(iter(self.model.embed([text]))),dtype=np.float32);vector/=max(float(np.linalg.norm(vector)),1e-12)
         cosine=self.matrix@vector;order=np.argsort(-cosine)
@@ -119,7 +157,7 @@ class Catalog:
             role=self.vector_roles[int(index)];known=set(self.role_skills.get(role['code'],[]));common=sorted(required&known)
             similarity=float(np.clip(cosine[index],-1,1))
             items.append({'code':role['code'],'titleAr':role['titleAr'],'sourcePage':role['sourcePage'],'cosineSimilarity':round(similarity,5),'semanticDistance':round(1-similarity,5),'skillOverlapPercent':round(100*len(common)/len(required),1) if required and known else None,'matchedSkillIds':common,'sourceWarning':role['code'] in self.flagged,'skillDenominator':len(required),'profile':self.profiles.get(role['code']),'taskOverlapPercent':None})
-        semantic_skills=[];skill_threshold=float(os.getenv('MIYAR_SEMANTIC_SKILL_THRESHOLD','.5'))
+        semantic_skills=[];skill_threshold=float(os.getenv('MIYAR_SEMANTIC_SKILL_THRESHOLD','.8' if caps['provider']=='local-e5-small' else '.5'))
         if not math.isfinite(skill_threshold) or not -1<=skill_threshold<=1:raise RuntimeError('Semantic skill threshold must be between minus one and one')
         if self.skill_matrix is not None and len(self.skill_matrix):
             skill_cosine=self.skill_matrix@vector

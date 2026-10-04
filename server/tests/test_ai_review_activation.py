@@ -35,6 +35,21 @@ def test_new_public_ai_features_require_consent_origin_and_active_window(env,mon
     assert not calls
     with app.state.sessions() as db:assert db.get(ExpertReviewQuota,'global').requests==0
 
+def test_local_semantic_processing_does_not_require_external_consent_or_relax_public_guards(env,monkeypatch):
+    app,c,_,calls=setup(env,monkeypatch)
+    monkeypatch.setenv('MIYAR_EMBEDDING_PROVIDER','local-e5-small')
+    monkeypatch.setattr(Catalog,'semantic_status',lambda self:{'configured':True,'enabled':True,'modelReady':True,'externalProcessing':False})
+    body={**INPUT,'consentExternalProcessing':False}
+    assert c.post('/api/v1/review/semantic',json=body,headers={'Origin':'https://unrelated.example'}).status_code==403
+    result=c.post('/api/v1/review/semantic',json=body,headers=ORIGIN)
+    assert result.status_code==200 and result.json()['organizationAccess'] is False
+    assert result.json()['inputStored'] is False
+    assert c.post('/api/v1/review/kpis',json={'content':CONTENT,'consentExternalProcessing':False},headers=ORIGIN).status_code==422
+    monkeypatch.setenv('MIYAR_EXPERT_REVIEW_EXPIRES_AT','2020-01-01T00:00:00Z')
+    assert c.post('/api/v1/review/semantic',json=body,headers=ORIGIN).status_code==410
+    assert [call[0] for call in calls]==['semantic']
+    with app.state.sessions() as db:assert db.get(ExpertReviewQuota,'global').requests==1
+
 def test_public_semantic_and_kpis_share_quota_without_creating_org_records(env,monkeypatch):
     app,c,_,calls=setup(env,monkeypatch)
     import server.expert_review as review

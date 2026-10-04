@@ -130,12 +130,12 @@ def install(app, sessions, secret, references, engine, slot, validate_content=No
                 'skillsSemantic': references.semantic_status(), 'kpiGeneration': kpi_capability()}
 
     @contextmanager
-    def review_call(body,request,configured):
+    def review_call(body,request,configured,external=True):
         if not availability()['enabled']:raise HTTPException(410,'انتهت تجربة الخبراء أو لم تُفعّل بعد.')
         origins={x.strip().rstrip('/') for x in os.getenv('MIYAR_CORS_ORIGINS','https://adeebnoor.github.io').split(',')}
         origins.add(str(request.base_url).rstrip('/'))
         if request.headers.get('origin','').rstrip('/') not in origins:raise HTTPException(403,'افتح صفحة اختبار الخبراء لإجراء التحليل.')
-        if not body.consentExternalProcessing:raise HTTPException(422,'وافق على إرسال نص المثال إلى Google Gemini قبل التحليل.')
+        if external and not body.consentExternalProcessing:raise HTTPException(422,'وافق على إرسال نص المثال إلى Google Gemini قبل التحليل.')
         if not configured:raise HTTPException(503,'الخدمة غير جاهزة الآن؛ افحص حالتها ثم أعد المحاولة.')
         if not slot.acquire(blocking=False):raise HTTPException(429,'المحرك يعالج طلبًا آخر. أعد المحاولة بعد قليل.',headers={'Retry-After':'20'})
         try:
@@ -146,7 +146,7 @@ def install(app, sessions, secret, references, engine, slot, validate_content=No
     @app.post('/api/v1/review/semantic')
     def semantic_review(body:SkillReviewRequest,request:Request):
         state=references.semantic_status()
-        with review_call(body,request,state['configured'] and state['modelReady']):
+        with review_call(body,request,state['configured'] and state['modelReady'],state.get('externalProcessing',True)):
             text='\n'.join([body.text,*[k+': '+v for k,v in [('Field',body.field),('Seniority',body.seniority)] if v.strip()]])
             try:result=references.semantic(text)
             except (RuntimeError,OSError,ValueError):raise HTTPException(503,'تعذّر التحليل الدلالي؛ لم تُنشأ درجات تشابه بديلة.')

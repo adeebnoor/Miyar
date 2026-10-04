@@ -52,6 +52,7 @@ python-multipart==0.0.32
 PyYAML==6.0.3
 reportlab==5.0.1
 requests==2.34.2
+sentencepiece==0.2.1
 socksio==1.0.0
 SQLAlchemy==2.0.52
 starlette==1.6.0

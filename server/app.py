@@ -63,7 +63,7 @@ def create_app(db_url=None,jwt_secret=None,catalog=None):
     warming=set()
     def warm_semantic(reference):
         from .taxonomy import semantic_capability
-        if not semantic_capability()['configured'] or semantic_capability()['provider']!='gemini' or id(reference) in warming:return
+        if not semantic_capability()['configured'] or semantic_capability()['provider'] not in {'gemini','local-e5-small'} or id(reference) in warming:return
         warming.add(id(reference))
         def prepare():
             try:reference.load_semantic()

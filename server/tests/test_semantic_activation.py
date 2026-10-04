@@ -5,7 +5,7 @@ import threading
 import numpy as np
 import pytest
 
-from server.semantic_provider import GeminiOccupationEmbeddings, capability, DIMENSIONS, query_chunks
+from server.semantic_provider import GeminiOccupationEmbeddings, capability, DIMENSIONS, query_chunks, failure_details
 from server.strategic import Unavailable
 from server.taxonomy import Catalog
 
@@ -172,8 +172,10 @@ def test_corrupt_cache_is_rebuilt_and_incomplete_index_never_becomes_ready(monke
     filename.write_bytes(b'corrupt archive')
     second = small_catalog()
     second.load_semantic()
-    assert len(calls) == 2 and second.semantic_status()['modelReady']
+    assert len(calls) == 1 and second.semantic_status()['modelReady']
     filename.unlink()
+    for part in tmp_path.glob('*-parts/*.npy'):
+        part.unlink()
     import server.taxonomy as module
 
     class Failure:
@@ -255,3 +257,70 @@ def test_long_query_embeds_all_chunks_in_one_batch_and_pools_real_vectors_by_len
     assert ''.join(row['content']['parts'][0]['text'] for row in requests) == text
     assert all(row['taskType'] == 'RETRIEVAL_QUERY' for row in requests)
     assert model.query_metadata(text) == {'queryChunks': 2, 'queryPooling': 'length-weighted-mean-normalized', 'queryChunkCharacters': 1200}
+
+
+def test_quota_diagnostics_keep_only_public_metric_limit_scope_and_retry_delay():
+    import httpx
+    payload={'error':{'message':'secret key and project identity must stay private','details':[
+        {'@type':'type.googleapis.com/google.rpc.QuotaFailure','violations':[
+            {'quotaMetric':'generativelanguage.googleapis.com/embed_content_free_tier_requests',
+             'quotaId':'EmbedContentRequestsPerMinutePerProjectPerUser-FreeTier','quotaValue':'100',
+             'quotaDimensions':{'consumer':'projects/private-project'}}]},
+        {'@type':'type.googleapis.com/google.rpc.RetryInfo','retryDelay':'41.25s'},
+        {'@type':'type.googleapis.com/google.rpc.ErrorInfo','domain':'googleapis.com','metadata':{
+            'quota_metric':'generativelanguage.googleapis.com/embed_content_free_tier_requests',
+            'quota_limit':'EmbedContentRequestsPerDayPerProjectPerUser-FreeTier',
+            'quota_limit_value':'1000','consumer':'private-project','api_key':'private-key'}}]}}
+    response=httpx.Response(429,json=payload,headers={'Retry-After':'20'},request=httpx.Request('POST','https://generativelanguage.googleapis.com/example'))
+    error=httpx.HTTPStatusError('Private URL and credentials must not escape',request=response.request,response=response)
+    details=failure_details(error)
+    assert details['upstreamStatus']==429 and details['retryAfterSeconds']==42
+    assert details['quotas'][0]['limit']==100 and details['quotas'][0]['scope']=='minute'
+    assert details['quotas'][1]['limit']==1000 and details['quotas'][1]['scope']=='day'
+    assert 'private' not in json.dumps(details).lower()
+
+
+def test_online_query_does_not_retry_provider_quota_errors(monkeypatch,tmp_path):
+    configure(monkeypatch,tmp_path)
+    import server.semantic_provider as module
+    import httpx
+    calls=[]
+    response=httpx.Response(429,json={'error':{'message':'Private quota details'}},request=httpx.Request('POST','https://generativelanguage.googleapis.com/example'))
+    class Client:
+        def __init__(self,**kw):pass
+        def __enter__(self):return self
+        def __exit__(self,*args):pass
+        def post(self,*args,**kw):calls.append(kw);return response
+    monkeypatch.setattr(module.httpx,'Client',Client)
+    with pytest.raises(Unavailable):
+        next(GeminiOccupationEmbeddings().embed(['Review audit evidence']))
+    assert len(calls)==1
+
+
+def test_remote_index_resumes_completed_batches_after_quota_failure(monkeypatch,tmp_path):
+    configure(monkeypatch,tmp_path)
+    import server.taxonomy as module
+    completed=[]
+    class Interrupt:
+        name='gemini-embedding-001';fingerprint='synthetic-resumable-index';dimensions=DIMENSIONS
+        def __call__(self,texts,kind):
+            completed.append(len(texts))
+            if len(completed)>1:
+                error=RuntimeError('Provider quota details are private')
+                error.response=type('Response',(),{'status_code':429})()
+                raise Unavailable('Quota is exhausted') from error
+            return [vector(1) for text in texts]
+    monkeypatch.setattr(module,'GeminiOccupationEmbeddings',Interrupt)
+    first=Catalog();first.roles=dict(list(first.roles.items())[:201]);first.skills=first.skills[:2]
+    with pytest.raises(Unavailable):first.load_semantic()
+    assert first.semantic_status()['indexedDocuments']==100 and not first.semantic_status()['modelReady']
+    assert len(list(tmp_path.glob('*-parts/*.npy')))==1
+    resumed=[]
+    class Continue:
+        name=Interrupt.name;fingerprint=Interrupt.fingerprint;dimensions=DIMENSIONS
+        def __call__(self,texts,kind):resumed.append(len(texts));return [vector(1) for text in texts]
+    monkeypatch.setattr(module,'GeminiOccupationEmbeddings',Continue)
+    second=Catalog();second.roles=dict(list(second.roles.items())[:201]);second.skills=second.skills[:2]
+    second.load_semantic()
+    assert resumed==[100,3]
+    assert second.semantic_status()['modelReady'] and second.semantic_status()['indexedDocuments']==203

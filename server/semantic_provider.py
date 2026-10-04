@@ -7,6 +7,8 @@ does not generate descriptions, invent scores or create an implicit provider.
 import os
 import re
 import math
+from datetime import datetime, timezone
+from email.utils import parsedate_to_datetime
 
 import httpx
 
@@ -17,6 +19,73 @@ DIMENSIONS = 768
 BATCH_SIZE = 100
 QUERY_CHUNK_CHARACTERS = 1200
 MAX_QUERY_CHARACTERS = 16000
+
+
+def _retry_seconds(value):
+    if isinstance(value, str) and re.fullmatch(r'\d+(?:\.\d+)?s?', value.strip()):
+        seconds = float(value.strip().removesuffix('s'))
+        return min(86400, max(0, math.ceil(seconds)))
+    return None
+
+
+def failure_details(error):
+    """Allowlisted quota diagnostics; never include messages or project identity."""
+    result = {'kind': 'semantic-index-unavailable', 'upstreamStatus': None}
+    cause = error
+    for _ in range(8):
+        response = getattr(cause, 'response', None)
+        status = getattr(response, 'status_code', None)
+        if isinstance(status, int) and not isinstance(status, bool) and 100 <= status <= 599:
+            result['upstreamStatus'] = status
+            try:
+                retry = getattr(response, 'headers', {}).get('Retry-After', '')
+                delay = _retry_seconds(retry)
+                if delay is None and retry:
+                    date = parsedate_to_datetime(retry)
+                    if date.tzinfo is not None:
+                        delay = min(86400, max(0, math.ceil((date - datetime.now(timezone.utc)).total_seconds())))
+                if delay is not None:
+                    result['retryAfterSeconds'] = delay
+            except (ValueError, TypeError, OverflowError):
+                pass
+            quotas = []
+            try:
+                details = response.json().get('error', {}).get('details', [])
+                for detail in details[:20]:
+                    kind = detail.get('@type', '')
+                    if kind == 'type.googleapis.com/google.rpc.RetryInfo':
+                        delay = _retry_seconds(detail.get('retryDelay', ''))
+                        if delay is not None:
+                            result['retryAfterSeconds'] = max(result.get('retryAfterSeconds', 0), delay)
+                    rows = detail.get('violations', []) if kind == 'type.googleapis.com/google.rpc.QuotaFailure' else []
+                    if kind == 'type.googleapis.com/google.rpc.ErrorInfo' and detail.get('domain') == 'googleapis.com':
+                        rows = [detail.get('metadata', {})]
+                    for row in rows[:8]:
+                        metric = row.get('quotaMetric', row.get('quota_metric', ''))
+                        quota_id = row.get('quotaId', row.get('quota_limit', ''))
+                        limit = row.get('quotaValue', row.get('quota_limit_value', ''))
+                        item = {}
+                        if isinstance(metric, str) and re.fullmatch(r'generativelanguage\.googleapis\.com/(?:embed_content|model_requests|generate_content)[a-z_]*', metric):
+                            item['metric'] = metric
+                        if isinstance(quota_id, str) and re.fullmatch(r'(?:EmbedContent|GenerateContent|Model|Read|Tokens|Requests)[A-Za-z0-9_-]{0,180}', quota_id):
+                            item['id'] = quota_id
+                        if not item:
+                            continue
+                        if not isinstance(limit, bool) and str(limit).isdigit() and 0 <= int(limit) <= 10**12:
+                            item['limit'] = int(limit)
+                        scope = str(quota_id).lower().replace('_', '').replace('-', '')
+                        item['scope'] = 'day' if 'perday' in scope else 'minute' if 'perminute' in scope else 'unknown'
+                        if item not in quotas:
+                            quotas.append(item)
+                if quotas:
+                    result['quotas'] = quotas[:4]
+            except (AttributeError, ValueError, TypeError, KeyError, OverflowError):
+                pass
+            return result
+        cause = getattr(cause, '__cause__', None)
+        if cause is None:
+            break
+    return result
 
 
 def query_chunks(text):
@@ -46,10 +115,10 @@ def query_chunks(text):
 def capability():
     enabled = os.getenv('MIYAR_ENABLE_EMBEDDINGS') == 'true'
     provider = os.getenv('MIYAR_EMBEDDING_PROVIDER', 'local')
-    model = (os.getenv('MIYAR_EMBEDDING_MODEL') or
+    model = 'intfloat/multilingual-e5-small' if provider=='local-e5-small' else (os.getenv('MIYAR_EMBEDDING_MODEL') or
              os.getenv('MIYAR_STRATEGIC_EMBEDDING_MODEL', '')) if provider == 'gemini' else os.getenv(
                  'MIYAR_EMBEDDING_MODEL', 'sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2')
-    configured = provider == 'local' or (
+    configured = provider in {'local','local-e5-small'} or (
         provider == 'gemini' and bool(os.getenv('MIYAR_STRATEGIC_GEMINI_KEY'))
         and bool(re.fullmatch(r'gemini-embedding-[a-zA-Z0-9._-]+', model)))
     return {'enabled': enabled, 'configured': bool(enabled and configured),

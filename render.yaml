@@ -24,9 +24,9 @@ services:
       - key: MIYAR_ENABLE_EMBEDDINGS
         value: "true"
       - key: MIYAR_EMBEDDING_PROVIDER
-        value: gemini
+        value: local-e5-small
       - key: MIYAR_EMBEDDING_MODEL
-        value: gemini-embedding-001
+        value: intfloat/multilingual-e5-small
       - key: MIYAR_KPI_PROVIDER
         value: gemini
       - key: MIYAR_SERVE_UI

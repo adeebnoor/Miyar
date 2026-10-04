@@ -48,6 +48,22 @@ jobs:
         run: |
           pip install pip-audit==2.9.0
           pip-audit -r server/requirements-lock.txt --progress-spinner off
+      - name: Verify the real local semantic index and memory budget
+        env:
+          MIYAR_MODEL_CACHE: /tmp/miyar-local-semantic-ci
+          ORT_DISABLE_TELEMETRY: '1'
+          OPENBLAS_NUM_THREADS: '1'
+          OMP_NUM_THREADS: '1'
+        run: |
+          python -m server.build_semantic_index
+          python scripts/check-local-semantic-resources.py
+      - name: Retain actual model resource verification
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: local-semantic-resource-evidence
+          path: test-results/local-semantic-resources.json
+          retention-days: 14
   ui-test:
     runs-on: ubuntu-latest
     steps:
