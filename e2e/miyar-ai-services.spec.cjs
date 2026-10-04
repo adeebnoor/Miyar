@@ -36,12 +36,12 @@ async function exportedDraft(page){const event=page.waitForEvent('download');awa
 for(const lang of ['ar','en']){
  test('local semantic processing omits external consent and leaves unsupported occupation scope empty: '+lang,async({page})=>{
   const dialogs=await setup(page,lang,'intelligence',true,LOCAL_API);
-  await page.locator('#ent-analysis-field').fill('Nebulous aurora atelier');await page.locator('#ent-analysis-seniority').fill('Individual contributor');await page.locator('#ent-analysis-text').fill('Explain a synthetic unfamiliar aurora weaving example');
+  await page.locator('#ent-analysis-field').fill('Nebulous aurora atelier');await page.locator('#ent-analysis-seniority').fill('Individual contributor');await page.locator('#ent-analysis-text').fill(lang==='ar'?'التنسيق في مثال افتراضي غير مألوف لصياغة مفهوم جديد':'Coordination for a synthetic unfamiliar aurora weaving example');
   const done=responseFor(page,'semantic',LOCAL_API);await page.locator('#ent-semantic').click();const response=await done;expect(response.status()).toBe(200);const body=await response.json();
   expect(response.request().postDataJSON().consentExternalProcessing).toBe(false);expect(dialogs).toHaveLength(1);expect(dialogs[0]).toContain(lang==='ar'?'دون إرسالها إلى Google Gemini':'without being sent to Google Gemini');expect(body.provider).toBe('local-e5-small');expect(body.organizationAccess).toBe(false);
-  expect(body.occupationScope).toMatchObject({status:'insufficient-evidence',families:[],matchedTerms:[],coverage:'authored-limited',candidateCount:0});expect(body.candidates).toEqual([]);expect(body.semanticSkills.length).toBeGreaterThan(0);
+  expect(body.occupationScope).toMatchObject({status:'insufficient-evidence',families:[],matchedTerms:[],coverage:'authored-limited',candidateCount:0});expect(body.candidates).toEqual([]);expect(body.semanticSkills).toHaveLength(1);expect(body.semanticSkills[0]).toMatchObject({id:'onet:2.B.1.b',source:'O*NET',humanReviewRequired:true});
   await expect(page.locator('#ent-candidates [data-candidate-code]')).toHaveCount(0);await expect(page.locator('#ent-candidates')).toContainText(lang==='ar'?'المراجع المهنية المقترحة':'Proposed occupation references');await expect(page.locator('#ent-candidates')).toContainText(lang==='ar'?'المجال':/field/i);await expect(page.locator('#ent-candidates')).toContainText(lang==='ar'?/راجع|مراجعة/:/review/i);
-  await expect(page.locator('#ent-skills')).toContainText(lang==='ar'?'مهارات مقترحة بالمعنى':'Skills suggested by meaning');await expect(page.locator('#ent-skills')).toContainText('O*NET');await expect(page.locator('#ent-message')).not.toHaveClass(/error/);
+  await expect(page.locator('#ent-skills')).toContainText(lang==='ar'?'مهارات مقترحة بالمعنى':'Skills suggested by meaning');await expect(page.locator('#ent-skills')).toContainText(lang==='ar'?'التنسيق':'Coordination');await expect(page.locator('#ent-skills')).toContainText('O*NET');await expect(page.locator('#ent-message')).not.toHaveClass(/error/);
  });
 
  test('local adjacent occupation reference is labelled a review proposal and needs explicit selection: '+lang,async({page})=>{

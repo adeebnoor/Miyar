@@ -92,9 +92,12 @@ for code, score in occupation_scores:
     catalog.matrix[index, 1] = math.sqrt(1 - score * score)
 catalog.skill_matrix = np.zeros((len(catalog.skills), dimensions), dtype=np.float32)
 catalog.skill_matrix[:, 1] = 1.0
-programming = next(i for i, skill in enumerate(catalog.skills) if skill['id'] == 'onet:2.B.3.e')
-catalog.skill_matrix[programming, 0] = .96
-catalog.skill_matrix[programming, 1] = math.sqrt(1 - .96 * .96)
+# The unknown local scope deliberately proposes a transferable coordination
+# skill; the separate Gemini baseline continues to propose Programming.
+skill_id = 'onet:2.B.1.b' if LOCAL_FIXTURE else 'onet:2.B.3.e'
+skill_index = next(i for i, skill in enumerate(catalog.skills) if skill['id'] == skill_id)
+catalog.skill_matrix[skill_index, 0] = .96
+catalog.skill_matrix[skill_index, 1] = math.sqrt(1 - .96 * .96)
 class SyntheticLocalEmbeddings:
     """Deterministic local boundary only; never downloads or calls a provider."""
     name = 'intfloat/multilingual-e5-small'
