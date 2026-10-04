@@ -17,8 +17,9 @@ KPI_LOGGER=logging.getLogger('miyar.kpi')
 FAILURE_CATEGORIES={'formula_validation','provider_http','provider_transport','unfinished_generation','invalid_json','invalid_schema'}
 
 class KpiFormulaError(ValueError):
-    def __init__(self,row_indices):
+    def __init__(self,row_indices,syntax_counts=None):
         self.row_indices=tuple(row_indices)
+        self.syntax_counts=syntax_counts or {}
         super().__init__('Incomplete percentage KPI formulas in rows '+', '.join(map(str,self.row_indices)))
 
 def percentage_metric(metric):
@@ -37,27 +38,44 @@ def absolute_percentage_target(target):
         if not RELATIVE_PERCENT_AFTER.match(after) and not RELATIVE_PERCENT_BEFORE.search(before):return True
     return False
 
+def balanced_parentheses(text):
+    """Return matched spans or reject unfinished and out-of-order wrappers."""
+    stack=[];spans=[]
+    for index,char in enumerate(text):
+        if char=='(':stack.append(index)
+        elif char==')':
+            if not stack:return None
+            spans.append((stack.pop(),index+1))
+    return None if stack else spans
+
+def nonempty_operands(text):
+    operands=RATIO_OPERATOR.split(text)
+    return len(operands)==2 and all(re.search(r'[^\s()]',operand) for operand in operands)
+
 def clear_ratio(metric):
-    """Locate one simple nonempty ratio, without interpreting its cohort."""
-    if len(RATIO_OPERATOR.findall(metric))!=1:return None
-    for ratio in re.finditer(r'\([^()]*\)',metric):
-        operands=RATIO_OPERATOR.split(ratio.group()[1:-1])
-        if len(operands)==2 and all(operand.strip() for operand in operands):return (ratio.start(),ratio.end(),True)
+    """Locate one complete ratio, allowing balanced operand explanations."""
+    divisions=list(RATIO_OPERATOR.finditer(metric))
+    spans=balanced_parentheses(metric)
+    if len(divisions)!=1 or spans is None:return None
+    division=divisions[0]
+    # The innermost span enclosing the division contains the complete ratio;
+    # parentheses belonging only to either operand are not ratio boundaries.
+    for first,last in sorted(spans,key=lambda span:span[1]-span[0]):
+        if first<division.start() and division.end()<last:
+            return (first,last,True) if nonempty_operands(metric[first+1:last-1]) else None
     divider=max(metric.rfind('='),metric.rfind(':'))
     if divider>=0:
-        ratio=metric[divider+1:];operands=RATIO_OPERATOR.split(ratio)
-        if len(operands)==2 and all(operand.strip() for operand in operands) and not re.search(r'[()]',ratio):
+        ratio=metric[divider+1:]
+        if nonempty_operands(ratio) and balanced_parentheses(ratio) is not None:
             return (divider+1,len(metric),False)
-    elif not re.search(r'[()]',metric):
-        operands=RATIO_OPERATOR.split(metric)
-        if len(operands)==2 and all(operand.strip() for operand in operands):return (0,len(metric),False)
+    elif nonempty_operands(metric):return (0,len(metric),False)
     return None
 
 def normalize_percentage_metric(metric):
     """Supply a missing scale only for an explicit, unambiguous percent ratio.
 
     Operands, cohort definitions, targets and units are never inferred or changed.
-    Ambiguous/nested formulas are left for review rather than rewritten.
+    Ambiguous or unfinished formulas are left for review rather than rewritten.
     """
     if not percentage_metric(metric) or PERCENTAGE_SCALE.search(metric) or NUMERIC_SCALE.search(metric):return metric
     ratio=clear_ratio(metric)
@@ -79,14 +97,16 @@ def complete_percentage_formula(metric):
     if ratio is None or len(scales)!=1 or len(NUMERIC_SCALE.findall(metric))!=1:return False
     first,last,parenthesized=ratio;scale=scales[0]
     if parenthesized:
-        if scale.start()<last or metric[last:scale.start()].strip():return False
+        # Global balance was checked by clear_ratio. Closing-only gaps can
+        # finish redundant wrappers around the whole ratio, never add math.
+        if scale.start()<last or not re.fullmatch(r'[\s)]*',metric[last:scale.start()]):return False
     else:
         if not first<=scale.start()<last:return False
-        operands=RATIO_OPERATOR.split(metric[first:scale.start()])
-        if len(operands)!=2 or not all(operand.strip() for operand in operands):return False
+        ratio_text=metric[first:scale.start()]
+        if balanced_parentheses(ratio_text) is None or not nonempty_operands(ratio_text):return False
     # Natural-language explanations may follow the formula, but an additional
     # arithmetic operation would change its value and needs regeneration.
-    return not re.match(r'\s*(?:[+*×÷/%٪]|[-−]\s*\d)',metric[scale.end():])
+    return not re.match(r'[\s)]*(?:[+*×÷/%٪]|[-−]\s*\d)',metric[scale.end():])
 
 def capability():
     provider=os.getenv('MIYAR_KPI_PROVIDER','openai-compatible')
@@ -107,7 +127,13 @@ def validate_kpis(rows):
         normalized.append({**row,'metric':metric})
     missing=[index for index,row in enumerate(normalized,1) if (percentage_metric(row['metric']) or absolute_percentage_target(row['target']))
              and not complete_percentage_formula(row['metric'])]
-    if missing:raise KpiFormulaError(missing)
+    if missing:
+        counts={index:{'divisions':len(RATIO_OPERATOR.findall(normalized[index-1]['metric'])),
+                       'numericScales':len(NUMERIC_SCALE.findall(normalized[index-1]['metric'])),
+                       'exactScales':len(PERCENTAGE_SCALE.findall(normalized[index-1]['metric'])),
+                       'openParentheses':normalized[index-1]['metric'].count('('),
+                       'closeParentheses':normalized[index-1]['metric'].count(')')} for index in missing}
+        raise KpiFormulaError(missing,counts)
     return normalized
 
 def generate_kpis(content,lang):
@@ -142,6 +168,10 @@ def generate_kpis(content,lang):
 
 def generate_gemini_kpis(prompt,data,model):
     schema={'type':'object','properties':{'kpis':{'type':'array','minItems':3,'maxItems':5,'items':{'type':'object','properties':{name:{'type':'string'} for name in sorted(FIELDS)},'required':sorted(FIELDS),'additionalProperties':False}}},'required':['kpis'],'additionalProperties':False}
+    schema['properties']['kpis']['items']['properties']['metric']['description']=('For an absolute percentage target, use one complete proportional formula: (eligible numerator / eligible denominator) × 100. '
+        'Use the same eligible cohort and measurement period in both operands. Apply 100 once, outside the complete ratio; operand explanations must have balanced parentheses. '
+        'Use exactly one division operator in the metric and no extra narrative division symbols. A plain count or duration metric cannot have an absolute percentage target. '
+        'Count and duration units remain valid for explicit relative improvement or reduction targets.')
     config={'temperature':0,'responseMimeType':'application/json','responseJsonSchema':schema,'maxOutputTokens':4096}
     if model in {'gemini-2.5-flash','gemini-2.5-flash-lite'}:config['thinkingConfig']={'thinkingBudget':0}
     attempt_number=0;stage='provider_transport'
@@ -177,8 +207,12 @@ def generate_gemini_kpis(prompt,data,model):
         status=status if isinstance(status,int) and not isinstance(status,bool) and 100<=status<=599 else None
         rows=error.row_indices if isinstance(error,KpiFormulaError) else ()
         rows=tuple(row for row in rows if isinstance(row,int) and not isinstance(row,bool) and 1<=row<=5)
+        counts=error.syntax_counts if isinstance(error,KpiFormulaError) else {}
+        keys=('divisions','numericScales','exactScales','openParentheses','closeParentheses')
+        safe_counts={str(row):{key:value for key in keys if isinstance((value:=counts.get(row,{}).get(key)),int)
+                               and not isinstance(value,bool) and 0<=value<=1500} for row in rows}
         # Only fixed categories and bounded integers are emitted. Never log
         # exception text, traces, prompts, generated rows, keys or headers.
-        KPI_LOGGER.warning('kpi_generation_failure category=%s attempt=%d upstream_status=%s formula_rows=%s',
-                           category,attempt_number,status if status is not None else '-',','.join(map(str,rows)) or '-')
+        KPI_LOGGER.warning('kpi_generation_failure category=%s attempt=%d upstream_status=%s formula_rows=%s syntax_counts=%s',
+                           category,attempt_number,status if status is not None else '-',','.join(map(str,rows)) or '-',json.dumps(safe_counts,sort_keys=True,separators=(',',':')))
         raise ValueError('The organization model did not return valid KPI rows; no results were fabricated. Retry or use local generation.') from error

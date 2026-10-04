@@ -78,6 +78,10 @@ def test_opt_in_gemini_kpis_use_schema_and_bounded_job_data_only(monkeypatch, la
     schema = request['json']['generationConfig']['responseJsonSchema']
     assert schema['properties']['kpis']['minItems'] == 3 and schema['properties']['kpis']['maxItems'] == 5
     assert schema['additionalProperties'] is False
+    guidance = schema['properties']['kpis']['items']['properties']['metric']['description']
+    assert 'same eligible cohort and measurement period' in guidance
+    assert 'outside the complete ratio' in guidance and 'exactly one division operator' in guidance
+    assert 'plain count or duration metric cannot have an absolute percentage target' in guidance
 
 
 @pytest.mark.parametrize('result', [{'kpis': []}, {'kpis': [KPI] * 6}, {'kpis': [{**KPI, 'approved': 'yes'}] * 3},
@@ -121,6 +125,8 @@ def test_kpi_generation_requires_explicit_provider_valid_config_success_measures
      'Percentage of complete papers (complete eligible papers divided by eligible submitted papers) × 100'),
     ('نسبة اكتمال الملفات (عدد الملفات المكتملة مقسوماً على عدد الملفات المستحقة)',
      'نسبة اكتمال الملفات (عدد الملفات المكتملة مقسوماً على عدد الملفات المستحقة) × 100'),
+    ('Percentage of completed cases ((eligible completions) / eligible cases)',
+     'Percentage of completed cases ((eligible completions) / eligible cases) × 100'),
 ])
 def test_clear_percentage_ratios_receive_only_missing_scaling_without_changing_operands(metric, expected):
     assert normalize_percentage_metric(metric) == expected
@@ -153,7 +159,6 @@ def test_ambiguous_formulas_and_nonpercentage_units_are_not_rewritten_or_inferre
     'Percentage of completed cases × 100',
     'Percentage of completed cases ( / eligible cases)',
     'Percentage of completed cases (completed cases / )',
-    'Percentage of completed cases ((eligible completions) / eligible cases)',
     'Percentage of completed cases (completions / receipts / months)',
     'Percentage of completed cases (completed cases / eligible cases) × 1000',
     'Percentage of completed cases (completed cases / eligible cases) × 0.01',
@@ -289,6 +294,52 @@ def test_explicit_arabic_relative_suffix_targets_preserve_duration_units(target)
 def test_arabic_relative_suffix_does_not_exempt_an_independent_absolute_target(target):
     with pytest.raises(KpiFormulaError):
         validate_kpis([{**KPI, 'metric': 'متوسط أيام المعالجة', 'target': target}] * 3)
+
+
+@pytest.mark.parametrize('metric', [
+    'Percentage of cases (completed cases (eligible) / eligible cases (due this period)) × 100',
+    'Percentage of cases ((completed eligible cases) / (eligible cases)) × 100',
+    '(completed eligible cases) / (eligible cases) × 100',
+    '((completed cases / eligible cases) × 100)',
+    '((completed cases / eligible cases)) × 100',
+    '((completed cases (eligible) / total cases (eligible)) × 100)',
+    'نسبة الحالات (عدد الحالات المكتملة (المؤهلة) ÷ إجمالي الحالات (المؤهلة للفترة)) × ١٠٠',
+    'نسبة الحالات = ((عدد الحالات المكتملة) ÷ (إجمالي الحالات المؤهلة)) × 100',
+    '(عدد الحالات المكتملة المؤهلة) ÷ (إجمالي الحالات المؤهلة) × ١٠٠',
+    '(((عدد الحالات المكتملة المؤهلة ÷ إجمالي الحالات المؤهلة))) × ١٠٠',
+])
+def test_balanced_nested_explanations_and_separate_operand_parentheses_preserve_complete_ratio(metric):
+    row = {**KPI, 'metric': metric, 'target': '95% proposed'}
+    assert validate_kpis([row] * 3) == [row] * 3
+
+
+@pytest.mark.parametrize('metric', [
+    '(completed cases / (eligible cases × 100))',
+    'completed cases / (eligible cases × 100)',
+    '((completed cases) / (eligible cases × 100))',
+    '((completed cases) / (eligible cases)) × 100.5',
+    '((completed cases) / (eligible cases)) × 100 × 0.01',
+    '((completed cases) / (eligible cases)) × 100 + 3',
+    '((completed cases / eligible cases) + 3) × 100',
+    '((completed cases / eligible cases) × 100) + 5',
+    '((completed cases / eligible cases) × 100) %',
+    '(completed cases (eligible) / total cases) × 100)',
+    '(completed cases (eligible) / total cases × 100',
+    '(completed cases) / (total cases)) × 100',
+    '(() / (eligible cases)) × 100',
+])
+def test_nested_ratio_rejects_denominator_scaling_unbalanced_wrappers_empty_operands_and_extra_math(metric):
+    with pytest.raises(KpiFormulaError):
+        validate_kpis([{**KPI, 'metric': metric, 'target': '95% proposed'}] * 3)
+
+
+def test_formula_failure_syntax_metadata_contains_only_counts_and_never_metric_text():
+    metric = 'PRIVATE_GENERATED_METRIC_SECRET ((completed cases) / (eligible cases × 100))'
+    with pytest.raises(KpiFormulaError) as failure:
+        validate_kpis([KPI, {**KPI, 'metric': metric, 'target': '95%'}, KPI])
+    assert failure.value.syntax_counts == {2: {'divisions': 1, 'numericScales': 1, 'exactScales': 1,
+                                              'openParentheses': 3, 'closeParentheses': 3}}
+    assert 'PRIVATE_GENERATED_METRIC_SECRET' not in str(failure.value)
 
 
 def test_normalization_preserves_existing_structural_response_size_limit():
@@ -433,4 +484,7 @@ def test_terminal_generation_diagnostics_emit_only_allowlisted_categories_and_bo
     assert 'category=' + category in message and 'attempt=' + str(attempt) in message
     assert 'upstream_status=' + status in message
     assert 'formula_rows=' + ('2' if scenario == 'formula' else '-') in message
+    syntax_counts = json.loads(message.split('syntax_counts=', 1)[1])
+    assert syntax_counts == ({'2': {'divisions': 0, 'numericScales': 0, 'exactScales': 0,
+                                   'openParentheses': 0, 'closeParentheses': 0}} if scenario == 'formula' else {})
     assert all(secret not in caplog.text for secret in ['PRIVATE_INPUT_SECRET', 'PRIVATE_PROVIDER_OUTPUT_SECRET', 'PRIVATE_EXCEPTION_SECRET', 'private-synthetic-test-key'])
