@@ -112,11 +112,11 @@ function licenseNotice(c,nodes){
  else if(/^(22|32)/.test(code)&&!/^225/.test(code))group='health';
  else if(/مهندس|engineer/i.test(r.titleAr+' '+(r.titleEn||'')))group='engineering';
  const data={
- engineering:{authorityAr:'الهيئة السعودية للمهندسين',authorityEn:'Saudi Council of Engineers',source:'https://www.saudieng.sa/English/AboutSCE/Pages/PPE.aspx'},
- accounting:{authorityAr:'الهيئة السعودية للمراجعين والمحاسبين',authorityEn:'Saudi Organization for Chartered and Professional Accountants',source:'https://socpa.org.sa/Socpa/Membership/Associate-Membership.aspx?lang=en-us'},
+ engineering:{authorityAr:'الهيئة السعودية للمهندسين',authorityEn:'Saudi Council of Engineers',source:'https://www.uqn.gov.sa/details?p=24294',sourceLabelAr:'اللائحة التنفيذية للمهن الهندسية — أم القرى',sourceLabelEn:'Engineering practice regulations — Umm Al-Qura',checkedOn:'2026-10-04'},
+ accounting:{authorityAr:'الهيئة السعودية للمراجعين والمحاسبين',authorityEn:'Saudi Organization for Chartered and Professional Accountants',source:'https://socpa.org.sa/Sites/E-Services/M/11.aspx?t=content',sourceLabelAr:'عضوية الانتساب والتسجيل المهني — الهيئة',sourceLabelEn:'Associate membership and professional registration — SOCPA',checkedOn:'2026-10-04'},
  health:{authorityAr:'الهيئة السعودية للتخصصات الصحية',authorityEn:'Saudi Commission for Health Specialties',source:'https://scfhs.org.sa/en/requirements'}
  };
- return group?{...data[group],group,code,title:r.titleAr,checkedOn:'2026-09-13'}:null;
+ return group?{checkedOn:'2026-09-13',...data[group],group,code,title:r.titleAr}:null;
 }
 root.MiyarEnterpriseCore={normalize,search,skills,csv,diagnose,customGrade,kpis,raci,raciKey,licenseNotice,validateSalary,sentences,required,read,save,importDraft,importDecision,validateReferences,parseMatrix,KEY};
 if(typeof module!=='undefined')module.exports=root.MiyarEnterpriseCore;

@@ -1,6 +1,6 @@
 """Tenant-scoped API. Approval checks are enforced here, never by UI role selectors."""
 import copy,json,os,re,secrets,time,math,csv,zipfile,threading
-from contextlib import asynccontextmanager
+from contextlib import asynccontextmanager,contextmanager
 from datetime import datetime,timezone
 from typing import Annotated,Literal
 from fastapi import FastAPI,Depends,HTTPException,UploadFile,File,Request,Header,Query
@@ -41,6 +41,10 @@ class AnalyzeRequest(Input):
         return '\n'.join([self.text,*[name+': '+value for name,value in [('Field',self.field),('Seniority',self.seniority)] if value.strip()]])
 class StrategicRequest(AnalyzeRequest):
     consentExternalProcessing:bool=False
+class SemanticRequest(AnalyzeRequest):
+    consentExternalProcessing:bool=False
+class PerformanceRequest(PublicPDF):
+    consentExternalProcessing:bool=False
 class FrameworkRequest(Input):framework:dict;reason:str=Field(min_length=3,max_length=1000)
 class WorkflowRequest(Input):steps:list[dict];reason:str=Field(min_length=3,max_length=1000)
 class BrandingRequest(Input):nameAr:str=Field(max_length=200);nameEn:str=Field(max_length=200);color:str=Field(pattern=r'^#[0-9a-fA-F]{6}$');footer:str=Field(max_length=500)
@@ -56,7 +60,21 @@ def create_app(db_url=None,jwt_secret=None,catalog=None):
     engine,Session=database(url);Base.metadata.create_all(engine)
     from .audit import protect
     protect(engine);references=catalog or Catalog()
-    app=FastAPI(title='Miyar Enterprise Workforce API',version=VERSION,description='Tenant-scoped positions, revision-bound approvals, versioned classification references and explicit integration boundaries.')
+    warming=set()
+    def warm_semantic(reference):
+        from .taxonomy import semantic_capability
+        if not semantic_capability()['configured'] or semantic_capability()['provider']!='gemini' or id(reference) in warming:return
+        warming.add(id(reference))
+        def prepare():
+            try:reference.load_semantic()
+            except (RuntimeError,OSError,ValueError):pass
+            finally:warming.discard(id(reference))
+        threading.Thread(target=prepare,name='miyar-semantic-index',daemon=True).start()
+    @asynccontextmanager
+    async def lifespan(application):
+        warm_semantic(references)
+        yield
+    app=FastAPI(title='Miyar Enterprise Workforce API',version=VERSION,lifespan=lifespan,description='Tenant-scoped positions, revision-bound approvals, versioned classification references and explicit integration boundaries.')
     app.state.sessions=Session;app.state.catalog=references;app.state.secret=secret
     origins=[x.strip() for x in os.getenv('MIYAR_CORS_ORIGINS','https://adeebnoor.github.io').split(',') if x.strip()]
     app.add_middleware(CORSMiddleware,allow_origins=origins,allow_credentials=False,allow_methods=['GET','POST','PATCH'],allow_headers=['Authorization','Content-Type','Idempotency-Key'])
@@ -105,6 +123,7 @@ def create_app(db_url=None,jwt_secret=None,catalog=None):
             row=db.get(TaxonomyRelease,digest({'org':user.org_id,'release':selected}))
             if not row or row.org_id!=user.org_id:raise HTTPException(422,'Unsupported organization taxonomy release')
             release_cache[key]=Catalog(occupation_payload=row.payload)
+            warm_semantic(release_cache[key])
         return release_cache[key]
     def content(value,db=None,user=None):
         selected=reference_for(db,user,value.get('occupationRelease') if isinstance(value,dict) else None) if user else references
@@ -168,14 +187,31 @@ def create_app(db_url=None,jwt_secret=None,catalog=None):
             result=pdf(card,{'nameAr':'معيار | بطاقة الوصف الوظيفي','nameEn':'MIYAR | POSITION DESCRIPTION','color':'#146954'})
             return Response(result,media_type='application/pdf',headers={'Content-Disposition':'attachment; filename="Miyar-Position.pdf"','Cache-Control':'no-store'})
         finally:pdf_slot.release()
+    ai_slot=threading.BoundedSemaphore(1);ai_recent={};ai_lock=threading.Lock()
+    @contextmanager
+    def organization_ai_request(user):
+        key=(user.org_id,user.id);stamp=time.monotonic()
+        with ai_lock:
+            if stamp-ai_recent.get(key,-1e9)<20:raise HTTPException(429,'Wait briefly before another AI request',headers={'Retry-After':'20'})
+            if not ai_slot.acquire(blocking=False):raise HTTPException(429,'The AI service is busy; retry shortly',headers={'Retry-After':'20'})
+            ai_recent[key]=stamp
+            for old in list(ai_recent):
+                if stamp-ai_recent[old]>900:ai_recent.pop(old,None)
+        try:yield
+        finally:ai_slot.release()
+    def semantic_consent(body):
+        from .taxonomy import semantic_capability
+        if semantic_capability()['externalProcessing'] and not body.consentExternalProcessing:raise HTTPException(422,'Confirm external processing before sending job text to Google Gemini')
     @app.post('/api/v1/performance/kpis')
-    def generate_performance(body:PublicPDF,user=Depends(current),db=Depends(session)):
+    def generate_performance(body:PerformanceRequest,user=Depends(current),db=Depends(session)):
         require(user,'line_manager','od_specialist','admin')
         value=content(body.content,db,user)
-        from .performance import generate_kpis
-        try:result=generate_kpis(value,body.lang)
+        from .performance import generate_kpis,capability as kpi_capability
+        if kpi_capability()['configured'] and not body.consentExternalProcessing:raise HTTPException(422,'Confirm external processing before sending job text to the configured AI provider')
+        try:
+            with organization_ai_request(user):result=generate_kpis(value,body.lang)
         except ValueError as error:raise HTTPException(422,str(error))
-        audit(db,user,'performance.suggested',{'method':'configured-ai','count':len(result),'model':os.getenv('MIYAR_KPI_MODEL')});db.commit()
+        audit(db,user,'performance.suggested',{'method':'configured-ai','count':len(result),'model':kpi_capability()['model'],'inputDigest':digest(value)});db.commit()
         return {'kpis':result,'status':'human-review-required'}
     @app.get('/health')
     def health():
@@ -230,7 +266,9 @@ def create_app(db_url=None,jwt_secret=None,catalog=None):
         except (ValueError,TypeError):pass
         from .strategic import capability as strategic_capability
         from .expert_review import availability as expert_availability
-        return {'strategicAI':{**strategic_capability(),'purpose':'strategic-objective-to-role'},'expertReview':expert_availability(),'skillsSemantic':{'enabled':os.getenv('MIYAR_ENABLE_EMBEDDINGS')=='true','modelReady':references.model is not None,'purpose':'occupation-skill-matching'},'recovery':{'mode':'administrator-assisted','selfServiceEmail':False,'tokenLifetimeSeconds':900},'mfa':{'method':'totp','available':True,'sso':False},'version':app.version,'storage':engine.dialect.name,'approvals':True,'kpiGenerationEnabled':bool(os.getenv('MIYAR_KPI_ENDPOINT') and os.getenv('MIYAR_KPI_MODEL') and os.getenv('MIYAR_KPI_API_KEY')),'semanticEnabled':os.getenv('MIYAR_ENABLE_EMBEDDINGS')=='true','semanticModelReady':references.model is not None,'signingConfigured':signing,'exports':[{'format':kind,'available':find_spec(module) is not None} for kind,module in [('DOCX','docx'),('XLSX','openpyxl'),('PDF','weasyprint')]],'externalConnectors':'Require organization-authorized endpoint configuration'}
+        from .performance import capability as kpi_capability
+        semantic=references.semantic_status();kpi=kpi_capability()
+        return {'strategicAI':{**strategic_capability(),'purpose':'strategic-objective-to-role'},'expertReview':expert_availability(),'skillsSemantic':{**semantic,'purpose':'occupation-and-skill-matching'},'kpiGeneration':kpi,'recovery':{'mode':'administrator-assisted','selfServiceEmail':False,'tokenLifetimeSeconds':900},'mfa':{'method':'totp','available':True,'sso':False},'version':app.version,'storage':engine.dialect.name,'approvals':True,'kpiGenerationEnabled':kpi['configured'],'semanticEnabled':semantic['configured'],'semanticModelReady':references.model is not None,'signingConfigured':signing,'exports':[{'format':kind,'available':find_spec(module) is not None} for kind,module in [('DOCX','docx'),('XLSX','openpyxl'),('PDF','weasyprint')]],'externalConnectors':'Require organization-authorized endpoint configuration'}
     @app.get('/api/v1/capabilities')
     def capabilities(user=Depends(current)):
         return service_capabilities()
@@ -408,28 +446,31 @@ def create_app(db_url=None,jwt_secret=None,catalog=None):
         org=organization(db,user);policy={**policy,'version':int(org.settings.get('decisionPolicy',{}).get('version',0))+1,'calibration':'organization-supplied; validate against held-out expert labels'}
         org.settings={**org.settings,'decisionPolicy':policy};audit(db,user,'decision-policy.configured',policy);db.commit();return policy
     @app.post('/api/v1/analyze/governed')
-    def governed(body:AnalyzeRequest,user=Depends(current),db=Depends(session)):
+    def governed(body:SemanticRequest,user=Depends(current),db=Depends(session)):
         from .governed import route,DEFAULT_POLICY
         reference=reference_for(db,user)
-        try:result=reference.semantic(body.retrieval_text())
-        except (RuntimeError,OSError,ValueError):raise HTTPException(503,'Semantic model is not ready; no scores were fabricated')
+        semantic_consent(body)
         approved=set()
         for p in db.scalars(scoped_positions(user).where(Position.active_revision.is_not(None))):
             v=db.scalar(select(PositionVersion).where(PositionVersion.position_id==p.id,PositionVersion.revision==p.active_revision))
             if v.content.get('occupationRelease')==reference.occupations['id']:approved.add(v.content.get('occupationCode'))
-        fallback_candidates=reference.semantic(body.retrieval_text(),candidate_codes=approved)['candidates'] if approved else []
+        try:
+            with organization_ai_request(user):
+                result=reference.semantic(body.retrieval_text())
+                fallback_candidates=reference.semantic(body.retrieval_text(),candidate_codes=approved)['candidates'] if approved else []
+        except (RuntimeError,OSError,ValueError):raise HTTPException(503,'Semantic model is not ready; no scores were fabricated')
         decision=route(result['candidates'],reference,approved,organization(db,user).settings.get('decisionPolicy',DEFAULT_POLICY),fallback_candidates=fallback_candidates)
         record=audit(db,user,'classification.routed',{'inputDigest':digest(body.model_dump()),'model':result['model'],'modelFingerprint':result['modelFingerprint'],'release':result['release'],'candidates':result['candidates'],'decision':decision});db.commit()
-        return {**result,'request':body.model_dump(),'constraintsReviewRequired':bool(body.constraints.strip()),'decision':decision,'auditEventId':record.id,'auditDigest':record.digest}
+        return {**result,'request':body.model_dump(exclude={'consentExternalProcessing'}),'constraintsReviewRequired':bool(body.constraints.strip()),'decision':decision,'auditEventId':record.id,'auditDigest':record.digest}
     @app.post('/api/v1/analyze/skills')
     def skills(body:AnalyzeRequest,user=Depends(current)):return {'skills':references.extract_skills(body.text),'method':'dictionary-extraction','reviewRequired':True}
     from .strategic import StrategicEngine,capability as strategic_capability,Unavailable as StrategicUnavailable
     strategic_engine=StrategicEngine()
-    strategic_slot=threading.BoundedSemaphore(1)
+    strategic_slot=ai_slot
     strategic_recent={}
     strategic_verified={}
     from .expert_review import install as install_expert_review
-    install_expert_review(app,Session,secret,references,strategic_engine,strategic_slot)
+    install_expert_review(app,Session,secret,references,strategic_engine,strategic_slot,validate_content=content)
     @app.get('/api/v1/analyze/strategic/status')
     def strategic_status():
         from .strategic_check import public_report
@@ -456,8 +497,10 @@ def create_app(db_url=None,jwt_secret=None,catalog=None):
             return {**result,'auditEventId':record.id,'embeddingModel':caps['embeddingModel'],'generationModel':caps['generationModel'],'embeddingMode':caps['embeddingMode']}
         finally:strategic_slot.release()
     @app.post('/api/v1/analyze/semantic')
-    def semantic(body:AnalyzeRequest,user=Depends(current),db=Depends(session)):
-        try:return {**reference_for(db,user).semantic(body.retrieval_text()),'request':body.model_dump(),'constraintsReviewRequired':bool(body.constraints.strip())}
+    def semantic(body:SemanticRequest,user=Depends(current),db=Depends(session)):
+        semantic_consent(body)
+        try:
+            with organization_ai_request(user):return {**reference_for(db,user).semantic(body.retrieval_text()),'request':body.model_dump(exclude={'consentExternalProcessing'}),'constraintsReviewRequired':bool(body.constraints.strip())}
         except (RuntimeError,OSError,ValueError) as e:raise HTTPException(503,'Semantic model is not ready; see server model configuration. No similarity values were fabricated.')
     @app.post('/api/v1/organization/diagnose')
     async def diagnose(file:UploadFile=File(...),user=Depends(current),db=Depends(session)):

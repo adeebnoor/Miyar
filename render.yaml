@@ -22,7 +22,13 @@ services:
       - key: MIYAR_CORS_ORIGINS
         value: https://adeebnoor.github.io
       - key: MIYAR_ENABLE_EMBEDDINGS
-        value: "false"
+        value: "true"
+      - key: MIYAR_EMBEDDING_PROVIDER
+        value: gemini
+      - key: MIYAR_EMBEDDING_MODEL
+        value: gemini-embedding-001
+      - key: MIYAR_KPI_PROVIDER
+        value: gemini
       - key: MIYAR_SERVE_UI
         value: "true"
       - key: MIYAR_BOOTSTRAP_EMAIL

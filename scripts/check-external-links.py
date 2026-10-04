@@ -16,13 +16,15 @@ for file in Path('dist').rglob('*'):
                 for item in value:visit(item)
         try:visit(json.loads(source))
         except json.JSONDecodeError:pass
-    else:urls.update(unescape(u) for u in re.findall(r'href=["\'](https://[^"\'<>]+)["\']',source))
-urls.update(['https://socpa.org.sa/Socpa/Membership/Associate-Membership.aspx?lang=en-us','https://www.saudieng.sa/English/AboutSCE/Pages/PPE.aspx'])
+    else:
+        urls.update(unescape(u) for u in re.findall(r'href=["\'](https://[^"\'<>]+)["\']',source))
+        # Data-backed links are rendered dynamically, including licensing and HR guides.
+        urls.update(unescape(u) for u in re.findall(r'\bsource\s*:\s*["\'](https://[^"\'<>]+)["\']',source))
 urls={u for u in urls if 'example' not in u and '+esc' not in u}
 def check(url):
     started=time.monotonic()
     try:
-        req=urllib.request.Request(url,headers={'User-Agent':'Miyar-Reference-Check/6.1.2'})
+        req=urllib.request.Request(url,headers={'User-Agent':'Miyar-Reference-Check/6.1.3'})
         with urllib.request.urlopen(req,timeout=20) as response:
             response.read(1024)
             return {'url':url,'status':response.status,'finalUrl':response.url,'result':'reachable','seconds':round(time.monotonic()-started,2)}

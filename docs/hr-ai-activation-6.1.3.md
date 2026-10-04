@@ -1,0 +1,11 @@
+# HR AI activation — 6.1.3
+
+The existing server-only Gemini configuration is explicitly selected for occupation/skill semantic retrieval and KPI generation. No credential is copied into a frontend bundle, source file or CI fixture.
+
+Semantic retrieval warms a full index of 5,041 public SSCO occupation labels and 37 authored/reference skill labels in the background. Gemini embedding-001 returns real 768-dimensional vectors; normalized cosine scores are not confidence. Query chunks retain long descriptions, including their tail context. The skill vocabulary and the two authored occupation crosswalks remain deliberately bounded; absent task profiles and unsupported overlaps stay null. Index progress and redacted failures are visible in service status. Public labels may be cached; incoming descriptions are not saved by the public trial.
+
+KPI generation uses the selected Gemini model, a strict JSON schema and a second local validator requiring three to five complete rows. Explicit user targets/deadlines are preserved by the prompt; inferred targets are proposals that require baseline and manager review. External-processing consent is required before either API sends job text. The organization routes remain authenticated and tenant-scoped. The public expert routes use the existing expiring review window, origin checks, persisted shared quotas and concurrency controls; they cannot access organizational positions or create approvals.
+
+Arabic and English browser cases exercise UI → real disposable API → deterministic provider boundary. Provider contract tests exercise actual vector normalization, batching, cache invalidation, long-input pooling, malformed rows and failure redaction. They are not live-model accuracy scores. Live synthetic examples must be verified after deployment; no production organization credentials are needed for the public review routes.
+
+Source links now point to SOCPA's associate-membership service, the official Umm Al-Qura engineering-practice regulations (clearly labeled as a regulation, not a registration portal), and WEF's canonical Future of Jobs2025 article. The link checker now includes literal dynamic source URLs; it reports denial/timeouts without bypass or suppressed failures. The old SCE landing page and blocked national-portal candidates are not used as working links.

@@ -1,8 +1,11 @@
 {
-  "version": "6.1.2",
-  "buildId": "feee5031dbfa29c0",
+  "version": "6.1.3",
+  "buildId": "2b7fac6ae29d5b97",
   "releasedAt": "2026-10-04",
   "changes": [
+    "Enable Gemini semantic occupation and skill matching with explicit consent",
+    "Enable validated Arabic and English AI KPI proposals",
+    "Resolve external sources and verify 44 official reference links",
     "Functional acceptance: distinct-role approval workflows and inspected exports",
     "Invalidate stale skill, bulk, pilot and imported scenario results",
     "Clear corrected errors and require explicit finance approval inputs",

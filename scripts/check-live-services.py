@@ -3,7 +3,7 @@
 No organization records, credentials or employee data are read or written.
 The public PDF endpoint renders a draft in memory; it does not save a position.
 """
-import json
+import json,time
 import urllib.error
 import urllib.request
 
@@ -29,6 +29,16 @@ def main():
     assert isinstance(statuses['strategic']['configured'], bool)
     assert isinstance(statuses['trial']['enabled'], bool)
     assert 'remainingToday' in statuses['trial']
+    for attempt in range(60):
+        services=statuses['health']['services']
+        assert services.get('semanticEnabled') and services.get('kpiGenerationEnabled'), 'Requested HR AI services are not configured'
+        semantic=services.get('skillsSemantic',{})
+        if semantic.get('modelReady'):break
+        assert semantic.get('indexStatus')!='failed', 'Semantic index initialization failed: '+str(semantic.get('lastFailure'))
+        if attempt==59:raise AssertionError('Semantic index did not become ready within five minutes')
+        time.sleep(5)
+        _,body=request('/health');statuses['health']=json.loads(body)
+    print('Live semantic index verified:',semantic.get('indexedDocuments'),'documents; KPI provider:',services.get('kpiGeneration',{}).get('provider'))
     for path in ['/api/v1/positions', '/api/v1/capabilities', '/api/v1/settings/institution-profile']:
         try:
             request(path)

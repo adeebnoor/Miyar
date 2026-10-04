@@ -292,7 +292,7 @@ test('performance suggestions, license alerts, matrices and new PDF control surv
   a.$('generate-kpis').click();assert.equal(a.w.document.querySelectorAll('[data-matrix-key="kpis"]').length,15);
   a.$('generate-raci').click();assert.equal(a.w.document.querySelectorAll('[data-matrix-key="raci"]').length,15);
   const target=a.w.document.querySelector('[data-matrix-key="kpis"][data-matrix-field="target"]');target.value='98% approved draft target';target.dispatchEvent(new a.w.Event('input'));
-  a.$('use-license').click();assert.ok(a.w.document.querySelector('[data-field="licenseSource"]').value.startsWith('https://www.saudieng.sa'));assert.equal(a.w.document.querySelector('[data-field="licenseDate"]').value,'');
+  a.$('use-license').click();assert.equal(a.w.document.querySelector('[data-field="licenseSource"]').value,'https://www.uqn.gov.sa/details?p=24294');assert.equal(a.w.document.querySelector('[data-field="licenseDate"]').value,'');
   a.$('save').click();await new Promise(r=>setImmediate(r));let saved=JSON.parse(a.w.localStorage.getItem(C.KEY))[0];assert.equal(saved.content.kpis[0].target,'98% approved draft target');assert.equal(saved.content.raci.length,3);
   const imported=C.importDraft(saved);assert.equal(imported.kpis.length,3);
   a.$('preview-draft').click();assert.match(a.w.document.querySelector('dialog').textContent,/98% approved draft target/);assert.equal(a.w.document.querySelectorAll('.signature-box').length,4);a.$('close-report').click();
@@ -310,9 +310,11 @@ test('salary proposal is linked to computed grade and invalidated by changed evi
  }finally{a.dom.window.close();}
 });
 test('license mapping checks known SSCO records, including Arabic digits, and avoids unknown-code claims',()=>{
- assert.equal(C.licenseNotice({occupationCode:'٢١٤٢٠١'},ref.nodes).group,'engineering');
+ const engineering=C.licenseNotice({occupationCode:'٢١٤٢٠١'},ref.nodes);
+ assert.equal(engineering.group,'engineering');assert.equal(engineering.source,'https://www.uqn.gov.sa/details?p=24294');assert.equal(engineering.checkedOn,'2026-10-04');assert.match(engineering.sourceLabelAr,/أم القرى/);assert.match(engineering.sourceLabelEn,/Umm Al-Qura/);
  const accountant=ref.nodes.find(x=>x.level==='occupation'&&x.code.startsWith('2411'));
- assert.equal(C.licenseNotice({occupationCode:accountant.code},ref.nodes).group,'accounting');
+ const accounting=C.licenseNotice({occupationCode:accountant.code},ref.nodes);
+ assert.equal(accounting.group,'accounting');assert.equal(accounting.source,'https://socpa.org.sa/Sites/E-Services/M/11.aspx?t=content');assert.equal(accounting.checkedOn,'2026-10-04');assert.match(accounting.sourceLabelEn,/Associate membership/);
  const health=ref.nodes.find(x=>x.level==='occupation'&&x.code.startsWith('221'));
  assert.equal(C.licenseNotice({occupationCode:health.code},ref.nodes).group,'health');
  assert.equal(C.licenseNotice({occupationCode:'999999',title:'Engineer'},ref.nodes),null);

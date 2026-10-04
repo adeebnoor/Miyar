@@ -9,9 +9,11 @@ import hmac
 import os
 import time
 from datetime import datetime, timezone
+from contextlib import contextmanager
 
 from fastapi import HTTPException, Request
 from pydantic import BaseModel, ConfigDict, Field
+from typing import Literal
 from sqlalchemy import delete, select
 from sqlalchemy.exc import IntegrityError
 
@@ -42,6 +44,20 @@ class ReviewRequest(BaseModel):
     constraints: str = Field(default='', max_length=1000)
     consentExternalProcessing: bool = False
 
+class SkillReviewRequest(BaseModel):
+    model_config = ConfigDict(extra='forbid')
+    text: str = Field(min_length=15,max_length=2500)
+    field: str = Field(default='',max_length=120)
+    seniority: str = Field(default='',max_length=120)
+    constraints: str = Field(default='',max_length=1000)
+    consentExternalProcessing: bool = False
+
+class KPIReviewRequest(BaseModel):
+    model_config = ConfigDict(extra='forbid')
+    content: dict
+    lang: Literal['ar','en'] = 'ar'
+    consentExternalProcessing: bool = False
+
 
 def availability():
     configured = os.getenv('MIYAR_ENABLE_EXPERT_REVIEW') == 'true'
@@ -58,7 +74,7 @@ def availability():
             'daysRemaining': days, 'expiringSoon': days is not None and days <= EXPIRY_WARNING_DAYS}
 
 
-def install(app, sessions, secret, references, engine, slot):
+def install(app, sessions, secret, references, engine, slot, validate_content=None):
     # One global row serializes quota reservations across workers and restarts.
     with sessions() as db:
         if db.get(ExpertReviewQuota, 'global') is None:
@@ -100,6 +116,7 @@ def install(app, sessions, secret, references, engine, slot):
     @app.get('/api/v1/review/strategic/status')
     def status():
         caps = capability()
+        from .performance import capability as kpi_capability
         with sessions() as db:
             row = db.get(ExpertReviewQuota, 'global')
             used = row.requests if row and row.started == int(time.time()) // 86400 * 86400 else 0
@@ -109,7 +126,42 @@ def install(app, sessions, secret, references, engine, slot):
                 'remainingToday': max(0, DAILY_LIMIT - used), 'hourlyLimit': HOURLY_LIMIT,
                 'usagePercent': round(100 * used / DAILY_LIMIT), 'nearLimit': used * 100 >= NEAR_LIMIT_PERCENT * DAILY_LIMIT,
                 'cooldownSeconds': COOLDOWN, 'organizationAccess': False,
-                'inputStored': False, 'provider': 'Google Gemini'}
+                'inputStored': False, 'provider': 'Google Gemini',
+                'skillsSemantic': references.semantic_status(), 'kpiGeneration': kpi_capability()}
+
+    @contextmanager
+    def review_call(body,request,configured):
+        if not availability()['enabled']:raise HTTPException(410,'انتهت تجربة الخبراء أو لم تُفعّل بعد.')
+        origins={x.strip().rstrip('/') for x in os.getenv('MIYAR_CORS_ORIGINS','https://adeebnoor.github.io').split(',')}
+        origins.add(str(request.base_url).rstrip('/'))
+        if request.headers.get('origin','').rstrip('/') not in origins:raise HTTPException(403,'افتح صفحة اختبار الخبراء لإجراء التحليل.')
+        if not body.consentExternalProcessing:raise HTTPException(422,'وافق على إرسال نص المثال إلى Google Gemini قبل التحليل.')
+        if not configured:raise HTTPException(503,'الخدمة غير جاهزة الآن؛ افحص حالتها ثم أعد المحاولة.')
+        if not slot.acquire(blocking=False):raise HTTPException(429,'المحرك يعالج طلبًا آخر. أعد المحاولة بعد قليل.',headers={'Retry-After':'20'})
+        try:
+            reserve(request)
+            yield
+        finally:slot.release()
+
+    @app.post('/api/v1/review/semantic')
+    def semantic_review(body:SkillReviewRequest,request:Request):
+        state=references.semantic_status()
+        with review_call(body,request,state['configured'] and state['modelReady']):
+            text='\n'.join([body.text,*[k+': '+v for k,v in [('Field',body.field),('Seniority',body.seniority)] if v.strip()]])
+            try:result=references.semantic(text)
+            except (RuntimeError,OSError,ValueError):raise HTTPException(503,'تعذّر التحليل الدلالي؛ لم تُنشأ درجات تشابه بديلة.')
+            return {**result,'mode':'expert-review','organizationAccess':False,'inputStored':False,'constraintsReviewRequired':bool(body.constraints.strip()),'completedAt':datetime.now(timezone.utc).isoformat()}
+
+    @app.post('/api/v1/review/kpis')
+    def kpi_review(body:KPIReviewRequest,request:Request):
+        from .performance import capability as kpi_capability,generate_kpis
+        if validate_content is None:raise HTTPException(503,'KPI review is unavailable')
+        value=validate_content(body.content)
+        if not str(value.get('successMeasures','')).strip():raise HTTPException(422,'أدخل مؤشرات النجاح أولًا / Enter success measures first')
+        with review_call(body,request,kpi_capability()['configured']):
+            try:rows=generate_kpis(value,body.lang)
+            except ValueError:raise HTTPException(503,'تعذّر توليد مؤشرات صالحة؛ حاول لاحقًا أو استخدم الاقتراح المحلي.')
+            return {'kpis':rows,'status':'human-review-required','mode':'expert-review','organizationAccess':False,'inputStored':False,'model':kpi_capability()['model'],'completedAt':datetime.now(timezone.utc).isoformat()}
 
     @app.post('/api/v1/review/strategic')
     def analyze(body: ReviewRequest, request: Request):
