@@ -12,7 +12,12 @@ test.afterAll(()=>server?.kill());
 // Finish pending API route callbacks before Playwright disposes the page.
 // The previous release failed MFA teardown after its assertions passed.
 test.afterEach(async({page})=>{await page.unrouteAll({behavior:'wait'});});
-async function setup(page){await page.addInitScript(()=>localStorage.setItem('miyar-language','en'));await page.route('https://miyar-enterprise-api.onrender.com/**',async r=>{const response=await r.fetch({url:r.request().url().replace('https://miyar-enterprise-api.onrender.com',API)});await r.fulfill({response});});await page.goto(BASE+'#enterprise/connection');}
+async function setup(page){await page.addInitScript(()=>localStorage.setItem('miyar-language','en'));await page.route('https://miyar-enterprise-api.onrender.com/**',async r=>{
+ // Retry one connection reset for idempotent reads from the disposable API.
+ // Writes remain single-attempt so this harness cannot duplicate mutations.
+ const response=await r.fetch({url:r.request().url().replace('https://miyar-enterprise-api.onrender.com',API),maxRetries:r.request().method()==='GET'?1:0});
+ await r.fulfill({response});
+});await page.goto(BASE+'#enterprise/connection');}
 async function login(page,email){await page.locator('#ent-email').fill(email);await page.locator('#ent-password').fill('isolated-test-password-928');await page.locator('#ent-login button[type=submit]').click();await page.waitForURL(/#enterprise\/overview$/);}
 
 test('authenticated manager reads institution profile before designing a position',async({page})=>{

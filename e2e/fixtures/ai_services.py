@@ -65,8 +65,9 @@ def kpi_response(client, url, **kwargs):
     arabic = 'Use Arabic.' in data['systemInstruction']['parts'][0]['text']
     rows = [{
         'outcome': ('مخرج تجريبي ' if arabic else 'Synthetic outcome ') + str(i + 1),
-        'metric': 'Completed / requested × 100',
-        'target': '95% proposed',
+        'metric': ('(الطلبات المكتملة المؤهلة ÷ جميع الطلبات المؤهلة للشهر) × 100' if arabic else
+                   '(Completed eligible requests / All eligible monthly requests) × 100'),
+        'target': '٩٥٪ هدف مقترح' if arabic else '95% proposed',
         'frequency': 'Monthly',
         'deliverable': 'Synthetic source register ' + str(i + 1),
     } for i in range(3)]
