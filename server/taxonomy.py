@@ -144,20 +144,26 @@ class Catalog:
             except Exception as error:
                 self.semantic_index_status='failed';self.semantic_failure=failure_details(error)
                 raise
-    def semantic(self,text,candidate_codes=None):
+    def semantic(self,text,candidate_codes=None,field='',seniority=''):
         caps=semantic_capability()
         if not caps['configured']:raise RuntimeError('Semantic model is disabled or its provider is not configured')
         if caps['provider'] in {'gemini','local-e5-small'} and self.model is None:raise RuntimeError('Semantic index is warming up or unavailable; retry after readiness succeeds')
         if self.model is None:self.load_semantic()
         vector=np.asarray(next(iter(self.model.embed([text]))),dtype=np.float32);vector/=max(float(np.linalg.norm(vector)),1e-12)
         cosine=self.matrix@vector;order=np.argsort(-cosine)
+        scope=None
+        if caps['provider']=='local-e5-small':
+            from .semantic_scope import OccupationScope
+            scope=OccupationScope(field,seniority,self.nodes,self.flagged)
+            order=[i for i in order if self.vector_roles[int(i)]['code'] in scope.references]
         if candidate_codes is not None:order=[i for i in order if self.vector_roles[int(i)]['code'] in candidate_codes]
         order=order[:3];skills=self.extract_skills(text);required={s['id'] for s in skills};items=[]
         for index in order:
             role=self.vector_roles[int(index)];known=set(self.role_skills.get(role['code'],[]));common=sorted(required&known)
             similarity=float(np.clip(cosine[index],-1,1))
             items.append({'code':role['code'],'titleAr':role['titleAr'],'sourcePage':role['sourcePage'],'cosineSimilarity':round(similarity,5),'semanticDistance':round(1-similarity,5),'skillOverlapPercent':round(100*len(common)/len(required),1) if required and known else None,'matchedSkillIds':common,'sourceWarning':role['code'] in self.flagged,'skillDenominator':len(required),'profile':self.profiles.get(role['code']),'taskOverlapPercent':None})
-        semantic_skills=[];skill_threshold=float(os.getenv('MIYAR_SEMANTIC_SKILL_THRESHOLD','.8' if caps['provider']=='local-e5-small' else '.5'))
+            if scope:items[-1].update(mappingStatus=scope.references[role['code']]['mappingStatus'],scopeFamilies=scope.references[role['code']]['families'])
+        semantic_skills=[];suppressed_skills=0;skill_threshold=float(os.getenv('MIYAR_SEMANTIC_SKILL_THRESHOLD','.8' if caps['provider']=='local-e5-small' else '.5'))
         if not math.isfinite(skill_threshold) or not -1<=skill_threshold<=1:raise RuntimeError('Semantic skill threshold must be between minus one and one')
         if self.skill_matrix is not None and len(self.skill_matrix):
             skill_cosine=self.skill_matrix@vector
@@ -165,8 +171,17 @@ class Catalog:
                 similarity=float(np.clip(skill_cosine[int(index)],-1,1))
                 if similarity>=skill_threshold:
                     skill=self.skills[int(index)]
+                    evidence=scope.skill_evidence(skill['id'],required) if scope else None
+                    if scope and evidence is None:
+                        suppressed_skills+=1;continue
                     semantic_skills.append({**skill,'cosineSimilarity':round(similarity,5),'method':'multilingual-embedding-cosine','humanReviewRequired':True})
+                    if scope:semantic_skills[-1]['scopeEvidence']=evidence
         query_metadata=self.model.query_metadata(text) if hasattr(self.model,'query_metadata') else {}
+        if scope:
+            query_metadata.update(occupationScope=scope.metadata(len(items)),semanticSkillScope={
+                'coverage':'authored-limited','policy':'explicit-field-family-or-dictionary-evidence',
+                'suppressedFromTopFive':suppressed_skills,
+                'notice':'Skills in the limited authored domain-scope mapping need explicit field support or direct dictionary evidence. The actual top five are filtered without refilling. Transferable skills remain proposals; this is not a complete workforce skills inventory.'})
         return {'method':'multilingual-embedding-cosine','model':self.model_name,'modelFingerprint':self.model_fingerprint,'provider':caps['provider'],**query_metadata,'referenceText':'Occupation title and unit title; the supplied SSCO PDF does not contain task/skill profiles','release':self.occupations['id'],'candidates':items,'extractedSkills':skills,'semanticSkills':semantic_skills,'semanticSkillThreshold':skill_threshold,'semanticSkillThresholdCalibrated':False,'semanticSkillCorpusRecords':len(self.skills),'notice':'Cosine similarity is not a probability, approval, or a 65/35 role composition. Semantic skills are reviewable suggestions from the limited skill dictionary; the retrieval threshold is experimental, not an expert-accuracy percentage. Skill overlap is the share of extracted request skills in the selected proposed O*NET crosswalk. These two authored crosswalks require OD review; absent profiles and task overlap remain null.'}
 
 def read_rows(raw,filename):

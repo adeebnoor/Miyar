@@ -456,8 +456,8 @@ def create_app(db_url=None,jwt_secret=None,catalog=None):
             if v.content.get('occupationRelease')==reference.occupations['id']:approved.add(v.content.get('occupationCode'))
         try:
             with organization_ai_request(user):
-                result=reference.semantic(body.retrieval_text())
-                fallback_candidates=reference.semantic(body.retrieval_text(),candidate_codes=approved)['candidates'] if approved else []
+                result=reference.semantic(body.retrieval_text(),field=body.field,seniority=body.seniority)
+                fallback_candidates=reference.semantic(body.retrieval_text(),candidate_codes=approved,field=body.field,seniority=body.seniority)['candidates'] if approved else []
         except (RuntimeError,OSError,ValueError):raise HTTPException(503,'Semantic model is not ready; no scores were fabricated')
         decision=route(result['candidates'],reference,approved,organization(db,user).settings.get('decisionPolicy',DEFAULT_POLICY),fallback_candidates=fallback_candidates)
         record=audit(db,user,'classification.routed',{'inputDigest':digest(body.model_dump()),'model':result['model'],'modelFingerprint':result['modelFingerprint'],'release':result['release'],'candidates':result['candidates'],'decision':decision});db.commit()
@@ -500,7 +500,7 @@ def create_app(db_url=None,jwt_secret=None,catalog=None):
     def semantic(body:SemanticRequest,user=Depends(current),db=Depends(session)):
         semantic_consent(body)
         try:
-            with organization_ai_request(user):return {**reference_for(db,user).semantic(body.retrieval_text()),'request':body.model_dump(exclude={'consentExternalProcessing'}),'constraintsReviewRequired':bool(body.constraints.strip())}
+            with organization_ai_request(user):return {**reference_for(db,user).semantic(body.retrieval_text(),field=body.field,seniority=body.seniority),'request':body.model_dump(exclude={'consentExternalProcessing'}),'constraintsReviewRequired':bool(body.constraints.strip())}
         except (RuntimeError,OSError,ValueError) as e:raise HTTPException(503,'Semantic model is not ready; see server model configuration. No similarity values were fabricated.')
     @app.post('/api/v1/organization/diagnose')
     async def diagnose(file:UploadFile=File(...),user=Depends(current),db=Depends(session)):

@@ -11,10 +11,11 @@ import tempfile
 import time
 from datetime import datetime, timedelta, timezone
 
+LOCAL_FIXTURE = os.getenv('MIYAR_AI_TEST_LOCAL') == 'true'
 os.environ.update({
     'MIYAR_SERVE_UI': 'true',
     'MIYAR_ENABLE_EMBEDDINGS': 'true',
-    'MIYAR_EMBEDDING_PROVIDER': 'gemini',
+    'MIYAR_EMBEDDING_PROVIDER': 'local-e5-small' if LOCAL_FIXTURE else 'gemini',
     'MIYAR_EMBEDDING_MODEL': 'gemini-embedding-001',
     'MIYAR_STRATEGIC_GEMINI_KEY': 'synthetic-offline-provider-key',
     'MIYAR_KPI_PROVIDER': 'gemini',
@@ -78,19 +79,31 @@ performance.provider_post = kpi_response
 
 catalog = Catalog()
 catalog.vector_roles = list(catalog.roles.values())
-catalog.matrix = np.zeros((len(catalog.vector_roles), 768), dtype=np.float32)
+dimensions = 384 if LOCAL_FIXTURE else 768
+catalog.matrix = np.zeros((len(catalog.vector_roles), dimensions), dtype=np.float32)
 catalog.matrix[:, 1] = 1.0
 # Real source codes and labels, with deliberately deterministic synthetic scores.
-for code, score in [('251204', .99), ('241308', .9), ('251104', .8)]:
+occupation_scores = [('251204', .99), ('241308', .9), ('251104', .8)]
+if LOCAL_FIXTURE:
+    occupation_scores += [('242114', .97), ('121313', .85)]
+for code, score in occupation_scores:
     index = next(i for i, role in enumerate(catalog.vector_roles) if role['code'] == code)
     catalog.matrix[index, 0] = score
     catalog.matrix[index, 1] = math.sqrt(1 - score * score)
-catalog.skill_matrix = np.zeros((len(catalog.skills), 768), dtype=np.float32)
+catalog.skill_matrix = np.zeros((len(catalog.skills), dimensions), dtype=np.float32)
 catalog.skill_matrix[:, 1] = 1.0
 programming = next(i for i, skill in enumerate(catalog.skills) if skill['id'] == 'onet:2.B.3.e')
 catalog.skill_matrix[programming, 0] = .96
 catalog.skill_matrix[programming, 1] = math.sqrt(1 - .96 * .96)
-catalog.model = semantic_provider.GeminiOccupationEmbeddings()
+class SyntheticLocalEmbeddings:
+    """Deterministic local boundary only; never downloads or calls a provider."""
+    name = 'intfloat/multilingual-e5-small'
+
+    def embed(self, texts):
+        return iter([[1.0] + [0.0] * (dimensions - 1) for _ in texts])
+
+
+catalog.model = SyntheticLocalEmbeddings() if LOCAL_FIXTURE else semantic_provider.GeminiOccupationEmbeddings()
 catalog.model_name = catalog.model.name
 catalog.model_fingerprint = 'synthetic-browser-fixture-vectors-not-provider-accuracy'
 catalog.semantic_index_status = 'ready'

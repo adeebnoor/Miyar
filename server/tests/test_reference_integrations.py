@@ -88,7 +88,7 @@ def test_csv_duplicate_aliases_and_malformed_xlsx_are_rejected(env):
 
 def test_semantic_request_preserves_unrestricted_context_and_marks_constraints_for_review(env,monkeypatch):
     app,c,auth,create=env;seen=[]
-    def semantic(text,candidate_codes=None):
+    def semantic(text,candidate_codes=None,field='',seniority=''):
         seen.append(text);return {'model':'test-only-model','modelFingerprint':'test-only-fingerprint','release':app.state.catalog.occupations['id'],'candidates':[{'code':'251204','cosineSimilarity':.9},{'code':'251104','cosineSimilarity':.7}],'extractedSkills':[]}
     monkeypatch.setattr(app.state.catalog,'semantic',semantic)
     body={'text':'Build software for research','field':'Health informatics / digital twins','seniority':'Principal - 12+ years','constraints':'No direct reports'}

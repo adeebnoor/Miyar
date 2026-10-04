@@ -70,15 +70,57 @@ def save_report(report):
     return encoded
 
 
-def checked_semantic(result, catalog):
+def authored_scope_references(family, catalog):
+    """Independently validate concise authored links against the source release."""
+    source = (ROOT / 'dist' / 'role-catalog.js').read_text(encoding='utf-8')
+    payload, _ = json.JSONDecoder().raw_decode(source.split('const catalog=', 1)[1])
+    references = set()
+    for entry in payload['roles']:
+        if entry.get('family') != family or entry.get('level') in {'manager', 'executive'}:
+            continue
+        code = entry.get('ssco')
+        row = catalog.roles.get(code)
+        if (row and code not in catalog.flagged and row['parent'] in catalog.nodes
+                and row['titleAr'] == entry.get('referenceTitleAr')
+                and row['sourcePage'] == entry.get('sourcePage')):
+            references.add(code)
+    assert references, 'The synthetic field has no source-validated authored references'
+    return references
+
+
+def checked_semantic(result, catalog, retrieval_text, expected_family=None):
     assert result['provider'] == 'local-e5-small', 'The configured local adapter was not used'
     assert result['model'] == 'intfloat/multilingual-e5-small'
     assert result['semanticSkillCorpusRecords'] == 37
     assert result['semanticSkillThresholdCalibrated'] is False
     candidates = result['candidates']
-    assert len(candidates) == 3, 'Three occupation candidates are required'
+    scope = result['occupationScope']
+    assert 0 <= len(candidates) <= 3, 'Occupation proposals must be limited to zero through three'
+    assert scope['candidateCount'] == len(candidates) and scope['coverage'] == 'authored-limited'
+    assert scope['status'] == ('scope-constrained-proposals' if candidates else 'insufficient-evidence')
+    allowed = None
+    if expected_family:
+        assert candidates, 'The known synthetic field produced no source-valid proposal'
+        assert scope['families'] == [expected_family], 'The explicit field entered an unrelated occupation scope'
+        assert scope['requestedLevel'] == 'specialist'
+        allowed = authored_scope_references(expected_family, catalog)
+    import numpy as np
+    vector = np.asarray(next(iter(catalog.model.embed([retrieval_text]))), dtype=np.float32)
+    vector /= max(float(np.linalg.norm(vector)), 1e-12)
+    original_cosines = catalog.matrix @ vector
+    vector_indices = {row['code']: index for index, row in enumerate(catalog.vector_roles)}
     for row in candidates:
         assert row['code'] in catalog.roles, 'Candidate code is outside the selected source'
+        reference = catalog.roles[row['code']]
+        assert row['titleAr'] == reference['titleAr'] and row['sourcePage'] == reference['sourcePage']
+        assert row['code'] not in catalog.flagged and reference['parent'] in catalog.nodes
+        assert row['mappingStatus'] in {'source-title-reference-for-review', 'adjacent-reference-for-review'}
+        assert row['scopeFamilies'] and set(row['scopeFamilies']).issubset(scope['families'])
+        if allowed is not None:
+            assert row['code'] in allowed and expected_family in row['scopeFamilies'], 'Proposal is outside its source-validated authored field'
+        original_cosine = float(np.clip(original_cosines[vector_indices[row['code']]], -1, 1))
+        assert row['cosineSimilarity'] == round(original_cosine, 5), 'Field scoping changed the model cosine'
+        assert row['semanticDistance'] == round(1 - original_cosine, 5)
         assert row['taskOverlapPercent'] is None, 'Unavailable task overlap must remain null'
         assert math.isfinite(row['cosineSimilarity']) and -1 <= row['cosineSimilarity'] <= 1
         assert math.isfinite(row['semanticDistance']) and 0 <= row['semanticDistance'] <= 2
@@ -86,7 +128,7 @@ def checked_semantic(result, catalog):
             assert row['skillOverlapPercent'] is None, 'Missing profiles must not fabricate overlap'
     skill_ids = {row['id'] for row in catalog.skills}
     suggestions = result['semanticSkills']
-    assert 1 <= len(suggestions) <= 5, 'The local skill vocabulary produced no reviewable suggestions'
+    assert 0 <= len(suggestions) <= 5, 'Skill proposals must remain bounded'
     for row in suggestions:
         assert row['id'] in skill_ids and row['humanReviewRequired'] is True
         assert math.isfinite(row['cosineSimilarity']) and -1 <= row['cosineSimilarity'] <= 1
@@ -94,6 +136,11 @@ def checked_semantic(result, catalog):
         'candidateCodes': [row['code'] for row in candidates],
         'skillSuggestionCount': len(suggestions),
         'queryChunks': result['queryChunks'],
+        'occupationScopeStatus': scope['status'],
+        'occupationScopeFamilies': scope['families'],
+        'occupationScopeCoverage': scope['coverage'],
+        'sourceValidatedAuthoredReferences': len(allowed) if allowed is not None else None,
+        'originalCosinesPreserved': True,
         'taskOverlapNull': True,
         'sourceCodesValid': True,
         'humanReviewRequired': True,
@@ -153,10 +200,12 @@ def main():
                                  jwt_secret='synthetic-resource-check-secret-at-least-32-characters',
                                  catalog=catalog)
                 examples = [
-                    ('ar', 'أراجع أنظمة الرقابة الداخلية وأخطط للمراجعة بناءً على المخاطر وأوثق أدلة المراجعة وأقدم تقارير مستقلة للجنة المراجعة.'),
-                    ('en', 'Analyze investment opportunities, prepare financial models, evaluate valuation and portfolio risk, and report proposed investment decisions.'),
+                    ('ar', 'أراجع أنظمة الرقابة الداخلية وأخطط للمراجعة بناءً على المخاطر وأوثق أدلة المراجعة وأقدم تقارير مستقلة للجنة المراجعة.',
+                     'المراجعة الداخلية', 'أخصائي', 'internalAudit'),
+                    ('en', 'Analyze investment opportunities, prepare financial models, evaluate valuation and portfolio risk, and report proposed investment decisions.',
+                     'Investment', 'Specialist', 'investment'),
                 ]
-                for language, text in examples:
+                for language, text, field, seniority, family in examples:
                     stage = 'public-semantic-' + language
                     # Separate synthetic peers exercise the real quota behavior
                     # without changing production cooldown or sleeping in CI.
@@ -166,20 +215,22 @@ def main():
                         assert health.json()['services']['skillsSemantic']['modelReady']
                         response = client.post('/api/v1/review/semantic',
                                                headers={'Origin': 'http://testserver'},
-                                               json={'text': text, 'consentExternalProcessing': False})
+                                               json={'text': text, 'field': field, 'seniority': seniority,
+                                                     'consentExternalProcessing': False})
                         assert response.status_code == 200, 'Local public semantic API did not succeed'
                         result = response.json()
                         assert result['organizationAccess'] is False and result['inputStored'] is False
+                        retrieval = SemanticRequest(text=text, field=field, seniority=seniority).retrieval_text()
                         report['checks'].append({'name': stage, 'httpStatus': response.status_code,
-                                                 **checked_semantic(result, catalog)})
+                                                 **checked_semantic(result, catalog, retrieval, family)})
 
                 stage = 'maximum-organizational-query'
                 final_context = ' FINAL_CONTEXT_FOR_STRATEGY_PMO_REVIEW'
                 sentence = 'أحلل مخاطر الاستثمار وأخطط للقوى العاملة وأراجع الاستراتيجية وحوكمة المشاريع. '
                 maximum_text = (sentence * (12000 // len(sentence) + 1))[:12000 - len(final_context)] + final_context
                 request = SemanticRequest(text=maximum_text,
-                                          field=('Human resources and investment planning ' * 10)[:200],
-                                          seniority=('Senior strategy and project governance ' * 10)[:200],
+                                          field='Investment'.ljust(200),
+                                          seniority='Specialist'.ljust(200),
                                           constraints='c' * 4000)
                 retrieval = request.retrieval_text()
                 assert len(request.text) == 12000 and len(request.field) == len(request.seniority) == 200
@@ -194,11 +245,12 @@ def main():
                 assert len(windows) > 1 and all(len(ids) <= 256 for ids, weight in windows)
                 assert all(ids[0] == 0 and ids[-1] == 2 and ids[1:1 + len(prefix_ids)] == prefix_ids
                            for ids, weight in windows)
-                result = catalog.semantic(retrieval)
+                result = catalog.semantic(retrieval, field=request.field, seniority=request.seniority)
                 assert result['queryChunks'] == len(windows)
                 report['checks'].append({'name': stage, 'inputCharacters': len(retrieval),
                                          'encodedBodyTokens': len(expected), 'tokenContextPreserved': True,
-                                         'maximumSequenceTokens': 256, **checked_semantic(result, catalog)})
+                                         'maximumSequenceTokens': 256,
+                                         **checked_semantic(result, catalog, retrieval, 'investment')})
 
                 stage = 'public-arabic-pdf'
                 with TestClient(app, client=('synthetic-resource-pdf', 50000)) as client:

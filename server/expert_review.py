@@ -148,7 +148,7 @@ def install(app, sessions, secret, references, engine, slot, validate_content=No
         state=references.semantic_status()
         with review_call(body,request,state['configured'] and state['modelReady'],state.get('externalProcessing',True)):
             text='\n'.join([body.text,*[k+': '+v for k,v in [('Field',body.field),('Seniority',body.seniority)] if v.strip()]])
-            try:result=references.semantic(text)
+            try:result=references.semantic(text,field=body.field,seniority=body.seniority)
             except (RuntimeError,OSError,ValueError):raise HTTPException(503,'تعذّر التحليل الدلالي؛ لم تُنشأ درجات تشابه بديلة.')
             return {**result,'mode':'expert-review','organizationAccess':False,'inputStored':False,'constraintsReviewRequired':bool(body.constraints.strip()),'completedAt':datetime.now(timezone.utc).isoformat()}
 

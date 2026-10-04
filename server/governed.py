@@ -1,7 +1,7 @@
 """Versioned decision gates. Similarity is a tunable signal, never calibrated confidence."""
 import math
 from .domain import digest
-POLICY_VERSION='miyar-gates/1.0'
+POLICY_VERSION='miyar-gates/1.1'
 DEFAULT_POLICY={'similarityThreshold':0.75,'minimumMargin':0.03,'version':1,'calibration':'unvalidated-pilot-default','rules':{}}
 
 def route(candidates,catalog,approved_codes,policy=None,context=None,fallback_candidates=None):
@@ -11,6 +11,7 @@ def route(candidates,catalog,approved_codes,policy=None,context=None,fallback_ca
     score=top['cosineSimilarity'] if top else -1;gap=score-ordered[1]['cosineSimilarity'] if len(ordered)>1 else 0
     code=top['code'] if top else None;node=catalog.roles.get(code);rule=policy.get('rules',{}).get(code,{})
     checks=[{'id':'R01','name':'Code exists in selected edition','pass':bool(node)},{'id':'R02','name':'Parent unit exists in source','pass':bool(node and node.get('parent') in catalog.nodes)},{'id':'R03','name':'Organization education requirement','pass':not rule.get('minimumEducationLevel') or (str(context.get('educationLevel','')).isdigit() and int(context['educationLevel'])>=int(rule['minimumEducationLevel']))},{'id':'R04','name':'Organization license evidence','pass':not rule.get('licenseRequired') or context.get('licenseVerifiedByOD') is True}]
+    checks.append({'id':'R05','name':'Source-title reference, not an adjacent business-title mapping','pass':bool(top) and top.get('mappingStatus')!='adjacent-reference-for-review'})
     statistical=score>=threshold and gap>=margin;rules_ok=all(x['pass'] for x in checks)
     eligible=statistical and rules_ok
     # This is an intersection with a separately approved library. A taxonomy record alone is not pre-approved.
@@ -18,7 +19,7 @@ def route(candidates,catalog,approved_codes,policy=None,context=None,fallback_ca
     # Each fallback must independently pass its organization policy. No unsafe candidate survives through fallback.
     def allowed(c):
         r=policy.get('rules',{}).get(c['code'],{});minimum=r.get('minimumEducationLevel')
-        return (not minimum or (str(context.get('educationLevel','')).isdigit() and int(context['educationLevel'])>=int(minimum))) and (not r.get('licenseRequired') or context.get('licenseVerifiedByOD') is True)
+        return c.get('mappingStatus')!='adjacent-reference-for-review' and (not minimum or (str(context.get('educationLevel','')).isdigit() and int(context['educationLevel'])>=int(minimum))) and (not r.get('licenseRequired') or context.get('licenseVerifiedByOD') is True)
     fallback=[c for c in fallback if allowed(c)]
     selected=top if eligible else next(iter(fallback),None)
     parent=node.get('parent') if node else None

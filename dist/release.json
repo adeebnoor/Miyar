@@ -1,9 +1,10 @@
 {
   "version": "6.1.3",
-  "buildId": "85e51184897aa6e6",
+  "buildId": "596b57dfa95bbfb0",
   "releasedAt": "2026-10-04",
   "changes": [
     "Enable locally hosted multilingual semantic occupation and skill matching",
+    "Constrain semantic proposals by explicit source-checked field and level; show uncertainty for unsupported occupations",
     "Enable validated Arabic and English AI KPI proposals",
     "Resolve external sources and verify 44 official reference links",
     "Functional acceptance: distinct-role approval workflows and inspected exports",

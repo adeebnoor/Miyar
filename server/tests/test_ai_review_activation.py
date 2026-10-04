@@ -16,7 +16,7 @@ def setup(env,monkeypatch):
     for key,value in {'MIYAR_ENABLE_EMBEDDINGS':'true','MIYAR_EMBEDDING_PROVIDER':'gemini','MIYAR_STRATEGIC_EMBEDDING_MODEL':'gemini-embedding-001','MIYAR_STRATEGIC_GEMINI_KEY':'synthetic-private-provider-key','MIYAR_STRATEGIC_GEMINI_MODEL':'gemini-test','MIYAR_KPI_PROVIDER':'gemini','MIYAR_ENABLE_EXPERT_REVIEW':'true','MIYAR_EXPERT_REVIEW_EXPIRES_AT':(datetime.now(timezone.utc)+timedelta(days=1)).isoformat()}.items():monkeypatch.setenv(key,value)
     monkeypatch.setattr(Catalog,'semantic_status',lambda self:{'configured':True,'enabled':True,'modelReady':True})
     calls=[]
-    def semantic(self,text,candidate_codes=None):
+    def semantic(self,text,candidate_codes=None,field='',seniority=''):
         calls.append(('semantic',text))
         return {'model':'gemini-embedding-001','modelFingerprint':'synthetic-fingerprint','candidates':[],'semanticSkills':[],'extractedSkills':[]}
     def kpis(content,lang):calls.append(('kpis',content,lang));return ROWS

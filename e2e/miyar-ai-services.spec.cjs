@@ -1,31 +1,32 @@
 const {test,expect}=require('@playwright/test');
 const {spawn,execFileSync}=require('node:child_process');
 const fs=require('node:fs'),path=require('node:path'),os=require('node:os'),https=require('node:https');
-const BASE='http://127.0.0.1:4173/',API='https://127.0.0.1:8194';
-let server,certificateDirectory,logs='';
-function healthy(){return new Promise(resolve=>{const request=https.get(API+'/health',{rejectUnauthorized:false},r=>{r.resume();resolve(r.statusCode===200);});request.setTimeout(1500,()=>request.destroy());request.on('error',()=>resolve(false));});}
+const BASE='http://127.0.0.1:4173/',API='https://127.0.0.1:8194',LOCAL_API='https://127.0.0.1:8195';
+let server,localServer,certificateDirectory,logs='';
+function healthy(api){return new Promise(resolve=>{const request=https.get(api+'/health',{rejectUnauthorized:false},r=>{r.resume();resolve(r.statusCode===200);});request.setTimeout(1500,()=>request.destroy());request.on('error',()=>resolve(false));});}
 test.beforeAll(async()=>{
  certificateDirectory=fs.mkdtempSync(path.join(os.tmpdir(),'miyar-ai-tls-'));const key=path.join(certificateDirectory,'localhost.key'),certificate=path.join(certificateDirectory,'localhost.crt');
  execFileSync('openssl',['req','-x509','-newkey','rsa:2048','-nodes','-days','1','-keyout',key,'-out',certificate,'-subj','/CN=localhost','-addext','subjectAltName=IP:127.0.0.1,DNS:localhost'],{stdio:'ignore'});
  server=spawn(process.env.MIYAR_TEST_PYTHON||'python3',['-m','uvicorn','e2e.fixtures.ai_services:app','--host','127.0.0.1','--port','8194','--ssl-keyfile',key,'--ssl-certfile',certificate],{cwd:path.join(__dirname,'..'),env:{...process.env,MIYAR_ENV:'test',MIYAR_CORS_ORIGINS:BASE.replace(/\/$/,''),MIYAR_SIGNING_KEY:Buffer.from('0123456789abcdef0123456789abcdef').toString('base64')}});
- server.stdout.on('data',x=>logs+=x);server.stderr.on('data',x=>logs+=x);
- for(let i=0;i<100;i++){if(await healthy())return;if(server.exitCode!==null)throw Error(logs);await new Promise(r=>setTimeout(r,200));}throw Error(logs);
+ localServer=spawn(process.env.MIYAR_TEST_PYTHON||'python3',['-m','uvicorn','e2e.fixtures.ai_services:app','--host','127.0.0.1','--port','8195','--ssl-keyfile',key,'--ssl-certfile',certificate],{cwd:path.join(__dirname,'..'),env:{...process.env,MIYAR_ENV:'test',MIYAR_AI_TEST_LOCAL:'true',MIYAR_CORS_ORIGINS:BASE.replace(/\/$/,''),MIYAR_SIGNING_KEY:Buffer.from('0123456789abcdef0123456789abcdef').toString('base64')}});
+ for(const process of [server,localServer]){process.stdout.on('data',x=>logs+=x);process.stderr.on('data',x=>logs+=x);}
+ for(let i=0;i<100;i++){if((await Promise.all([healthy(API),healthy(LOCAL_API)])).every(Boolean))return;if([server,localServer].some(p=>p.exitCode!==null))throw Error(logs);await new Promise(r=>setTimeout(r,200));}throw Error(logs);
 });
 // Native HTTPS browser requests target a real disposable API, not intercepted responses.
 // Only provider boundaries are deterministic; this suite makes no live-accuracy claim.
 test.use({screenshot:'only-on-failure',ignoreHTTPSErrors:true});
-test.afterAll(async()=>{if(server&&server.exitCode===null)await new Promise(resolve=>{server.once('exit',resolve);server.kill();});if(certificateDirectory)fs.rmSync(certificateDirectory,{recursive:true,force:true});});
-async function setup(page,lang,route='intelligence',consent=true){
+test.afterAll(async()=>{for(const process of [server,localServer])if(process&&process.exitCode===null)await new Promise(resolve=>{process.once('exit',resolve);process.kill();});if(certificateDirectory)fs.rmSync(certificateDirectory,{recursive:true,force:true});});
+async function setup(page,lang,route='intelligence',consent=true,api=API){
  const dialogs=[];
- await page.addInitScript(({language,api})=>{localStorage.setItem('miyar-language',language);window.MIYAR_CONFIG={apiBase:api};},{language:lang,api:API});
+ await page.addInitScript(({language,api})=>{localStorage.setItem('miyar-language',language);window.MIYAR_CONFIG={apiBase:api};},{language:lang,api});
  // Permit localhost exclusively in the served test document. Production CSP is untouched.
- await page.route(BASE,async route=>{const response=await route.fetch();const original=await response.text();const body=original.replace("connect-src 'self' https://miyar-enterprise-api.onrender.com","connect-src 'self' https://miyar-enterprise-api.onrender.com "+API);expect(body).not.toBe(original);await route.fulfill({response,body,headers:{...response.headers(),'content-length':String(Buffer.byteLength(body))}});});
+ await page.route(BASE,async route=>{const response=await route.fetch();const original=await response.text();const body=original.replace("connect-src 'self' https://miyar-enterprise-api.onrender.com","connect-src 'self' https://miyar-enterprise-api.onrender.com "+api);expect(body).not.toBe(original);await route.fulfill({response,body,headers:{...response.headers(),'content-length':String(Buffer.byteLength(body))}});});
  page.on('dialog',dialog=>{dialogs.push(dialog.message());return consent?dialog.accept():dialog.dismiss();});
  await page.goto(BASE+'#enterprise/'+route);await expect(page.locator('html')).toHaveAttribute('lang',lang);
  return dialogs;
 }
-const isPost=(request,feature)=>request.method()==='POST'&&request.url()===API+'/api/v1/review/'+feature;
-const responseFor=(page,feature)=>page.waitForResponse(r=>isPost(r.request(),feature));
+const isPost=(request,feature,api=API)=>request.method()==='POST'&&request.url()===api+'/api/v1/review/'+feature;
+const responseFor=(page,feature,api=API)=>page.waitForResponse(r=>isPost(r.request(),feature,api));
 async function enterRole(page,lang,measures){
  await page.locator('[data-field="title"]').fill(lang==='ar'?'منصب تجريبي':'Synthetic role');
  await page.locator('[data-field="successMeasures"]').fill(measures);
@@ -33,6 +34,26 @@ async function enterRole(page,lang,measures){
 async function exportedDraft(page){const event=page.waitForEvent('download');await page.locator('#ent-local-json').click();const downloaded=await event;return JSON.parse(fs.readFileSync(await downloaded.path(),'utf8')).content;}
 
 for(const lang of ['ar','en']){
+ test('local semantic processing omits external consent and leaves unsupported occupation scope empty: '+lang,async({page})=>{
+  const dialogs=await setup(page,lang,'intelligence',true,LOCAL_API);
+  await page.locator('#ent-analysis-field').fill('Nebulous aurora atelier');await page.locator('#ent-analysis-seniority').fill('Individual contributor');await page.locator('#ent-analysis-text').fill('Explain a synthetic unfamiliar aurora weaving example');
+  const done=responseFor(page,'semantic',LOCAL_API);await page.locator('#ent-semantic').click();const response=await done;expect(response.status()).toBe(200);const body=await response.json();
+  expect(response.request().postDataJSON().consentExternalProcessing).toBe(false);expect(dialogs).toHaveLength(1);expect(dialogs[0]).toContain(lang==='ar'?'دون إرسالها إلى Google Gemini':'without being sent to Google Gemini');expect(body.provider).toBe('local-e5-small');expect(body.organizationAccess).toBe(false);
+  expect(body.occupationScope).toMatchObject({status:'insufficient-evidence',families:[],matchedTerms:[],coverage:'authored-limited',candidateCount:0});expect(body.candidates).toEqual([]);expect(body.semanticSkills.length).toBeGreaterThan(0);
+  await expect(page.locator('#ent-candidates [data-candidate-code]')).toHaveCount(0);await expect(page.locator('#ent-candidates')).toContainText(lang==='ar'?'المراجع المهنية المقترحة':'Proposed occupation references');await expect(page.locator('#ent-candidates')).toContainText(lang==='ar'?'المجال':/field/i);await expect(page.locator('#ent-candidates')).toContainText(lang==='ar'?/راجع|مراجعة/:/review/i);
+  await expect(page.locator('#ent-skills')).toContainText(lang==='ar'?'مهارات مقترحة بالمعنى':'Skills suggested by meaning');await expect(page.locator('#ent-skills')).toContainText('O*NET');await expect(page.locator('#ent-message')).not.toHaveClass(/error/);
+ });
+
+ test('local adjacent occupation reference is labelled a review proposal and needs explicit selection: '+lang,async({page})=>{
+  await setup(page,lang,'intelligence',true,LOCAL_API);await page.locator('#ent-analysis-field').fill(lang==='ar'?'تطوير المشاريع العقارية':'Project Development');await page.locator('#ent-analysis-seniority').fill(lang==='ar'?'أخصائي فردي':'Specialist individual contributor');await page.locator('#ent-analysis-text').fill(lang==='ar'?'مراجعة جدوى مشروع افتراضي وتوثيق مخرجات مراحل التطوير':'Review feasibility of a synthetic project and document development stage outcomes');
+  const done=responseFor(page,'semantic',LOCAL_API);await page.locator('#ent-semantic').click();const response=await done;expect(response.status()).toBe(200);const body=await response.json();expect(response.request().postDataJSON().consentExternalProcessing).toBe(false);
+  expect(body.occupationScope.status).toBe('scope-constrained-proposals');expect(body.occupationScope.coverage).toBe('authored-limited');expect(body.occupationScope.families).toContain('projectDevelopment');expect(body.occupationScope.candidateCount).toBe(body.candidates.length);
+  const proposed=body.candidates.find(candidate=>candidate.code==='242114');expect(proposed).toMatchObject({mappingStatus:'adjacent-reference-for-review',titleAr:'محلل أعمال'});
+  await expect(page.locator('#ent-candidates')).toContainText(lang==='ar'?'المراجع المهنية المقترحة':'Proposed occupation references');const choice=page.locator('#ent-candidates article').filter({has:page.locator('[data-candidate-code="242114"]')});await expect(choice).toContainText(lang==='ar'?'مرجع مجاور مقترح؛ ليس تطابقًا رسميًا':'Proposed adjacent reference; not an official exact match');
+  await expect(page).toHaveURL(BASE+'#enterprise/intelligence');await expect(page.locator('[data-field="occupationCode"]')).toHaveCount(0);await expect(page.locator('#ent-candidates [data-candidate-code]')).toHaveCount(body.candidates.length);
+  await choice.locator('[data-candidate-code="242114"]').click();await expect(page).toHaveURL(BASE+'#enterprise/create');await expect(page.locator('[data-field="occupationCode"]')).toHaveValue('242114');const draft=await exportedDraft(page);expect(draft.occupationCode).toBe('242114');expect(draft.mappingJustification).toContain(lang==='ar'?'يحتاج مراجعة نطاق المهام من المختص':'specialist task-scope review required');expect(draft.evaluationSummary).toBeUndefined();
+ });
+
  test('public semantic skill matching renders real source references and nullable overlap: '+lang,async({page})=>{
   await setup(page,lang,'create');await page.locator('[data-field="title"]').fill('Synthetic provisional title');
   // The provisional controls are inside a collapsed details section. Open its
