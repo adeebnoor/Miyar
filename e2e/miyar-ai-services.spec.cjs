@@ -34,7 +34,11 @@ async function exportedDraft(page){const event=page.waitForEvent('download');awa
 
 for(const lang of ['ar','en']){
  test('public semantic skill matching renders real source references and nullable overlap: '+lang,async({page})=>{
-  await setup(page,lang,'create');await page.locator('[data-field="title"]').fill('Synthetic provisional title');await page.locator('#ent-provisional').check();await page.goto(BASE+'#enterprise/intelligence');await page.locator('#ent-analysis-text').fill(lang==='ar'?'البرمجة وتحليل الاحتياجات واختبار الحلول البرمجية':'Programming, analyze requirements and test software solutions');
+  await setup(page,lang,'create');await page.locator('[data-field="title"]').fill('Synthetic provisional title');
+  // The provisional controls are inside a collapsed details section. Open its
+  // visible summary and use the visible label, exactly as a person would.
+  await page.locator('details:has(#ent-provisional)>summary').click();await page.locator('label:has(#ent-provisional)').click();await expect(page.locator('#ent-provisional')).toBeChecked();await page.locator('[data-field="provisionalParent"]').fill('2512');
+  await page.goto(BASE+'#enterprise/intelligence');await page.locator('#ent-analysis-text').fill(lang==='ar'?'البرمجة وتحليل الاحتياجات واختبار الحلول البرمجية':'Programming, analyze requirements and test software solutions');
   await page.locator('#ent-analysis-constraints').fill('Synthetic constraint requiring human review');
   const done=responseFor(page,'semantic');await page.locator('#ent-semantic').click();const response=await done;expect(response.status()).toBe(200);const body=await response.json();
   expect(response.request().postDataJSON().consentExternalProcessing).toBe(true);expect(body.mode).toBe('expert-review');expect(body.organizationAccess).toBe(false);expect(body.inputStored).toBe(false);expect(body.constraintsReviewRequired).toBe(true);
