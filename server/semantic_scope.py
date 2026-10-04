@@ -64,7 +64,7 @@ def positive_field(text):
     """Discard explicit exclusions, never use narrative or report recipients."""
     pattern = (r'\b(?:not responsible for|not|without|excluding|exclude|except|other than|no)\s+[^,;.!?\n]+'
                r'|\bnon[-\s]+[^,;.!?\n]+'
-               r'|(?:دون|بدون|باستثناء|ليس|ليست|غير|لا)\s+[^،,;؛.\n]+')
+               r'|\bو?(?:دون|بدون|باستثناء|ليس|ليست|غير|لا)\s+[^،,;؛.\n]+')
     return re.sub(pattern, ' ', str(text or ''), flags=re.IGNORECASE)
 
 

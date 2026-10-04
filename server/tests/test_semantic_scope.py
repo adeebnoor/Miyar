@@ -46,6 +46,7 @@ def test_arabic_field_articles_and_conjunctions_and_english_word_boundaries(cata
     assert set(scope.families) == {'internalAudit', 'investment'}
     assert set(scope.references) == {'241308', '241321'}
     assert OccupationScope('audit investmentish information technologies', '', catalog.nodes).families == []
+    assert OccupationScope('الاستثمار مثلا', 'أخصائي', catalog.nodes).families == ['investment']
 
 
 @pytest.mark.parametrize('seniority', ['Specialist individual contributor', 'أخصائي فردي', 'اختصاصي', 'Analyst'])
