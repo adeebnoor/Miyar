@@ -13,7 +13,8 @@ test.afterAll(()=>server?.kill());
 test.afterEach(async({page})=>{await page.unrouteAll({behavior:'wait'});});
 async function setup(page,lang='en'){
  await page.addInitScript(v=>localStorage.setItem('miyar-language',v),lang);
- await page.route(HOST+'/**',async r=>{const response=await r.fetch({url:r.request().url().replace(HOST,API)});await r.fulfill({response});});
+ // Preserve multipart bytes when forwarding a browser upload to the disposable API.
+ await page.route(HOST+'/**',async r=>{const response=await r.fetch({url:r.request().url().replace(HOST,API),postData:r.request().postDataBuffer()??undefined});await r.fulfill({response});});
  page.on('dialog',d=>d.accept());await page.goto(BASE+'#enterprise/connection');
 }
 async function login(page,role='line_manager',org='a'){
@@ -100,7 +101,7 @@ test('local package preview, editable fields, JSON, HTML and real PDF contain th
 });
 
 test('dictionary skills invalidate when the actual work changes, and unavailable semantic AI is disabled',async({page})=>{
- await setup(page);await login(page,'od_specialist');await page.goto(BASE+'#enterprise/intelligence');await page.locator('#ent-analysis-text').fill('Programming, SQL and Internal Audit');await page.locator('#ent-extract').click();await expect(page.locator('#ent-skills')).toContainText('Programming');await expect(page.locator('#ent-skills')).toContainText(/Internal Audit/i);
+ await setup(page);await login(page,'od_specialist');await page.goto(BASE+'#enterprise/intelligence');await page.locator('#ent-analysis-text').fill('Programming, SQL, prepare an internal audit plan and document audit evidence');await page.locator('#ent-extract').click();await expect(page.locator('#ent-skills')).toContainText('Programming');await expect(page.locator('#ent-skills')).toContainText('Risk-based audit planning');await expect(page.locator('#ent-skills')).toContainText('Audit evidence');
  await page.locator('#ent-analysis-text').fill('Unmatched arbitrary wording');await expect(page.locator('#ent-skills')).toBeEmpty();await page.locator('#ent-extract').click();await expect(page.locator('#ent-skills')).toContainText('No terms matched');await expect(page.locator('#ent-semantic')).toBeDisabled();
 });
 
@@ -114,7 +115,7 @@ test('XLSX diagnosis goes through the real server, preserves zeros and rejects m
 test('administrator adds a scoped department and account, persists branding, previews a framework and deactivates the account',async({page})=>{
  test.setTimeout(90000);await setup(page);await login(page,'admin','b');await page.goto(BASE+'#enterprise/connection');await page.locator('#ent-dept-name').fill('Acceptance testing department');await page.locator('#ent-add-dept').click();await expect(page.locator('#ent-message')).toContainText('Department added');
  await page.locator('#ent-user-name').fill('Synthetic acceptance user');await page.locator('#ent-user-email').fill('disposable-acceptance@audit.test');await page.locator('#ent-user-password').fill('disposable-test-password-928');await page.locator('#ent-user-role').selectOption('line_manager');await page.locator('#ent-user-dept').selectOption({label:'Acceptance testing department'});await page.locator('#ent-add-user').click();await expect(page.locator('#ent-message')).toContainText('Account created');await expect(page.locator('#ent-user-password')).toHaveValue('');
- await page.locator('#ent-brand-en').fill('Acceptance Synthetic Brand');await page.locator('#ent-save-brand').click();await expect(page.locator('#ent-message')).toContainText('Branding saved');await page.reload();await expect(page.locator('#ent-brand-en')).toHaveValue('Acceptance Synthetic Brand');
+ await page.locator('#ent-brand-en').fill('Acceptance Synthetic Brand');await page.locator('#ent-save-brand').click();await expect(page.locator('#ent-message')).toContainText('Branding saved');await page.reload();await login(page,'admin','b');await page.goto(BASE+'#enterprise/connection');await expect(page.locator('#ent-brand-en')).toHaveValue('Acceptance Synthetic Brand');
  const framework=json(await download(page,'#ent-framework-template'));await page.locator('#ent-framework-file').setInputFiles({name:'framework.json',mimeType:'application/json',buffer:Buffer.from(JSON.stringify(framework))});await page.locator('#ent-import-framework').click();await expect(page.locator('#ent-framework-preview')).toContainText('Preview before activation');await page.locator('#ent-framework-activate').click();await expect(page.locator('#ent-message')).toContainText('at least 10 characters');await page.locator('#ent-framework-reason').fill('Isolated framework acceptance activation');await page.locator('#ent-framework-activate').click();await expect(page.locator('#ent-framework-status')).toContainText(/activated|saved/i);
  const row=page.locator('#ent-user-list tr').filter({hasText:'Synthetic acceptance user'});await expect(row).toHaveCount(1);await row.locator('[data-disable-user]').click();
  await expect(page.locator('#ent-message')).toContainText('Account deactivated');
