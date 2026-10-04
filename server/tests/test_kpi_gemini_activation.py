@@ -1,4 +1,5 @@
 import json
+import logging
 
 import pytest
 
@@ -252,6 +253,44 @@ def test_complete_proportional_formulas_without_percentage_label_accept_absolute
     assert validate_kpis([row] * 3) == [row] * 3
 
 
+@pytest.mark.parametrize('metric', [
+    'Completed eligible cases / All eligible cases × 100',
+    'Completed eligible cases divided by All eligible cases multiplied by 100',
+    'عدد الطلبات المكتملة المؤهلة ÷ إجمالي الطلبات المؤهلة × ١٠٠',
+    'عدد الطلبات المكتملة المؤهلة مقسوماً على إجمالي الطلبات المؤهلة مضروبة في 100',
+])
+def test_bare_complete_ratio_with_one_final_exact_scale_accepts_absolute_percentage_target(metric):
+    row = {**KPI, 'metric': metric, 'target': '95% proposed'}
+    assert validate_kpis([row] * 3) == [row] * 3
+
+
+@pytest.mark.parametrize('metric', [
+    'Completed cases / Eligible cases × 100.5',
+    'Completed cases / Eligible cases × 100 × 0.01',
+    'Completed cases × 100 / Eligible cases',
+    'Completed cases / (Eligible cases × 100)',
+    'Completed cases / Eligible cases × 100 + 3',
+    'Completed cases / Eligible cases × 1000',
+    'عدد الحالات المكتملة ÷ إجمالي الحالات × ١٠٠٫٥',
+    'عدد الحالات المكتملة ÷ إجمالي الحالات × ١٠٠ × ٠٫٠١',
+])
+def test_bare_ratio_still_rejects_incorrect_scale_position_or_additional_arithmetic(metric):
+    with pytest.raises(KpiFormulaError):
+        validate_kpis([{**KPI, 'metric': metric, 'target': '95% proposed'}] * 3)
+
+
+@pytest.mark.parametrize('target', ['20% تحسن عن خط الأساس', '٢٠٪ انخفاض عن خط الأساس', '20% أقل من خط الأساس'])
+def test_explicit_arabic_relative_suffix_targets_preserve_duration_units(target):
+    row = {**KPI, 'metric': 'متوسط أيام المعالجة', 'target': target}
+    assert validate_kpis([row] * 3) == [row] * 3
+
+
+@pytest.mark.parametrize('target', ['20% تحسن عن خط الأساس؛ وتوثيق 100% من الافتراضات', '٢٠٪ انخفاض عن خط الأساس مع تغطية ٩٥٪ من الطلبات'])
+def test_arabic_relative_suffix_does_not_exempt_an_independent_absolute_target(target):
+    with pytest.raises(KpiFormulaError):
+        validate_kpis([{**KPI, 'metric': 'متوسط أيام المعالجة', 'target': target}] * 3)
+
+
 def test_normalization_preserves_existing_structural_response_size_limit():
     metric = 'Percentage of cases (' + 'eligible completed case ' * 60 + '/ eligible cases)'
     metric += ' ' * (1500 - len(metric))
@@ -343,3 +382,55 @@ def test_complete_worded_ratio_is_accepted_without_correction(monkeypatch):
     seen=provider(monkeypatch,{'kpis':[row]*3})
     assert generate_kpis(CONTENT,'en')==[row]*3
     assert len(seen)==1
+
+
+@pytest.mark.parametrize('scenario,category,attempt,status', [
+    ('formula', 'formula_validation', 2, '-'),
+    ('schema', 'invalid_schema', 1, '-'),
+    ('unfinished', 'unfinished_generation', 1, '-'),
+    ('json', 'invalid_json', 1, '-'),
+    ('shape', 'invalid_schema', 1, '-'),
+    ('http', 'provider_http', 1, '429'),
+    ('transport', 'provider_transport', 1, '-'),
+])
+def test_terminal_generation_diagnostics_emit_only_allowlisted_categories_and_bounded_numbers(monkeypatch, caplog, scenario, category, attempt, status):
+    import server.performance as module
+    configure(monkeypatch)
+    provider(monkeypatch, None)
+    calls = []
+
+    class Response:
+        content = b'{}'
+        status_code = 200
+
+        def raise_for_status(self):
+            if scenario == 'http':
+                response = module.httpx.Response(429)
+                raise module.httpx.HTTPStatusError('PRIVATE_EXCEPTION_SECRET', request=module.httpx.Request('POST', 'https://synthetic.example.test'), response=response)
+
+        def json(self):
+            if scenario == 'shape':
+                return {'candidates': []}
+            bad = {**KPI, 'outcome': 'PRIVATE_PROVIDER_OUTPUT_SECRET', 'metric': 'Number of documented assumptions', 'target': '100%'}
+            rows = [KPI, bad, KPI] if scenario == 'formula' else [KPI] * 3
+            payload = {'kpis': [{**KPI, 'target': 20}] * 3} if scenario == 'schema' else {'kpis': rows}
+            text = 'PRIVATE_PROVIDER_OUTPUT_SECRET invalid JSON' if scenario == 'json' else json.dumps(payload)
+            return {'candidates': [{'finishReason': 'MAX_TOKENS' if scenario == 'unfinished' else 'STOP', 'content': {'parts': [{'text': text}]}}]}
+
+    def post(*args, **kwargs):
+        calls.append(True)
+        if scenario == 'transport':
+            raise module.httpx.ReadTimeout('PRIVATE_EXCEPTION_SECRET')
+        return Response()
+
+    monkeypatch.setattr(module, 'provider_post', post)
+    with caplog.at_level(logging.WARNING, logger='miyar.kpi'):
+        with pytest.raises(ValueError, match='no results were fabricated'):
+            generate_kpis({**CONTENT, 'successMeasures': 'PRIVATE_INPUT_SECRET'}, 'en')
+    records = [record for record in caplog.records if record.name == 'miyar.kpi']
+    assert len(records) == 1 and len(calls) == attempt
+    message = records[0].getMessage()
+    assert 'category=' + category in message and 'attempt=' + str(attempt) in message
+    assert 'upstream_status=' + status in message
+    assert 'formula_rows=' + ('2' if scenario == 'formula' else '-') in message
+    assert all(secret not in caplog.text for secret in ['PRIVATE_INPUT_SECRET', 'PRIVATE_PROVIDER_OUTPUT_SECRET', 'PRIVATE_EXCEPTION_SECRET', 'private-synthetic-test-key'])
