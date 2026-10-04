@@ -4,14 +4,14 @@
 (function(){
 'use strict';
 const t=(ar,en)=>document.documentElement.lang==='en'?en:ar;
-const SEEN='miyar-whats-new-6',VISITED='miyar-new-badges-6',TOUR='miyar-tour-6';
+const SEEN='miyar-whats-new-6.1',VISITED='miyar-new-badges-6',TOUR='miyar-tour-6';
 const store={get(k,s=localStorage){try{return s.getItem(k);}catch{return null;}},set(k,v,s=localStorage){try{s.setItem(k,v);}catch{}},del(k,s=localStorage){try{s.removeItem(k);}catch{}}};
 const version=()=>window.MIYAR_RELEASE?.version||'6.0';
 const ITEMS=[
- ['#enterprise/grading','التقييم الوظيفي يحوّل النقاط إلى درجة الهيكل المعتمد لديكم وينقلها إلى التعويضات تلقائيًا.','Job evaluation turns points into your approved grade and carries it into Compensation automatically.'],
- ['#enterprise/manpower','تخطيط القوى العاملة يفصل الإحلال عن النمو، ويعرض خمس طرق لسد الفجوة وما الذي يحرّكها.','Manpower planning separates backfill from growth, shows five ways to close a gap and what moves it.'],
- ['#enterprise/compensation','التعويضات تفحص تصميم النطاق وCompa-ratio وتكلفة رفع الراتب إلى الحد الأدنى.','Compensation checks band design, compa-ratio and the cost of bringing pay to the minimum.'],
- ['#enterprise/connection','التحقق بخطوتين لحسابات المؤسسة.','Two-step sign-in for organization accounts.'],
+ ['#demo','أضفنا تطوير المشاريع والاستثمار والمراجعة الداخلية والاستراتيجية وPMO إلى الترشيح وتصميم الوظيفة.','Added Project Development, Investment, Internal Audit, Strategy and PMO to recommendations and position design.'],
+ ['#demo','حلّل وصفًا مركبًا مع فصل المهام وجهة التقرير والقيود، وراجع الوظائف المتداخلة.','Analyze detailed descriptions with tasks, reporting context and exclusions, and review overlapping functions.'],
+ ['#enterprise/manpower','شرح داخل أدوات التخطيط والتعويضات والمهارات والتقييم، مع أمثلة وحسابات وحدود واضحة.','In-tool guides for planning, compensation, skills and evaluation, with worked examples and clear limits.'],
+ ['#enterprise/grading','النقاط ترتبط بدرجة الجهة ثم بنطاق التعويضات المعتمد.','Evaluation points link to the institution grade and approved compensation band.'],
  ['tour','بيانات عرض بنقرة واحدة وجولة موجهة في 10 دقائق.','Demo data in one click and a guided 10-minute tour.']
 ];
 const BADGES={manpower:'[data-manpower-nav]',compensation:'[data-comp-nav]',grading:'.nav-link[data-enterprise-open="grading"]',connection:'.nav-link[data-enterprise-open="connection"]',tour:'.nav-link[data-enterprise-open="tour"]'};

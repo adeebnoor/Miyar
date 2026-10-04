@@ -1,8 +1,11 @@
 {
-  "version": "6.0.1",
-  "buildId": "4dd70e9dd080f380",
-  "releasedAt": "2026-09-29",
+  "version": "6.1.0",
+  "buildId": "e75ea6d03b311384",
+  "releasedAt": "2026-10-04",
   "changes": [
+    "Project Development, Investment, Internal Audit, Strategy and PMO recommendations shared by Quick Trial and OD",
+    "Complex-description context separation with reviewable tasks, recipients and exclusions",
+    "Bilingual HR service guides and authored skills for the added functions",
     "What is new panel, New badges and a version badge for returning users",
     "Guided 10-minute tour that loads labelled demo data",
     "Plain decision summaries on planning and compensation results",
@@ -45,6 +48,7 @@
       "value-proposition-v5.js",
       "demo-workspace-6.js",
       "whats-new-6.js",
+      "hr-service-guide.js",
       "audit-improvements.js"
     ],
     "styles": [
@@ -64,6 +68,7 @@
       "accessibility-perf-v5.css",
       "expert-review-5-2.css",
       "whats-new-6.css",
+      "hr-service-guide.css",
       "audit-improvements.css"
     ]
   }

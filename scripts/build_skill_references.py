@@ -28,6 +28,24 @@ rows=[
 skills=[dict(id='onet:'+id,labelAr=ar,labelEn=en,kind=kind,aliases=aliases,source='O*NET',sourceUrl='https://www.onetonline.org/find/descriptor/result/'+id,retrieved='2026-09-13',translation='Miyar-authored Arabic label; type grouping is local') for id,ar,en,kind,aliases in rows]
 for id,ar,en,aliases in [('sql','استعلام قواعد البيانات','Database querying',['SQL','قواعد البيانات']),('python','لغة بايثون','Python',['بايثون']),('data-analysis','تحليل البيانات','Data analysis',['تحليل بيانات','analytics']),('ai','الذكاء الاصطناعي','Artificial intelligence',['AI','machine learning','تعلم الآلة'])]:
  skills.append(dict(id='miyar:'+id,labelAr=ar,labelEn=en,kind='technical',aliases=aliases,source='Miyar authored vocabulary',sourceUrl=None,retrieved='2026-09-13'))
+# Authored role-skill terms; these are not O*NET ratings or employee assessments.
+for id,ar,en,aliases in [
+ ('feasibility','دراسة الجدوى','Feasibility studies',['دراسات الجدوى','feasibility study','feasibility']),
+ ('financial-modelling','النمذجة المالية','Financial modelling',['نمذجة مالية','financial modeling','cash flow modelling']),
+ ('due-diligence','الفحص النافي للجهالة','Due diligence',['فحص نافي للجهالة','due diligence review']),
+ ('valuation','تقييم الأصول','Asset valuation',['تقييم الفرص','valuation']),
+ ('portfolio-risk','تحليل مخاطر المحفظة','Portfolio risk analysis',['مخاطر المحفظة','portfolio risk']),
+ ('audit-planning','التخطيط للمراجعة بناءً على المخاطر','Risk-based audit planning',['خطة المراجعة','audit plan','risk based audit plan']),
+ ('control-testing','اختبار الضوابط','Control testing',['اختبارات الضوابط','test controls','testing controls']),
+ ('audit-evidence','أدلة المراجعة','Audit evidence',['توثيق أدلة المراجعة','document audit evidence']),
+ ('strategic-planning','التخطيط الاستراتيجي','Strategic planning',['صياغة الاستراتيجية','corporate strategy']),
+ ('benchmarking','المقارنات المعيارية','Benchmarking',['مقارنة معيارية']),
+ ('project-governance','حوكمة المشاريع','Project governance',['حوكمة محفظة المشاريع','portfolio governance']),
+ ('schedule-control','ضبط الجداول الزمنية','Schedule control',['الجداول الزمنية','schedule management']),
+ ('benefits-tracking','متابعة تحقيق المنافع','Benefits realization tracking',['تحقيق المنافع','benefits tracking']),
+ ('development-gates','بوابات تطوير المشاريع','Development stage gates',['مراحل التطوير','stage gates']),
+]:
+ skills.append(dict(id='miyar:'+id,labelAr=ar,labelEn=en,kind='technical',aliases=aliases,source='Miyar authored vocabulary; domain review required',sourceUrl=None,retrieved='2026-10-04'))
 profiles=[dict(code='251204',titleEn='Software engineer',onetCode='15-1252.00',sourceUrl='https://www.onetonline.org/link/details/15-1252.00',skills=['2.A.2.a','2.A.2.b','2.A.1.a','2.B.3.e','2.B.4.e','2.B.4.g'],tasks=[{'ar':'تحليل المتطلبات وتقدير جدوى الحل البرمجي','en':'Assess requirements and the feasibility of a software solution'},{'ar':'تصميم البرامج واختبارها وتصحيح أخطائها','en':'Design, test and debug software'},{'ar':'تنسيق تنفيذ الحل مع المحللين والمهندسين','en':'Coordinate solution delivery with analysts and engineers'}]),dict(code='251104',titleEn='Systems analyst',onetCode='15-1211.00',sourceUrl='https://www.onetonline.org/link/details/15-1211.00',skills=['2.B.4.g','2.B.4.h'],tasks=[{'ar':'جمع احتياجات المستخدمين وتحليل إجراءات معالجة المعلومات','en':'Gather user needs and examine information-processing procedures'},{'ar':'تقييم النظم وتشخيص مشاكلها واقتراح تحسينات','en':'Evaluate systems, diagnose issues and recommend improvements'},{'ar':'تقدير التكلفة والمنفعة لبدائل الأنظمة','en':'Compare costs and benefits of system alternatives'}])]
 for p in profiles:p.update(skills=['onet:'+x for x in p['skills']],crosswalkStatus='authored-review-required',retrieved='2026-09-13',notice='Selected O*NET tasks paraphrased by Miyar; this SSCO crosswalk is proposed, not an official equivalence or a complete skill inventory.')
 for name,value in [('skills',skills),('role-profiles',profiles)]:

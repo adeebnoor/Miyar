@@ -1,0 +1,7 @@
+.hr-guide,.hr-context{padding:18px 22px;border:1px solid #bfd4ce;border-radius:14px;background:#f4faf7;color:#223c38;margin:18px 0;overflow-wrap:anywhere}
+.hr-guide summary,.hr-context summary{cursor:pointer;font-weight:700;color:#146954;font-size:1.05rem;line-height:1.7}
+.hr-guide p,.hr-guide dd,.hr-context p,.hr-context li{line-height:1.85;font-size:.95rem;max-width:90ch}
+.hr-guide dt{font-weight:700;margin-top:16px}.hr-guide dd{margin-inline-start:0;margin-top:5px}.hr-guide .button{white-space:normal}
+.hr-coverage{max-width:1180px;margin:24px auto}.hr-example-grid,.hr-tool-links{display:flex;gap:10px;flex-wrap:wrap}.hr-tool-links{margin-top:18px}.hr-tool-links a{color:#146954;text-decoration:underline;line-height:1.8}
+.hr-context h5{font-size:.95rem;margin:16px 0 6px}.hr-context ul{padding-inline-start:22px}.hr-context mark{overflow-wrap:anywhere}
+@media(max-width:600px){.hr-guide,.hr-context{padding:15px}.hr-coverage{margin:18px 12px}.hr-example-grid .button{flex:1 1 140px}.hr-tool-links{flex-direction:column}}

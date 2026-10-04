@@ -61,11 +61,16 @@ E.generate=function(input={},locale='en'){
    p.content.qualifications=ar?'مؤهل مرتبط بـ '+f.ar+'؛ الرموز التعليمية روابط مقترحة تحتاج مراجعة.':'Qualification relevant to '+f.en+'; education-code links are proposed and require review.';
    p.content.certifications=ar?'تحدد الشهادات حسب تخصص الدور وسياسة الجهة؛ لا يُفترض اشتراط شهادة مشاريع.':'Certifications depend on the role and organization policy; no project certificate is assumed.';
   }
+  if(f.id==='internalAudit'){
+   p.content.authorities=ar?'الوصول إلى الأدلة وتقييم الضوابط ورفع النتائج وفق ميثاق المراجعة المعتمد؛ لا يمتلك تشغيل الضوابط أو اعتماد المعاملات التي يراجعها.':'Access evidence, assess controls and report findings under the approved audit charter; does not own operating controls or approve the transactions being audited.';
+   p.content.stakeholders=ar?'لجنة المراجعة؛ رئيس المراجعة الداخلية؛ ملاك العمليات والضوابط؛ المالية وGRC حسب نطاق المهمة.':'Audit Committee; Chief Audit Executive; process and control owners; Finance and GRC within engagement scope.';
+  }
+  if(recommendation.detection.workstreams.length>1)p.notices.unshift(ar?'نطاق متعدد الوظائف: راجع المهمة الرئيسية والمهام المساندة أو افصلها إلى أدوار قبل الاعتماد.':'Multi-function scope: confirm primary and supporting work, or split it into roles before approval.');
   p.content.odGenerationBasis=ar?'اقتراح قواعد شفافة من الهدف والمسؤوليات مع فحص المجال والمستوى والقيود؛ بانتظار اعتماد المختص.':'Transparent rule-based proposal from the objective and responsibilities, with domain, level and constraint checks; expert approval pending.';
   p.referenceQueries={ssco:[r.referenceTitleAr],education:r.educationCodes,educationLevel:'6'};
   p.validation=recommendation.checks;p.content.roleValidation=recommendation.checks;p.content.finalProposedTitle=recommendation.finalTitle?title:'';
   if(recommendation.detection.conflict)p.notices.unshift(ar?'تعارض مجال: تم تفضيل الإدارة المدخلة؛ راجع وصف العمل.':'Domain conflict: entered department takes priority; review the work description.');
-  if(r.intent==='general'||!r.skillsAr.length)p.notices.unshift(ar?'قالب عام داخل المجال؛ يجب تخصيص المهارات والمؤشرات مع مختص.':'Generic template within this family; specialize skills and KPIs with a domain reviewer.');
+  if((r.intent==='general'&&!r.domainProfileVersion)||!r.skillsAr.length)p.notices.unshift(ar?'قالب عام داخل المجال؛ يجب تخصيص المهارات والمؤشرات مع مختص.':'Generic template within this family; specialize skills and KPIs with a domain reviewer.');
   return p;
  }
  const hit=R?null:detect(input);if(!hit){p.notices.unshift(locale==='ar'?'قالب عام: لم يُحدد تخصص موثوق.':'Generic template: no supported specialization detected.');return p;}
