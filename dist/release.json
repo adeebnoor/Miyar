@@ -1,9 +1,10 @@
 {
-  "version": "6.2.2",
-  "buildId": "120a4039f5299d67",
+  "version": "6.2.3",
+  "buildId": "20c781e25aadcc06",
   "releasedAt": "2026-10-04",
   "changes": [
-    "Keep supplied KPI targets mandatory and expose undefined clocks and inferred periods for review",
+    "Show original success requirements beside editable KPI proposals and flag inferred targets, periods and undefined timing for review",
+    "Ask the provider to preserve supplied KPI requirements and expose measurement assumptions",
     "Preserve duties after reporting recipients and separate collaboration context in complex descriptions",
     "Generate typed KPI proportions from explicit operands and repair the actual rejected draft once",
     "Refined bilingual experience: decision-first entrance, navy and teal identity, consistent forms and results, accessible RTL and responsive layouts",

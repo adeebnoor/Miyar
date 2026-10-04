@@ -1,6 +1,6 @@
 # Expert review trial
 
-## Current full-site review (6.2.2)
+## Current full-site review (6.2.3)
 
 The bilingual entrance and workspace use a shared navy/teal design, clearer task
 navigation, readable fields and a consistent hierarchy for decisions and evidence.
@@ -28,10 +28,18 @@ before the same strict local validation. A single correction receives the actual
 bounded rejected draft as model data, with the original job input and fixed system
 rules preserved. Invalid or repeated failures remain withheld; local generation
 remains available. Retest the 30-day plan, 95% monthly job-data completeness and
-auditable gaps-and-assumptions register together. Release 6.2.2 also distinguishes supplied requirements from inferred targets,
-keeps the supplied record scope, and asks for manager definition of unspecified
-clock starts, day bases and reporting periods. Automated provider fixtures do
-not establish live-model accuracy or professional acceptance.
+auditable gaps-and-assumptions register together. Release 6.2.2 adds instructions
+to preserve supplied requirements and record scope, and to expose unspecified
+clock starts, day bases and reporting periods. Four actual synthetic requests
+(planning and investment, Arabic and English) returned HTTP 200 with three valid
+rows each. The planning results still introduced unsupported clock/day assumptions
+and unmarked additional targets or periods; prompt instructions do not establish
+semantic acceptance. Release 6.2.3 displays the original success requirements
+beside the editable KPI proposal and explicitly requires comparison of targets,
+frequencies, clock-start events and day bases before adoption. The comparison does
+not rewrite model figures or claim automated row-level source attribution.
+Automated provider fixtures and successful HTTP responses do not establish
+live-model accuracy or professional acceptance. See `complex-input-kpi-6.2.3.md`.
 
 The three public AI endpoints share the same persisted trial window, quotas and
 concurrency guard. Check the live **Service status** before arranging a review;
