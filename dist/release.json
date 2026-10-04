@@ -1,8 +1,9 @@
 {
-  "version": "6.1.3",
-  "buildId": "fa0e3670f6f7b7ef",
+  "version": "6.2.0",
+  "buildId": "4c922aa5ce474a1d",
   "releasedAt": "2026-10-04",
   "changes": [
+    "Refined bilingual experience: decision-first entrance, navy and teal identity, consistent forms and results, accessible RTL and responsive layouts",
     "Enable locally hosted multilingual semantic occupation and skill matching",
     "Constrain semantic proposals by explicit source-checked field and level; show uncertainty for unsupported occupations",
     "Enable validated Arabic and English AI KPI proposals",
@@ -81,7 +82,9 @@
       "expert-review-5-2.css",
       "whats-new-6.css",
       "hr-service-guide.css",
-      "audit-improvements.css"
+      "audit-improvements.css",
+      "expert-landing.css",
+      "expert-workspace.css"
     ]
   }
 }

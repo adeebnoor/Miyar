@@ -1,6 +1,8 @@
 const test=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path');
 const {JSDOM,VirtualConsole}=require('jsdom'),dir=path.join(__dirname,'../dist');
 const settle=()=>new Promise(r=>setTimeout(r,25));
+const releaseVersion=fs.readFileSync(path.join(__dirname,'../VERSION'),'utf8').trim();
+const releaseMinor=releaseVersion.split('.').slice(0,2).join('.');
 
 async function app(route,locale='en'){
  const errors=[],vc=new VirtualConsole();vc.on('jsdomError',e=>errors.push(e));
@@ -33,7 +35,7 @@ test('demonstration workspace loads labelled synthetic data into this browser an
 
 test('share card, CDN security headers and release 6 identity are published with the build',()=>{
  const html=fs.readFileSync(path.join(dir,'index.html'),'utf8'),release=JSON.parse(fs.readFileSync(path.join(dir,'release.json'),'utf8'));
- assert.match(release.version,/^6\.1\./);assert.match(html,/<title>معيار \| Miyar 6\.1\./);
+ assert.equal(release.version,releaseVersion);assert.ok(html.includes('<title>معيار | Miyar '+releaseVersion));
  assert.match(html,/property="og:image" content="https:\/\/adeebnoor\.github\.io\/Miyar\/assets\/og-card\.jpg"/);assert.match(html,/name="twitter:card" content="summary_large_image"/);
  const card=fs.readFileSync(path.join(dir,'assets/og-card.jpg'));assert.equal(card[0],0xff);assert.equal(card[1],0xd8);assert.ok(card.length<150000);
  const headers=fs.readFileSync(path.join(dir,'_headers'),'utf8'),meta=html.match(/http-equiv="Content-Security-Policy" content="([^"]+)"/)[1];
@@ -45,9 +47,9 @@ test('share card, CDN security headers and release 6 identity are published with
 test('returning users see what is new, New badges, a version badge and can dismiss the panel',async()=>{
  const a=await app('#home');try{
   for(let i=0;i<20&&!a.d.querySelector('.whats-new');i++)await settle();
-  const panel=a.d.querySelector('.whats-new');assert.ok(panel);assert.match(panel.textContent,/What’s new in Miyar 6\.1/);assert.equal(panel.querySelectorAll('li').length,5);
-  assert.equal(a.d.querySelector('.lp-header-inner .version-badge').textContent,'v6.1');
-  panel.querySelector('[data-whats-new-dismiss]').click();await settle();assert.equal(a.d.querySelector('.whats-new'),null);assert.equal(a.w.localStorage.getItem('miyar-whats-new-6.1'),'1');
+  const panel=a.d.querySelector('.whats-new');assert.ok(panel);assert.ok(panel.textContent.includes('What’s new in Miyar '+releaseMinor));assert.equal(panel.querySelectorAll('li').length,5);
+  assert.equal(a.d.querySelector('.lp-header-inner .version-badge').textContent,'v'+releaseMinor);
+  panel.querySelector('[data-whats-new-dismiss]').click();await settle();assert.equal(a.d.querySelector('.whats-new'),null);assert.equal(a.w.localStorage.getItem('miyar-whats-new-'+releaseMinor),'1');
   a.w.location.hash='#enterprise/overview';for(let i=0;i<20&&!a.d.querySelector('.sidebar [data-manpower-nav] .new-badge');i++)await settle();
   assert.ok(a.d.querySelector('.sidebar [data-manpower-nav] .new-badge'));assert.equal(a.d.querySelector('.whats-new'),null);
   a.w.location.hash='#enterprise/manpower';for(let i=0;i<20&&a.d.querySelector('.sidebar [data-manpower-nav] .new-badge');i++)await settle();

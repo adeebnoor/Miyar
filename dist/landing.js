@@ -1,6 +1,7 @@
 (function(root){
 'use strict';
 function mount(host,{t,lang,icon,switchLanguage,example}){
+ host.classList.add('expert-landing');
  const brand='<a class="lp-brand" href="#home" aria-label="'+t('معيار — الرئيسية','Miyar — Home')+'"><span class="brand-mark" aria-hidden="true"><i></i><i></i><i></i></span><span lang="ar">معيار<small lang="en" dir="ltr">MI’YĀR</small></span></a>';
  const journey=[
   ['target',t('الهدف الاستراتيجي','Strategic objective'),t('ابدأ بما تريد المؤسسة تحقيقه، لا بمسمى وظيفي جاهز.','Start with what the organization needs to achieve, not a preselected job title.')],
@@ -32,13 +33,9 @@ function mount(host,{t,lang,icon,switchLanguage,example}){
    <div class="lp-hero-copy">
     <span class="lp-eyebrow">${t('لمديري الموارد البشرية والتطوير التنظيمي والمالية','FOR HR, ORGANIZATION DEVELOPMENT & FINANCE')}</span>
     <h1 id="home-heading">${t('حوّل احتياج العمل إلى<br><em>قرار قوى عاملة موثّق.</em>','Turn a business need into<br><em>a documented workforce decision.</em>')}</h1>
-    <p>${t('ما الدور المطلوب؟ كم نحتاج؟ وما الدرجة والتكلفة؟ يربط معيار هذه الأسئلة بتصميم الوظيفة والتخطيط والتعويضات ومراجعة الإصدار نفسه قبل الاعتماد. ابدأ بهدف أو وصف مهام؛ المسمى والمرجع يظهران عندما تكفي الأدلة.','What role is needed, how many positions, and at what grade and cost? Miyar connects these questions to job design, workforce planning, compensation and review of the same revision before approval. Start with a goal or task description; titles and references follow the evidence.')}</p>
-    <ul class="lp-value-points" aria-label="${t('لماذا معيار؟','Why Miyar?')}">
-     <li><strong>${t('مرجع سعودي وسياق عربي','Saudi references, Arabic context')}</strong><span>${t('رمز ومصدر وإصدار ظاهر؛ الربط المقترح يبقى قابلًا للمراجعة.','Visible code, source and edition; proposed mappings remain reviewable.')}</span></li>
-     <li><strong>${t('العدد والدرجة والتكلفة في رحلة واحدة','Headcount, grade and cost in one journey')}</strong><span>${t('انقل الفجوة إلى تصميم المنصب والدرجة إلى نطاق التعويض.','Move the workforce gap to job design and the grade to compensation.')}</span></li>
-     <li><strong>${t('قرار يمكن مراجعته','A decision you can review')}</strong><span>${t('افتراضات وأدلة وإصدارات؛ الاعتماد بصلاحيات المؤسسة.','Assumptions, evidence and revisions; approval under organization permissions.')}</span></li>
-    </ul>
+    <p class="lp-hero-lead">${t('من الدور المطلوب إلى العدد والدرجة والتكلفة. قرار واحد، وأدلة يمكن الرجوع إليها.','Connect role, headcount, grade and cost. One decision, with evidence you can trace.')}</p>
     <form id="lp-guided-form" class="lp-guided-start" novalidate>
+     <div class="lp-start-label"><span aria-hidden="true">01</span><strong>${t('ابدأ من احتياج العمل','START WITH THE BUSINESS NEED')}</strong><small>${t('دون حساب مؤسسة','NO ORGANIZATION ACCOUNT NEEDED')}</small></div>
      <label for="lp-guided-objective">${t('صف الهدف أو المشكلة','Describe the goal or problem')}</label>
      <textarea id="lp-guided-objective" name="objective" rows="3" minlength="12" maxlength="12000" placeholder="${t('مثال: رفع اعتمادية المعدات وتقليل التوقف عبر الصيانة الوقائية وتحسين إجراءات التشغيل','Example: Improve equipment reliability and reduce downtime through preventive maintenance and better operating procedures')}"></textarea>
      <div class="lp-guided-examples" aria-label="${t('أمثلة سريعة','Quick examples')}">
@@ -60,25 +57,36 @@ function mount(host,{t,lang,icon,switchLanguage,example}){
     </div>
     <p class="lp-caption">${t('البداية مبسطة، لكن قدرات معيار المؤسسية تبقى كاملة: 5,041 مهنة، تصميم الوظيفة، تخطيط القوى العاملة، التعويضات، الإصدارات والاعتمادات.','The start is simplified, while Miyar retains its full enterprise depth: a versioned supplied occupation reference, job design, workforce planning, compensation, revisions and approvals.')}</p>
    </div>
-   <div class="lp-showcase">
+   <div class="lp-showcase lp-decision-preview">
     <div class="lp-preview-label"><span>${icon('target')} ${t('شاهد المحرك قبل الدخول إلى بقية المنصة','See the engine before the rest of the platform')}</span><span>${t('مثال توضيحي','ILLUSTRATIVE')}</span></div>
     <section class="lp-document" aria-label="${t('مثال على رحلة الهدف إلى الدور','Example objective-to-role journey')}">
-     <div class="lp-document-top"><span>${t('الهدف → الاحتياج → الدور','OBJECTIVE → NEED → ROLE')}</span><span class="lp-example-tag">${t('المحرك العام','PUBLIC ENGINE')}</span></div>
+     <div class="lp-document-top"><span class="lp-document-dots" aria-hidden="true"><i></i><i></i><i></i></span><span>${t('الهدف → الاحتياج → الدور','OBJECTIVE → NEED → ROLE')}</span><span class="lp-example-tag">${t('المحرك العام','PUBLIC ENGINE')}</span></div>
+     <div class="lp-decision-heading"><span>${t('لوحة قرار المنصب','POSITION DECISION CANVAS')}</span><span class="lp-review-badge">${icon('shield')}${t('مقترح للمراجعة','REVIEW PROPOSAL')}</span></div>
      <div class="lp-document-heading"><div><span class="lp-overline">${t('هدف أعمال','BUSINESS OBJECTIVE')}</span><h2>${t('رفع اعتمادية المعدات','Improve equipment reliability')}</h2></div><span class="lp-document-code" dir="ltr">SSCO<br><b>214401</b></span></div>
      <div class="lp-preview-content">
       <h3>${t('من الهدف إلى ترشيح يمكن مراجعته.','From an objective to a reviewable suggestion.')}</h3>
       <p>${t('رفع اعتمادية الأنظمة الميكانيكية وتقليل توقف المعدات، عبر تخطيط الصيانة الوقائية وتحسين إجراءات التركيب والتشغيل.','Improve mechanical reliability and reduce equipment downtime through preventive maintenance and better installation and operating procedures.')}</p>
       <div class="lp-responsibility">${icon('check')}<span><strong>${t('الترشيح التوضيحي: مهندس ميكانيكي','Illustrative suggestion: Mechanical Engineer')}</strong><br>${t('السبب ظاهر، والرمز مرجعي، والمراجعة البشرية تبقى مطلوبة.','The rationale is visible, the code is traceable, and human review remains required.')}</span></div>
-      <div class="lp-approval-grid" style="margin-top:18px">
+      <div class="lp-map-heading"><span>${t('مسار القرار','DECISION PATH')}</span><small>${t('الدليل يتبع كل خطوة','Evidence follows every step')}</small></div>
+      <div class="lp-approval-grid lp-decision-map">
+       <svg class="lp-map-connectors" viewBox="0 0 400 190" preserveAspectRatio="none" aria-hidden="true"><path d="M100 45H300M100 45V145H300V45"/><circle cx="100" cy="45" r="4"/><circle cx="300" cy="45" r="4"/><circle cx="100" cy="145" r="4"/><circle cx="300" cy="145" r="4"/></svg>
        <div><span class="lp-stage-number">01</span>${icon('target')}<strong>${t('هدف','Objective')}</strong><small>${t('ما الذي نريد تحقيقه؟','What must change?')}</small></div>
        <div><span class="lp-stage-number">02</span>${icon('spark')}<strong>${t('احتياج','Need')}</strong><small>${t('ما العمل المطلوب؟','What work is needed?')}</small></div>
        <div><span class="lp-stage-number">03</span>${icon('layers')}<strong>${t('دور','Role')}</strong><small>${t('ما المرجع الأقرب؟','Which reference fits?')}</small></div>
        <div><span class="lp-stage-number">04</span>${icon('document')}<strong>${t('منصب','Position')}</strong><small>${t('حوّل القرار إلى تصميم.','Turn it into a design.')}</small></div>
       </div>
      </div>
+     <div class="lp-preview-review"><span>${icon('document')}${t('مرجع مهني ظاهر','Visible occupation reference')}</span><span>${icon('check')}${t('مراجعة بشرية مطلوبة','Human review required')}</span></div>
      <div class="lp-document-bottom"><span>${icon('shield')}${t('ترشيح قابل للتفسير → تصميم → تقييم → اعتماد','Explainable suggestion → design → evaluation → approval')}</span><a href="#demo">${t('افتح المحرك','Open engine')} ${t('←','→')}</a></div>
     </section>
    </div>
+  </div><div class="lp-wrap lp-hero-benefits">
+    <ul class="lp-value-points" aria-label="${t('لماذا معيار؟','Why Miyar?')}">
+     <li><strong>${t('مرجع سعودي وسياق عربي','Saudi references, Arabic context')}</strong><span>${t('رمز ومصدر وإصدار ظاهر؛ الربط المقترح يبقى قابلًا للمراجعة.','Visible code, source and edition; proposed mappings remain reviewable.')}</span></li>
+     <li><strong>${t('العدد والدرجة والتكلفة في رحلة واحدة','Headcount, grade and cost in one journey')}</strong><span>${t('انقل الفجوة إلى تصميم المنصب والدرجة إلى نطاق التعويض.','Move the workforce gap to job design and the grade to compensation.')}</span></li>
+     <li><strong>${t('قرار يمكن مراجعته','A decision you can review')}</strong><span>${t('افتراضات وأدلة وإصدارات؛ الاعتماد بصلاحيات المؤسسة.','Assumptions, evidence and revisions; approval under organization permissions.')}</span></li>
+    </ul>
+    <p>${t('ما الدور المطلوب؟ كم نحتاج؟ وما الدرجة والتكلفة؟ يربط معيار هذه الأسئلة بتصميم الوظيفة والتخطيط والتعويضات ومراجعة الإصدار نفسه قبل الاعتماد. ابدأ بهدف أو وصف مهام؛ المسمى والمرجع يظهران عندما تكفي الأدلة.','What role is needed, how many positions, and at what grade and cost? Miyar connects these questions to job design, workforce planning, compensation and review of the same revision before approval. Start with a goal or task description; titles and references follow the evidence.')}</p>
   </div></section>
 
   <section class="lp-proof lp-wrap" aria-label="${t('قدرات متاحة في معيار','Available Miyar capabilities')}">
@@ -89,6 +97,7 @@ function mount(host,{t,lang,icon,switchLanguage,example}){
 
   <section id="lp-capabilities" class="lp-section lp-wrap" aria-labelledby="lp-capabilities-title">
    <div class="lp-section-heading"><span class="lp-eyebrow">${t('رحلة واحدة بدلاً من أدوات متفرقة','ONE JOURNEY INSTEAD OF DISCONNECTED TOOLS')}</span><h2 id="lp-capabilities-title">${t('من الاستراتيجية إلى قرار منصب<br>في ست خطوات واضحة.','From strategy to a position decision<br>in six clear steps.')}</h2><p>${t('المحرك الاستراتيجي هو نقطة البداية. أدوات إنشاء المناصب والتقييم والاعتماد تأتي بعده، لا بدلاً منه.','The strategic engine is the starting point. Position design, evaluation and approval follow it rather than replacing it.')}</p></div>
+   <div class="lp-story-groups"><span>${t('01 · افهم الاحتياج','01 · FRAME THE NEED')}</span><span>${t('02 · صمّم القرار','02 · DESIGN THE DECISION')}</span><span>${t('03 · راجع واعتمد','03 · REVIEW & APPROVE')}</span></div>
    <div class="lp-capabilities">${journey.map(([ico,title,desc],i)=>`<article><span class="lp-feature-icon">${icon(ico)}</span><span class="lp-feature-number">0${i+1}</span><h3>${title}</h3><p>${desc}</p></article>`).join('')}</div>
   </section>
 

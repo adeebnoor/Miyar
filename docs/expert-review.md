@@ -1,6 +1,9 @@
 # Expert review trial
 
-## Current full-site review (6.1.3)
+## Current full-site review (6.2.0)
+
+The bilingual entrance and workspace use a shared navy/teal design, clearer task
+navigation, readable fields and a consistent hierarchy for decisions and evidence.
 
 Use the main website at `https://adeebnoor.github.io/Miyar/` for the complete
 expert journey. The separate `/review.html` page covers strategic analysis only.
@@ -17,6 +20,11 @@ AI KPI generation uses Google Gemini after an explicit external-processing notic
 It returns three to five editable proposals, validates proportional percentage
 formulas, and makes at most one corrective provider generation. A failed response
 does not become a fabricated result. Targets and eligible cohorts need HR review.
+
+Known live limitation: a complex synthetic workforce-planning KPI example failed
+row validation even after the single corrective generation. The service withheld
+the invalid output and returned a temporary failure. Local KPI generation remains
+available; this case should be included in the expert's review.
 
 The three public AI endpoints share the same persisted trial window, quotas and
 concurrency guard. Check the live **Service status** before arranging a review;

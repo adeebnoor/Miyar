@@ -4,14 +4,15 @@
 (function(){
 'use strict';
 const t=(ar,en)=>document.documentElement.lang==='en'?en:ar;
-const SEEN='miyar-whats-new-6.1',VISITED='miyar-new-badges-6',TOUR='miyar-tour-6';
+const RELEASE_MINOR=(window.MIYAR_RELEASE?.version||'6.2.0').split('.').slice(0,2).join('.');
+const SEEN='miyar-whats-new-'+RELEASE_MINOR,VISITED='miyar-new-badges-6',TOUR='miyar-tour-6';
 const store={get(k,s=localStorage){try{return s.getItem(k);}catch{return null;}},set(k,v,s=localStorage){try{s.setItem(k,v);}catch{}},del(k,s=localStorage){try{s.removeItem(k);}catch{}}};
 const version=()=>window.MIYAR_RELEASE?.version||'6.0';
 const ITEMS=[
- ['#demo','أضفنا تطوير المشاريع والاستثمار والمراجعة الداخلية والاستراتيجية وPMO إلى الترشيح وتصميم الوظيفة.','Added Project Development, Investment, Internal Audit, Strategy and PMO to recommendations and position design.'],
- ['#demo','حلّل وصفًا مركبًا مع فصل المهام وجهة التقرير والقيود، وراجع الوظائف المتداخلة.','Analyze detailed descriptions with tasks, reporting context and exclusions, and review overlapping functions.'],
- ['#enterprise/manpower','شرح داخل أدوات التخطيط والتعويضات والمهارات والتقييم، مع أمثلة وحسابات وحدود واضحة.','In-tool guides for planning, compensation, skills and evaluation, with worked examples and clear limits.'],
- ['#enterprise/grading','النقاط ترتبط بدرجة الجهة ثم بنطاق التعويضات المعتمد.','Evaluation points link to the institution grade and approved compensation band.'],
+ ['#home','واجهة جديدة بهوية موحدة، وبداية موجهة وتنقل مرتب حسب رحلة القرار.','A unified visual identity, guided start and navigation organized around the decision journey.'],
+ ['#enterprise/intelligence','ترشيح دلالي للمهن والمهارات على خادم معيار، مع المرجع وحدود التغطية.','Locally hosted semantic occupation and skill proposals with traceable references and coverage limits.'],
+ ['#enterprise/create','مؤشرات AI قابلة للتعديل مع فحص الصيغ وموافقة المعالجة الخارجية؛ المخرجات تحتاج مراجعة.','Editable AI KPI proposals with formula checks and external-processing consent; outputs require review.'],
+ ['#enterprise/manpower','نماذج أوضح ونتائج منظمة للتخطيط والتعويضات والتقييم، مع أمثلة وأدلة وافتراضات.','Clearer forms and structured planning, compensation and evaluation results, with examples, evidence and assumptions.'],
  ['tour','بيانات عرض بنقرة واحدة وجولة موجهة في 10 دقائق.','Demo data in one click and a guided 10-minute tour.']
 ];
 const BADGES={manpower:'[data-manpower-nav]',compensation:'[data-comp-nav]',grading:'.nav-link[data-enterprise-open="grading"]',connection:'.nav-link[data-enterprise-open="connection"]',tour:'.nav-link[data-enterprise-open="tour"]'};
