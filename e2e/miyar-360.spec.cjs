@@ -49,13 +49,16 @@ test('360 all primary public and workspace routes render with no horizontal over
   }
 });
 
-test('360 every enterprise route renders meaningful content in Arabic and English',async({page})=>{
-  const tabs=['overview','tour','reference','create','workspace','intelligence','bulk','grading','readiness','evidence','market','connection'];
+test('360 every enterprise route renders meaningful content in Arabic and English',async({browser})=>{
+  const tabs=['overview','tour','reference','create','workspace','intelligence','bulk','grading','readiness','evidence','market','connection','review','business','manpower','compensation'];
+  test.setTimeout(90000);
   for(const lang of ['ar','en']){
+    const page=await browser.newPage();
     await page.addInitScript(value=>localStorage.setItem('miyar-language',value),lang);
     for(const tab of tabs){
       await page.goto(BASE+'#enterprise/'+tab);
       await page.waitForTimeout(180);
+      await expect(page.locator('html')).toHaveAttribute('lang',lang);
       const content=page.locator('#ent-content');
       await expect(content,'Missing enterprise content for '+tab+' in '+lang).toBeVisible();
       const tabText=(await content.innerText()).trim();
@@ -63,6 +66,7 @@ test('360 every enterprise route renders meaningful content in Arabic and Englis
       await expect(page.locator('#enterprise-heading')).toBeVisible();
       if(tab==='market')expect(tabText).not.toMatch(/Tafany|تفاني/i);
     }
+    await page.close();
   }
 });
 

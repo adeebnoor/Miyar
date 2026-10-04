@@ -10,6 +10,6 @@ with app.state.sessions() as db:
  for suffix in ['a','b']:
   p=profile();p['organizationName']='Audit Organization '+suffix.upper();p['version']=7 if suffix=='a' else 19;p['gradeStructure']['grades'][0]['id']='G11-A' if suffix=='a' else 'G19-B';p['updatedAt']='2026-09-28T00:00:00Z'
   db.add(Organization(id='org-'+suffix,name=p['organizationName'],settings={'demoMode':True,'institutionProfile':p}));db.flush();db.add(Department(id='dep-'+suffix,org_id='org-'+suffix,name='Human Capital'));db.flush()
-  for role in ['admin','line_manager']:
+  for role in ['admin','line_manager','od_specialist','total_rewards','finance','chro']:
    db.add(User(id=suffix+'-'+role,org_id='org-'+suffix,email=suffix+'-'+role+'@audit.test',name='Synthetic '+suffix+' '+role,role=role,department_id='dep-'+suffix if role=='line_manager' else None,password_hash=password_hash('isolated-test-password-928')))
  db.commit()
