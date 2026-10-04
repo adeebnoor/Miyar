@@ -1,15 +1,10 @@
-## Current release: 6.0.1
+## Current release: 6.1.1
 
-The full website is at https://adeebnoor.github.io/Miyar/?v=6.0.1#home. 6.0.1 makes the changes visible to returning users: a what's-new panel, New badges, a guided 10-minute tour with demo data and plain decision summaries ([team update](docs/team-update-6.0.md)). Release 6.0 answers the technical requirements document; the [requirements response register](docs/requirements-response-6.0.md) maps every item to what was done, what remains and who owns it. It adds:
+The website is at https://adeebnoor.github.io/Miyar/#home. The entrance explains the product's proposed advantage: a Saudi, bilingual workforce decision journey connecting role scope, headcount, grade, cost and revision-bound review. The six-service directory distinguishes local tools from services requiring an organization account or server configuration.
 
-- Two-step sign-in (TOTP) with audited administrator reset.
-- An isolated synthetic demo tenant, built automatically on start when `MIYAR_DEMO_PASSWORD` is set (and rebuilt only when it changes), or on demand with `python -m server.cli seed-demo` or the operator-token endpoint, plus one-click local demo data.
-- AI-window countdown and quota usage on the status page.
-- Scheduled release-drift monitoring and gitleaks secret scanning.
-- CDN-ready security headers (`dist/_headers`).
-- A threshold-calibration tool (`scripts/calibrate-thresholds.py`).
-- A share card.
-- Release identity and a signature block in exports.
+Release 6.1 adds Project Development, Investment, Internal Audit, Strategy and PMO, detailed input interpretation and bilingual HR guides ([expert-feedback response](docs/hr-feedback-6.1.md)). Release 6.1.1 strengthens first-visit value clarity, exposes all services, preserves direct service links, and handles undefined salary-range spread without Infinity.
+
+The [6.0 requirements register](docs/requirements-response-6.0.md) and [6.0 team handoff](docs/team-update-6.0.md) remain the basis for MFA, demo-tenant setup, recovery, monitoring and production configuration. See the public status page for the current AI trial window and server capabilities. Software verification does not establish measured HR decision accuracy or a market advantage.
 
 ## Release 5.2.0
 

@@ -119,6 +119,8 @@ jobs:
           npm run build
       - name: Require the matching API release before publishing UI
         run: python3 scripts/check-live-release.py
+      - name: Verify live public export and protected service responses
+        run: python3 scripts/check-live-services.py
       - name: Configure Pages
         uses: actions/configure-pages@v5
       - name: Upload website

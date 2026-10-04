@@ -6,7 +6,7 @@ from server.domain import DEFAULT_FRAMEWORK
 def test_release_headers_and_canonical_redirect(env):
     app,c,auth,_=env
     r=c.get('/health');body=r.json()
-    assert body['version']==body['frontendVersion']=='6.1.0'
+    assert body['version']==body['frontendVersion']=='6.1.1'
     assert len(body['buildId'])==16
     assert body['services']['strategicAI']['purpose']=='strategic-objective-to-role'
     assert body['services']['skillsSemantic']['purpose']=='occupation-skill-matching'
@@ -14,7 +14,7 @@ def test_release_headers_and_canonical_redirect(env):
     for h in ['strict-transport-security','x-frame-options','permissions-policy','content-security-policy-report-only','x-request-id']:assert h in r.headers
     assert r.headers['x-frame-options']=='DENY'
     root=c.get('/',follow_redirects=False)
-    assert root.status_code==307 and 'adeebnoor.github.io/Miyar/?v=6.1.0#home' in root.headers['location']
+    assert root.status_code==307 and 'adeebnoor.github.io/Miyar/?v=6.1.1#home' in root.headers['location']
     assert c.get('/missing').headers['x-frame-options']=='DENY'
 
 def test_framework_preview_does_not_activate_and_enforces_roles(env):

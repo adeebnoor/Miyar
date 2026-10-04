@@ -13,7 +13,7 @@ test('homepage release layer reflects OD, manpower and compensation with direct 
   assert.match(suite.textContent,/OD & Job Architecture/);assert.match(suite.textContent,/Manpower Planning/);assert.match(suite.textContent,/Compensation/);
   assert.ok(suite.querySelector('a[href="#enterprise/create"]'));assert.ok(suite.querySelector('a[href="#enterprise/manpower"]'));assert.ok(suite.querySelector('a[href="#enterprise/compensation"]'));
   assert.equal(w.document.querySelector('.lp-hero-copy h1').textContent,'Old');
-  assert.match(w.document.querySelector('.lp-eyebrow').textContent,/START HERE/);
+  assert.match(w.document.querySelector('.lp-eyebrow').textContent,/FOR HR, ORGANIZATION DEVELOPMENT & FINANCE/);
   assert.equal(w.document.querySelectorAll('.lp-nav [data-release-nav]').length,0);
  }finally{dom.window.close();}
 });

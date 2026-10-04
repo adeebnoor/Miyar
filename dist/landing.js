@@ -20,6 +20,7 @@ function mount(host,{t,lang,icon,switchLanguage,example}){
  <header class="lp-header"><div class="lp-wrap lp-header-inner">${brand}
   <nav class="lp-nav" aria-label="${t('التنقل الرئيسي','Main navigation')}">
    <a href="#demo" data-lp-strategy>${t('ابدأ','Start')}</a>
+   <a href="#home/services" data-lp-scroll="services">${t('الخدمات','Services')}</a>
    <a href="#home/capabilities" data-lp-scroll="capabilities">${t('كيف يعمل','How it works')}</a>
    <a href="#home/governance" data-lp-scroll="governance">${t('الحوكمة','Governance')}</a>
    <a href="#enterprise/overview">${t('مساحة العمل','Workspace')}</a>
@@ -29,9 +30,14 @@ function mount(host,{t,lang,icon,switchLanguage,example}){
  <main id="landing-main" tabindex="-1">
   <section class="lp-hero" aria-labelledby="home-heading"><div class="lp-wrap lp-hero-grid">
    <div class="lp-hero-copy">
-    <span class="lp-eyebrow">${t('ابدأ هنا · أقل مدخل ممكن','START HERE · MINIMUM INPUT')}</span>
-    <h1 id="home-heading">${t('ما الذي تريد المؤسسة تحقيقه؟<br><em>صف الهدف، ودع معيار يقودك للخطوة التالية.</em>','What does the organization need to achieve?<br><em>Describe the goal, and let Miyar guide the next step.</em>')}</h1>
-    <p>${t('لا تحتاج إلى معرفة المسمى الوظيفي أو النموذج المناسب مسبقًا. اكتب الهدف أو وصفًا مركبًا للمهام والقيود؛ معيار يرشح مرجعًا مناسبًا عندما تكفي الأدلة، أو يعرض مراجع للمراجعة، ثم يفتح لك الإجراء المناسب.','You do not need to know the job title or the right workflow in advance. Describe the goal or problem in one sentence; Miyar suggests a reference when evidence is sufficient, or shows reviewable references, then opens the right next action.')}</p>
+    <span class="lp-eyebrow">${t('لمديري الموارد البشرية والتطوير التنظيمي والمالية','FOR HR, ORGANIZATION DEVELOPMENT & FINANCE')}</span>
+    <h1 id="home-heading">${t('حوّل احتياج العمل إلى<br><em>قرار قوى عاملة موثّق.</em>','Turn a business need into<br><em>a documented workforce decision.</em>')}</h1>
+    <p>${t('ما الدور المطلوب؟ كم نحتاج؟ وما الدرجة والتكلفة؟ يربط معيار هذه الأسئلة بتصميم الوظيفة والتخطيط والتعويضات ومراجعة الإصدار نفسه قبل الاعتماد. ابدأ بهدف أو وصف مهام؛ المسمى والمرجع يظهران عندما تكفي الأدلة.','What role is needed, how many positions, and at what grade and cost? Miyar connects these questions to job design, workforce planning, compensation and review of the same revision before approval. Start with a goal or task description; titles and references follow the evidence.')}</p>
+    <ul class="lp-value-points" aria-label="${t('لماذا معيار؟','Why Miyar?')}">
+     <li><strong>${t('مرجع سعودي وسياق عربي','Saudi references, Arabic context')}</strong><span>${t('رمز ومصدر وإصدار ظاهر؛ الربط المقترح يبقى قابلًا للمراجعة.','Visible code, source and edition; proposed mappings remain reviewable.')}</span></li>
+     <li><strong>${t('العدد والدرجة والتكلفة في رحلة واحدة','Headcount, grade and cost in one journey')}</strong><span>${t('انقل الفجوة إلى تصميم المنصب والدرجة إلى نطاق التعويض.','Move the workforce gap to job design and the grade to compensation.')}</span></li>
+     <li><strong>${t('قرار يمكن مراجعته','A decision you can review')}</strong><span>${t('افتراضات وأدلة وإصدارات؛ الاعتماد بصلاحيات المؤسسة.','Assumptions, evidence and revisions; approval under organization permissions.')}</span></li>
+    </ul>
     <form id="lp-guided-form" class="lp-guided-start" novalidate>
      <label for="lp-guided-objective">${t('صف الهدف أو المشكلة','Describe the goal or problem')}</label>
      <textarea id="lp-guided-objective" name="objective" rows="3" minlength="12" maxlength="12000" placeholder="${t('مثال: رفع اعتمادية المعدات وتقليل التوقف عبر الصيانة الوقائية وتحسين إجراءات التشغيل','Example: Improve equipment reliability and reduce downtime through preventive maintenance and better operating procedures')}"></textarea>

@@ -1,8 +1,12 @@
 {
-  "version": "6.1.0",
-  "buildId": "2b24f2e0fb4e207c",
+  "version": "6.1.1",
+  "buildId": "70b131cfc8ed5ec4",
   "releasedAt": "2026-10-04",
   "changes": [
+    "Clear HR value proposition and complete service directory on the entrance",
+    "Returning-user updates moved after the primary value and start form",
+    "Zero-minimum compensation diagnostics and currency validation",
+    "Complete enterprise deep-link routing",
     "Project Development, Investment, Internal Audit, Strategy and PMO recommendations shared by Quick Trial and OD",
     "Complex-description context separation with reviewable tasks, recipients and exclusions",
     "Bilingual HR service guides and authored skills for the added functions",
