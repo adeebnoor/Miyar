@@ -44,6 +44,10 @@ jobs:
         env:
           MIYAR_TEST_POSTGRES_URL: postgresql+psycopg://miyar_test:ephemeral-ci-only@localhost:5432/miyar_test
         run: python -m pytest server/tests -q --disable-warnings
+      - name: Verify pinned Python dependencies have no known advisories
+        run: |
+          pip install pip-audit==2.9.0
+          pip-audit -r server/requirements-lock.txt --progress-spinner off
   ui-test:
     runs-on: ubuntu-latest
     steps:
@@ -96,6 +100,9 @@ jobs:
         env:
           PLAYWRIGHT_JSON_OUTPUT_NAME: test-results/acceptance-results.json
         run: npx playwright test e2e/*.spec.cjs --reporter=line,json --workers=1
+      - name: Check external reference links without submitting data
+        if: always()
+        run: python3 scripts/check-external-links.py
       - name: Retain functional acceptance evidence
         if: always()
         uses: actions/upload-artifact@v4
