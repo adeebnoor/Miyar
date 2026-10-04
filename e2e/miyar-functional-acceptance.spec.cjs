@@ -17,6 +17,8 @@ test.afterAll(async()=>{if(server&&server.exitCode===null)await new Promise(reso
 async function setup(page,lang='en'){
  // Use the real browser network path, including CORS and native multipart uploads.
  await page.addInitScript(({language,api})=>{localStorage.setItem('miyar-language',language);window.MIYAR_CONFIG={apiBase:api};},{language:lang,api:API});
+ // Permit the disposable API only in this served test document; production CSP is unchanged.
+ await page.route(BASE,async route=>{const response=await route.fetch();const original=await response.text();const body=original.replace("connect-src 'self' https://miyar-enterprise-api.onrender.com","connect-src 'self' https://miyar-enterprise-api.onrender.com "+API);expect(body).not.toBe(original);await route.fulfill({response,body,headers:{...response.headers(),'content-length':String(Buffer.byteLength(body))}});});
  page.on('dialog',d=>d.accept());await page.goto(BASE+'#enterprise/connection');
 }
 async function login(page,role='line_manager',org='a'){

@@ -13,6 +13,33 @@ def test_bulk_xlsx_zero_and_formula_cells_remain_literal():
     rows=read_rows(out.getvalue(),'positions.xlsx');assert rows[0]['directReports']=='0';r=bulk_diagnosis(rows,Catalog());assert r['titleScopeReviewRows']==1
     rows[0]['budgetAmount']='NaN';r=bulk_diagnosis(rows,Catalog());assert r['scopeAssessableRows']==0;assert 'invalid_scope_numbers' in r['rows'][0]['flags']
 
+def test_bulk_xlsx_formula_is_literal_and_cannot_be_used_as_numeric_scope():
+    from openpyxl import Workbook
+    workbook=Workbook();sheet=workbook.active
+    sheet.append(['title','department','occupationCode','directReports','budgetAmount','authority'])
+    sheet.append(['مدير نظم','IT','251104',0,'=1+1','يوصي'])
+    out=io.BytesIO();workbook.save(out)
+    rows=read_rows(out.getvalue(),'literal-formula.xlsx')
+    assert rows[0]['directReports']=='0'
+    assert rows[0]['budgetAmount']=='=1+1'
+    result=bulk_diagnosis(rows,Catalog())
+    assert result['scopeAssessableRows']==0
+    assert 'invalid_scope_numbers' in result['rows'][0]['flags']
+
+def test_bulk_csv_accepts_10000_rows_and_rejects_the_next_row():
+    header=b'title,occupationCode\n';row=b'Synthetic position,251204\n'
+    rows=read_rows(header+row*10000,'row-limit.csv')
+    assert len(rows)==10000
+    assert rows[0]['occupationCode']==rows[-1]['occupationCode']=='251204'
+    with pytest.raises(ValueError,match='Row limit: 10,000'):
+        read_rows(header+row*10001,'row-limit.csv')
+
+def test_bulk_upload_rejects_10000001_bytes_before_parsing():
+    oversized=b'x'*10_000_001
+    for filename in ['oversized.csv','oversized.xlsx']:
+        with pytest.raises(ValueError,match='Upload limit: 10 MB'):
+            read_rows(oversized,filename)
+
 def test_dual_gates_fallback_and_provisional_parent():
     c=Catalog();candidates=[{'code':'251204','cosineSimilarity':.9},{'code':'251104','cosineSimilarity':.7},{'code':'251403','cosineSimilarity':.65}]
     assert route(candidates,c,set())['route']=='candidate_for_review'
