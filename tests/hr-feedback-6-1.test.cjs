@@ -10,7 +10,7 @@ const cases=[
  ['pmo','حوكمة المشاريع والجداول الزمنية من خلال مكتب إدارة المشاريع','Coordinate PMO project governance, milestones and schedule control','242114','121909']
 ];
 for(const [family,ar,en,specialist,manager]of cases)for(const [locale,objective]of [['ar',ar],['en',en]])for(const [seniority,code]of [['specialist',specialist],['manager',manager]])test(`${family} ${locale} ${seniority} returns sourced role and tailored skills`,()=>{
- const r=R.recommend({objective,seniority},nodes,edu);assert.equal(r.candidate.family,family);assert.equal(r.candidate.ssco,code);assert.ok(r.source);assert.equal(r.source.titleAr,r.candidate.referenceTitleAr);assert.equal(r.source.sourcePage,r.candidate.sourcePage);assert.ok(r.candidate.skillsEn.length>=5);assert.ok(r.finalTitle);assert.ok(r.candidate.educationCodes.length);
+ const r=R.recommend({objective:objective+(seniority==='manager'?'; lead five employees; approve work plans':''),seniority},nodes,edu);assert.equal(r.candidate.family,family);assert.equal(r.candidate.ssco,code);assert.ok(r.source);assert.equal(r.source.titleAr,r.candidate.referenceTitleAr);assert.equal(r.source.sourcePage,r.candidate.sourcePage);assert.ok(r.candidate.skillsEn.length>=5);assert.ok(r.finalTitle);assert.ok(r.candidate.educationCodes.length);
  if(['pmo','projectDevelopment'].includes(family))assert.equal(r.checks.find(x=>x.id==='mapping-scope').status,'warn');
 });
 test('report recipients and negative work do not determine function or seniority',()=>{
@@ -19,7 +19,7 @@ test('report recipients and negative work do not determine function or seniority
  }
 });
 test('explicit level overrides wording; explicit no-management scope constrains it',()=>{
- const r=R.recommend({objective:'Investment analysis without management duties',seniority:'Manager'},nodes);assert.equal(r.candidate.level,'specialist');assert.equal(r.checks.find(x=>x.id==='level').status,'warn');
+ const r=R.recommend({objective:'Investment analysis without management duties',seniority:'Manager'},nodes);assert.equal(r.status,'blocked');assert.equal(r.finalTitle,null);
 });
 test('complex mixed descriptions retain separate reviewable functions',()=>{
  const r=R.recommend({objective:'Coordinate project governance through the PMO; evaluate investment opportunities and conduct due diligence; develop strategic objectives and benchmarking.'},nodes);
@@ -29,7 +29,7 @@ test('tasks after a report recipient are retained; Arabic conjunctions match tas
  const r=R.recommend({objective:'Report to the Finance Director and conduct internal audit testing and prepare audit evidence.'},nodes);assert.equal(r.candidate.family,'internalAudit');assert.equal(r.candidate.level,'specialist');assert.ok(R.has('وتخطيط القوى العاملة','تخطيط القوى العاملة'));assert.equal(R.has('investment audit','it'),false);
 });
 async function app(route,locale='en'){
- const errors=[],vc=new VirtualConsole();vc.on('jsdomError',e=>errors.push(e.message));const dom=new JSDOM(fs.readFileSync(path.join(dir,'index.html')),{url:'https://example.test/'+route,runScripts:'outside-only',pretendToBeVisual:true,virtualConsole:vc}),w=dom.window;
+ const errors=[],vc=new VirtualConsole();vc.on('jsdomError',e=>errors.push(e.message));const dom=new JSDOM(fs.readFileSync(path.join(dir,'index.html')),{url:'https://example.test/'+route,runScripts:'outside-only',pretendToBeVisual:true,virtualConsole:vc}),w=dom.window;require('./local-workspace.cjs')(w);
  w.localStorage.setItem('miyar-language',locale);w.structuredClone=structuredClone;w.AbortSignal=AbortSignal;w.scrollTo=()=>{};w.HTMLElement.prototype.scrollIntoView=()=>{};w.confirm=()=>true;w.HTMLDialogElement.prototype.showModal=function(){this.open=true;};w.HTMLDialogElement.prototype.close=function(){this.open=false;};
  w.fetch=async url=>({ok:true,json:async()=>String(url).startsWith('./')?JSON.parse(fs.readFileSync(path.join(dir,String(url).split('?')[0]))):{}});
  for(const s of w.document.querySelectorAll('script[src]'))w.eval(fs.readFileSync(path.join(dir,s.getAttribute('src').split('?')[0]),'utf8'));

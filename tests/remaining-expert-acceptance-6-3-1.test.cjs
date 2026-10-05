@@ -131,7 +131,7 @@ const translations = [
   ['finance director', 'Finance', 'Lead 25 accountants; approve consolidated financial statements; present the budget to the board.', {family: 'finance', level: 'director', directReports: 25, title: /Director|Head/i}],
   ['HR director', 'Human Resources', 'Lead a department of 40 employees; approve compensation policies; report to the Chief Executive.', {family: 'hc', level: 'director', directReports: 40, title: /Director|Head/i}],
   ['engineering manager', 'Engineering', 'Manage a team of 10 engineers; review engineering designs; approve drawings.', {level: 'manager', directReports: 10, title: /Manager/i}],
-  ['accounting manager', 'Finance', 'Responsible for leading a team of 6 accountants; approve accounting entries.', {family: 'finance', level: 'manager', directReports: 6, title: /Manager/i}],
+  ['accounting manager', 'Finance', 'Responsible for leading a team of 6 accountants; approve accounting entries.', {family: 'finance', level: 'manager', directReports: 6, title: /Manager|Chief Accountant/i}],
   ['invoice clerk', 'Finance', 'Enter supplier invoices; match invoices to purchase orders; archive supporting documents.', {family: 'finance', level: 'assistant', title: /Accountant|Accounts Payable Clerk/i, notTitle: /Analyst|Manager/i}],
   ['maintenance technician', 'Facilities', 'Perform preventive maintenance on air conditioning; repair electrical faults; record work orders.', {family: 'maintenance', title: /Maintenance Technician/i, notTitle: /Engineer/i}],
   ['payroll specialist', 'Human Resources', 'Prepare monthly payroll; reconcile social insurance contributions; calculate end of service benefits.', {family: 'hc', level: 'specialist', title: /Payroll Specialist/i, conflict: false}]

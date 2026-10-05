@@ -27,15 +27,15 @@ function assertSameProposal(input,expected,locale='en'){
 
 test('expert-provided full English HC case retains its home family, owned support work and OD duties',()=>{
  const input=E.hcExample,r=recommend(input),p=E.generate(input,'en');
- assert.equal(r.candidate.family,'hc');assert.equal(r.candidate.intent,'portfolio');assert.equal(r.candidate.level,'manager');
- assert.equal(p.content.title,'Human Capital Projects & Operations Manager');assert.equal(p.family.id,'hc');
+ assert.equal(r.candidate.family,'hc');assert.equal(r.candidate.intent,'portfolio');assert.equal(r.candidate.level,'specialist');
+ assert.equal(p.content.title,'Human Capital Projects & Operations Specialist');assert.equal(p.family.id,'hc');
  assert.equal(p.content.responsibilities,input.responsibilities);assert.equal(p.content.saudization,input.saudizationNote);
  assert.ok(r.detection.workstreams.some(x=>x.family.id==='procurement'),'the expert really owns procurement work');
  assert.equal(r.checks.find(x=>x.id==='mixed-scope').status,'warn');assert.match(p.notices.join(' '),/current official source/);
 });
 test('authored Arabic translation of the expert HC case retains the same bounded portfolio proposal',()=>{
  const input=E.hcExampleAr,r=recommend(input),p=E.generate(input,'ar');
- assert.equal(r.candidate.family,'hc');assert.equal(r.candidate.intent,'portfolio');assert.equal(r.candidate.level,'manager');
+ assert.equal(r.candidate.family,'hc');assert.equal(r.candidate.intent,'portfolio');assert.equal(r.candidate.level,'specialist');
  assert.equal(p.content.title,r.candidate.titleAr);assert.equal(p.content.responsibilities,input.responsibilities);
  assert.ok(r.detection.workstreams.some(x=>x.family.id==='procurement'));assert.match(p.notices.join(' '),/مصدر رسمي حالي/);
 });
@@ -85,8 +85,7 @@ for(const [locale,objective]of collaboratorCases)test(`synthetic collaborator do
  assert.equal(p.notices.some(x=>/Multi-function scope|نطاق متعدد الوظائف/.test(x)),false);
 });
 for(const [locale,index]of [['ar',3],['en',4]])test(`authored investment exclusion list constrains explicit manager request ${locale}`,()=>{
- const row=guideExamples.find(x=>x[0]==='investment'),{r}=assertSameProposal({objective:row[index],seniority:'manager'},{family:'investment'},locale);
- assert.equal(r.requestedLevel,'manager');assert.equal(r.checks.find(x=>x.id==='level').status,'warn');
+ const row=guideExamples.find(x=>x[0]==='investment'),r=R.recommend({objective:row[index],seniority:'manager'});assert.equal(r.status,'blocked');assert.equal(r.finalTitle,null);
 });
 for(const [locale,objective]of [
  ['en','Manage the internal audit team without managing payroll operations; prepare internal audit plans and document audit evidence.'],

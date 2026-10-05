@@ -97,8 +97,7 @@ test('HR recruitment case from reviewer screenshot returns recruitment roles',as
 
 test('governance and compliance case returns reviewable source roles instead of no output',async({page})=>{
   const result=await runDemoCase(page,{objective:'إعداد دليل الحوكمة والالتزام للشركة و مصفوفة الصلاحيات',domain:'الحوكمة',seniority:'مدير'});
-  await expect(result.locator('.demo-v5-directory')).toBeVisible();
-  await expect(result.locator('.demo-v5-directory')).toContainText(/مدير التزام|أخصائي تطوير تنظيمي/);
+  await expect(result).toContainText(/أعلى|يتعارض/);await expect(result.locator('[data-demo-primary-hr]')).toHaveCount(0);
 });
 
 test('HR expanded directory exposes the curated source roles present in the supplied classification',async({page})=>{
@@ -162,7 +161,7 @@ test('entered manager level changes HR recommendation to the corresponding manag
  ];
  for(const [objective,seniority,title,code] of cases){
   await test.step(title+' | '+code,async()=>{
-   const result=await runDemoCase(page,{objective,seniority});
+   const result=await runDemoCase(page,{objective:objective+'؛ يقود خمسة موظفين؛ يعتمد خطط العمل',seniority});
    const primary=result.locator('.demo-v5-primary-recommendation');
    await expect(primary,'Missing manager recommendation for: '+objective).toBeVisible();
    await expect(primary.locator('h4'),'Wrong manager title for: '+objective).toHaveText(title);

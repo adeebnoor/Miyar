@@ -6,7 +6,7 @@ const settle=async()=>{for(let i=0;i<6;i++)await new Promise(resolve=>setImmedia
 
 async function administrator(locale){
  const errors=[],requests=[],console=new VirtualConsole();console.on('jsdomError',error=>errors.push(error.message));
- const dom=new JSDOM('<main id="enterprise"></main>',{url:'https://example.test/Miyar/#enterprise/connection',runScripts:'outside-only',pretendToBeVisual:true,virtualConsole:console}),w=dom.window;
+ const dom=new JSDOM('<main id="enterprise"></main>',{url:'https://example.test/Miyar/#enterprise/connection',runScripts:'outside-only',pretendToBeVisual:true,virtualConsole:console}),w=dom.window;require('./local-workspace.cjs')(w);
  let configured=structuredClone(framework);
  const base='https://fixture-api.example.test',response=value=>({ok:true,status:200,json:async()=>value});
  w.structuredClone=structuredClone;w.AbortSignal=AbortSignal;w.confirm=()=>true;w.MIYAR_CONFIG={apiBase:base};

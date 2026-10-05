@@ -86,10 +86,6 @@ function generationAuthority(signals,locale){const ar=locale==='ar';const rows=[
 function buildSkills(family,signals,locale){const ar=locale==='ar',base=ar?family.technicalAr:family.technicalEn,extra=[];if(signals.project)extra.push(ar?'إدارة الجداول والمخاطر والمبادرات':'Schedules, risks and initiative management');if(signals.procurement)extra.push(ar?'إدارة دورة RFP / PR / PO والعقود':'RFP / PR / PO and contract lifecycle coordination');if(signals.budget)extra.push(ar?'متابعة OPEX وتحليل الانحراف':'OPEX monitoring and variance analysis');if(signals.reporting)extra.push(ar?'إعداد تقارير التقدم ولوحات المتابعة':'Progress reporting and management dashboards');if(signals.improvement)extra.push(ar?'تحليل وتحسين العمليات':'Process analysis and improvement');return uniq([...base,...extra]).slice(0,10);}
 function validateScope(input,locale){
  const ar=locale==='ar',r=root.MiyarRoleRecommender,work=r?.interpret({responsibilities:input.responsibilities})?.text||String(input.responsibilities||''),n=normalize(work),words=new Set(n.split(' ').filter(x=>x.length>1));
- const vague=/^(?:يسوي كل شي|يساعد في كل شي|نبي نطور الشغل|تطوير الشغل|do everything|help with everything|improve work|all tasks|كل شي)$/;
- const meaningful=sentences(work).filter(x=>!vague.test(normalize(x)));
- if(n.length<30||words.size<5||!meaningful.length)throw Error(ar?'المهام غير واضحة: اذكر العمل الفعلي والمخرج والمسؤولية وحدود الصلاحية؛ لن ننشئ وصفًا عامًا.':'Unclear duties: describe actual work, outputs, accountability and authority; a generic job will not be generated.');
- if(/\b(veterinar\w*|surgeon|physician|pilot|astronaut|geologist|civil engineer(?:ing)?|chemical engineer(?:ing)?)\b|طبيب|جراح|بيطري|طيار|جيولوج|هندس[ةي].*مدني|مهندس.*مدني|مهندس كيميائي/.test(n))throw Error(ar?'هذا التخصص خارج نطاق قوالب OD المتاحة. يلزم وصف ومؤهلات ومؤشرات يراجعها مختص المجال قبل التوليد.':'This specialization is outside the supported OD templates. A domain specialist must provide and review duties, qualifications and measures.');
  root.MiyarRoleRecommender?.validateScope(input,locale);
  const family=detectFamily({...input,context:''});
  const nursing=/nurs|تمريض|ممرض/.test(n+' '+normalize(input.department));
@@ -101,7 +97,6 @@ function generate(input={},locale='en'){
  validateScope(input,locale);
  const ar=locale==='ar',responsibilities=sentences(input.responsibilities),strategy=String(input.strategyObjective||'').trim();
  if(!strategy&&!responsibilities.length)throw Error(ar?'أدخل هدفًا استراتيجيًا أو مسؤوليات الدور.':'Enter a strategic objective or role responsibilities.');
- if(responsibilities.length<2&&(root.MiyarRoleRecommender?.interpret({responsibilities:input.responsibilities})?.clauses.length||0)<2)throw Error(ar?'أدخل مسؤوليتين على الأقل حتى تكون حزمة الوصف الوظيفي قابلة للمراجعة.':'Enter at least two responsibilities so the job-description proposal is reviewable.');
  const text=[strategy,responsibilities.join(' '),input.department,input.context].join(' '),family=detectFamily(input),signals=detectSignals(text),level=recommendLevel(input,signals,responsibilities.length),title=proposedTitle(family,level,signals,locale),skills=buildSkills(family,signals,locale),measures=successMeasures(signals,locale),career=ar?family.careerAr:family.careerEn;
  const department=String(input.department||'').trim()||(ar?family.departmentAr:family.departmentEn);
  const behaviors=ar?behaviorAr:behaviorEn;

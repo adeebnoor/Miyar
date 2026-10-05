@@ -5,7 +5,7 @@ function app(locale='en'){
  const errors=[],vc=new VirtualConsole();vc.on('jsdomError',e=>errors.push(e));
  const html='<!doctype html><html><body><div id="app"></div></body></html>';
  const dom=new JSDOM(html,{url:'https://example.test/Miyar/#demo',runScripts:'outside-only',pretendToBeVisual:true,virtualConsole:vc});
- const w=dom.window;w.localStorage.setItem('miyar-language',locale);w.scrollTo=()=>{};w.matchMedia=()=>({matches:true});w.HTMLElement.prototype.scrollIntoView=()=>{};Object.defineProperty(w,'innerWidth',{value:390,configurable:true});
+ const w=dom.window;require('./local-workspace.cjs')(w);w.localStorage.setItem('miyar-language',locale);w.scrollTo=()=>{};w.matchMedia=()=>({matches:true});w.HTMLElement.prototype.scrollIntoView=()=>{};Object.defineProperty(w,'innerWidth',{value:390,configurable:true});
  w.HTMLDialogElement.prototype.showModal=function(){this.open=true;};w.HTMLDialogElement.prototype.close=function(){this.open=false;};
  for(const file of ['data.js','engine.js','position.js','workspace.js','app.js','demo-fix.js'])w.eval(fs.readFileSync(path.join(dir,file),'utf8'));
  const $=id=>w.document.getElementById(id);const fill=value=>{const el=$('objective');el.value=value;el.dispatchEvent(new w.Event('input',{bubbles:true}));};const submit=()=>{const form=$('role-form');if(typeof form.requestSubmit==='function')form.requestSubmit();else form.dispatchEvent(new w.Event('submit',{bubbles:true,cancelable:true}));};
