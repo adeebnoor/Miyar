@@ -4,7 +4,7 @@ const pause=()=>new Promise(r=>setTimeout(r,15));
 async function ready(dom,check){for(let i=0;i<50&&!check();i++)await pause();assert.ok(check(),'Expected the route to finish rendering');}
 async function app(route='#home',locale='en'){
  const errors=[],vc=new VirtualConsole();vc.on('jsdomError',e=>errors.push(e));
- const dom=new JSDOM(fs.readFileSync(path.join(dir,'index.html'),'utf8'),{url:'https://example.test/Miyar/'+route,runScripts:'outside-only',pretendToBeVisual:true,virtualConsole:vc});const w=dom.window;
+ const dom=new JSDOM(fs.readFileSync(path.join(dir,'index.html'),'utf8'),{url:'https://example.test/Miyar/'+route,runScripts:'outside-only',pretendToBeVisual:true,virtualConsole:vc});const w=dom.window;require('./local-workspace.cjs')(w);
  w.localStorage.setItem('miyar-language',locale);w.structuredClone=structuredClone;w.AbortSignal=AbortSignal;w.scrollTo=()=>{};w.HTMLElement.prototype.scrollIntoView=()=>{};w.confirm=()=>false;w.URL.createObjectURL=()=> 'blob:test';w.URL.revokeObjectURL=()=>{};
  w.fetch=async url=>{const value=String(url);if(value.startsWith('./')){const file=path.join(dir,value.split('?')[0]);return {ok:fs.existsSync(file),json:async()=>JSON.parse(fs.readFileSync(file,'utf8'))};}return {ok:false,status:401,json:async()=>({detail:'Organization sign-in required'})};};
  w.HTMLDialogElement.prototype.showModal=function(){this.open=true;};w.HTMLDialogElement.prototype.close=function(){this.open=false;};

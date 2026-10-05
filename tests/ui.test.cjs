@@ -5,7 +5,7 @@ const root=path.join(__dirname,'../dist');
 function app({locale='ar',saved=null}={}){
  const errors=[],console=new VirtualConsole();console.on('jsdomError',e=>errors.push(e));
  const dom=new JSDOM(fs.readFileSync(path.join(root,'index.html'),'utf8'),{url:'https://example.test/Miyar/',runScripts:'outside-only',pretendToBeVisual:true,virtualConsole:console});
- const w=dom.window;w.localStorage.setItem('miyar-language',locale);if(saved)w.localStorage.setItem('miyar-position-workspace-v1',saved);
+ const w=dom.window;require('./local-workspace.cjs')(w);w.localStorage.setItem('miyar-language',locale);if(saved)w.localStorage.setItem('miyar-position-workspace-v1',saved);
  w.scrollTo=()=>{};w.matchMedia=()=>({matches:true});w.HTMLElement.prototype.scrollIntoView=()=>{};
  w.HTMLDialogElement.prototype.showModal=function(){this.open=true;};w.HTMLDialogElement.prototype.close=function(){this.open=false;this.dispatchEvent(new w.Event('close'));};
  for(const file of ['data.js','engine.js','position.js','workspace.js','app.js'])w.eval(fs.readFileSync(path.join(root,file),'utf8'));

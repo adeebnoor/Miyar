@@ -2,11 +2,11 @@ const test=require('node:test'),assert=require('node:assert/strict'),fs=require(
 const {JSDOM,VirtualConsole}=require('jsdom'),dir=path.join(__dirname,'../dist');
 const settle=()=>new Promise(r=>setTimeout(r,25));
 const releaseVersion=fs.readFileSync(path.join(__dirname,'../VERSION'),'utf8').trim();
-const releaseMinor=releaseVersion.split('.').slice(0,2).join('.');
+const releaseMinor=releaseVersion;
 
 async function app(route,locale='en'){
  const errors=[],vc=new VirtualConsole();vc.on('jsdomError',e=>errors.push(e));
- const dom=new JSDOM(fs.readFileSync(path.join(dir,'index.html'),'utf8'),{url:'https://example.test/Miyar/'+route,runScripts:'outside-only',pretendToBeVisual:true,virtualConsole:vc});const w=dom.window;
+ const dom=new JSDOM(fs.readFileSync(path.join(dir,'index.html'),'utf8'),{url:'https://example.test/Miyar/'+route,runScripts:'outside-only',pretendToBeVisual:true,virtualConsole:vc});const w=dom.window;require('./local-workspace.cjs')(w);
  w.localStorage.setItem('miyar-language',locale);w.structuredClone=structuredClone;w.AbortSignal=AbortSignal;w.scrollTo=()=>{};w.HTMLElement.prototype.scrollIntoView=()=>{};w.confirm=()=>true;
  w.fetch=async url=>{const value=String(url);if(value.startsWith('./'))return {ok:true,json:async()=>JSON.parse(fs.readFileSync(path.join(dir,value.split('?')[0]),'utf8'))};return {ok:false,status:404,json:async()=>({})};};
  w.HTMLDialogElement.prototype.showModal=function(){this.open=true;};w.HTMLDialogElement.prototype.close=function(){this.open=false;};
@@ -49,7 +49,7 @@ test('returning users see what is new, New badges, a version badge and can dismi
   for(let i=0;i<20&&!a.d.querySelector('.whats-new');i++)await settle();
   const panel=a.d.querySelector('.whats-new');assert.ok(panel);assert.ok(panel.textContent.includes('What’s new in Miyar '+releaseMinor));assert.equal(panel.querySelectorAll('li').length,5);
   assert.equal(a.d.querySelector('.lp-header-inner .version-badge').textContent,'v'+releaseMinor);
-  panel.querySelector('[data-whats-new-dismiss]').click();await settle();assert.equal(a.d.querySelector('.whats-new'),null);assert.equal(a.w.localStorage.getItem('miyar-whats-new-'+releaseMinor),'1');
+  panel.querySelector('[data-whats-new-dismiss]').click();await settle();assert.equal(a.d.querySelector('.whats-new'),null);assert.equal(a.w.localStorage.getItem('miyar-whats-new-'+releaseVersion.split('.').slice(0,2).join('.')),'1');
   a.w.location.hash='#enterprise/overview';for(let i=0;i<20&&!a.d.querySelector('.sidebar [data-manpower-nav] .new-badge');i++)await settle();
   assert.ok(a.d.querySelector('.sidebar [data-manpower-nav] .new-badge'));assert.equal(a.d.querySelector('.whats-new'),null);
   a.w.location.hash='#enterprise/manpower';for(let i=0;i<20&&a.d.querySelector('.sidebar [data-manpower-nav] .new-badge');i++)await settle();

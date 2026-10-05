@@ -5,7 +5,7 @@ const actionIds=['ent-save','ent-save-open','ent-local-json','ent-preview-draft'
 const tick=()=>new Promise(r=>setTimeout(r,10));
 async function app(locale='en'){
  const errors=[],vc=new VirtualConsole();vc.on('jsdomError',e=>errors.push(e.message));
- const dom=new JSDOM(fs.readFileSync(path.join(dir,'index.html'),'utf8'),{url:'https://example.test/Miyar/#enterprise/create',runScripts:'outside-only',pretendToBeVisual:true,virtualConsole:vc}),w=dom.window;
+ const dom=new JSDOM(fs.readFileSync(path.join(dir,'index.html'),'utf8'),{url:'https://example.test/Miyar/#enterprise/create',runScripts:'outside-only',pretendToBeVisual:true,virtualConsole:vc}),w=dom.window;require('./local-workspace.cjs')(w);
  const effects={downloads:0,pdfRequests:0};
  w.localStorage.setItem('miyar-language',locale);w.structuredClone=structuredClone;w.AbortSignal=AbortSignal;w.scrollTo=()=>{};w.HTMLElement.prototype.scrollIntoView=()=>{};w.confirm=()=>true;
  w.URL.createObjectURL=()=>{effects.downloads++;return 'blob:test';};w.URL.revokeObjectURL=()=>{};

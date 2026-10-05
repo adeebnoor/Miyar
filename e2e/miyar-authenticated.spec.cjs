@@ -22,7 +22,7 @@ async function login(page,email){await page.locator('#ent-email').fill(email);aw
 
 test('authenticated manager reads institution profile before designing a position',async({page})=>{
  await setup(page);await login(page,'a-line_manager@audit.test');await page.goto(BASE+'#enterprise/create');await expect(page.locator('[data-institution-context]')).toContainText('Configured · 2 units · 2 grades');await expect(page.locator('[data-inst-open]')).toHaveCount(0);
- await page.locator('[data-od-example]').click();await page.locator('[data-od-generate]').click();await expect(page.locator('[data-inst-match]')).toContainText('G11-A');
+ await page.locator('[data-od-example]').click();await page.locator('[data-od-responsibilities]').fill((await page.locator('[data-od-responsibilities]').inputValue())+'; lead six employees; approve work plans');await page.locator('[data-od-generate]').click();await expect(page.locator('[data-inst-match]')).toContainText('G11-A');
 });
 
 test('organization switch replaces institution profile and isolates locally saved scenarios',async({page})=>{

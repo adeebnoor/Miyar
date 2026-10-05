@@ -1,8 +1,11 @@
 {
-  "version": "6.3.1",
-  "buildId": "87fe5ca70cf97958",
+  "version": "6.3.2",
+  "buildId": "85211a198a5cfa68",
   "releasedAt": "2026-10-05",
   "changes": [
+    "6.3.2: duty evidence bounds requested levels and titles; membership and reporting recipients cannot confer leadership",
+    "6.3.2: confirmation choices for brief supported scope, expanded bilingual catalog and unified OD titles",
+    "6.3.2: pseudonym privacy, robust CSV numbers and salary coercion; workspace assets loaded on demand",
     "General leadership inference, Arabic direct-report extraction and consistent titles across Quick Trial and OD",
     "Block severe department-task conflicts and insufficient specialty evidence; preserve legitimate payroll overlap",
     "Assistant, technician, data science and security-safety coverage with licensing review",

@@ -102,10 +102,10 @@ test('360 OD example generates, applies and saves an editable position draft',as
   const od=page.locator('#miyar-od-workbench');await expect(od).toBeVisible();
   await od.locator('[data-od-example]').click();
   await od.locator('[data-od-generate]').click();
-  await expect(od.locator('[data-od-result]')).toContainText(/Human Capital Projects & Operations Manager/i);
+  await expect(od.locator('[data-od-result]')).toContainText(/Human Capital Projects & Operations Specialist/i);
   await expect(od.locator('[data-od-result]')).toContainText(/review|proposal|market/i);
   const apply=od.locator('[data-od-apply]');await expect(apply).toBeVisible();await apply.click();
-  await expect(page.locator('[data-field="title"]')).toHaveValue(/Human Capital Projects & Operations Manager/i);
+  await expect(page.locator('[data-field="title"]')).toHaveValue(/Human Capital Projects & Operations Specialist/i);
   await expect(page.locator('[data-field="responsibilities"]')).not.toHaveValue('');
   await page.locator('#ent-save').click();await page.waitForTimeout(120);
   const saved=await page.evaluate(()=>JSON.parse(localStorage.getItem('miyar-enterprise-drafts-v1')||localStorage.getItem('miyar-enterprise-positions-v1')||'[]'));

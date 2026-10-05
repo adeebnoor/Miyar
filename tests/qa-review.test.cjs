@@ -21,7 +21,7 @@ test('QA OD layer keeps specialist occupations out of manager SSCO queries and g
 
 async function app(route='#demo'){
  const errors=[],vc=new VirtualConsole();vc.on('jsdomError',e=>errors.push(e));
- const dom=new JSDOM(fs.readFileSync(path.join(dir,'index.html'),'utf8'),{url:'https://example.test/Miyar/'+route,runScripts:'outside-only',pretendToBeVisual:true,virtualConsole:vc});const w=dom.window;
+ const dom=new JSDOM(fs.readFileSync(path.join(dir,'index.html'),'utf8'),{url:'https://example.test/Miyar/'+route,runScripts:'outside-only',pretendToBeVisual:true,virtualConsole:vc});const w=dom.window;require('./local-workspace.cjs')(w);
  w.localStorage.setItem('miyar-language','ar');w.structuredClone=structuredClone;w.AbortSignal=AbortSignal;w.scrollTo=()=>{};w.HTMLElement.prototype.scrollIntoView=()=>{};w.confirm=()=>true;w.URL.createObjectURL=()=> 'blob:test';w.URL.revokeObjectURL=()=>{};w.matchMedia=()=>({matches:false});
  w.fetch=async url=>{const value=String(url);if(value.startsWith('./')){const file=path.join(dir,value.replace(/^\.\//,''));return {ok:true,json:async()=>JSON.parse(fs.readFileSync(file,'utf8')),blob:async()=>new w.Blob(['x'])};}return {ok:true,json:async()=>({})};};
  if(w.HTMLDialogElement){w.HTMLDialogElement.prototype.showModal=function(){this.open=true;};w.HTMLDialogElement.prototype.close=function(){this.open=false;};}

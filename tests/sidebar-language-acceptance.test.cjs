@@ -5,7 +5,7 @@ async function until(check,message){for(let i=0;i<60&&!check();i++)await tick();
 
 test('manpower and compensation sidebar links survive Arabic-English-Arabic shell replacements and open their actual tools',async()=>{
  const errors=[],console=new VirtualConsole();console.on('jsdomError',error=>errors.push(error.message));
- const dom=new JSDOM(fs.readFileSync(path.join(dist,'index.html'),'utf8'),{url:'https://example.test/Miyar/#demo',runScripts:'outside-only',pretendToBeVisual:true,virtualConsole:console}),w=dom.window,d=w.document;
+ const dom=new JSDOM(fs.readFileSync(path.join(dist,'index.html'),'utf8'),{url:'https://example.test/Miyar/#demo',runScripts:'outside-only',pretendToBeVisual:true,virtualConsole:console}),w=dom.window,d=w.document;require('./local-workspace.cjs')(w);
  try{
   w.localStorage.setItem('miyar-language','ar');w.structuredClone=structuredClone;w.AbortSignal=AbortSignal;w.scrollTo=()=>{};w.HTMLElement.prototype.scrollIntoView=()=>{};w.confirm=()=>true;
   w.HTMLDialogElement.prototype.showModal=function(){this.open=true;};w.HTMLDialogElement.prototype.close=function(){this.open=false;};

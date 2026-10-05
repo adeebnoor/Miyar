@@ -5,7 +5,7 @@ const settle=()=>new Promise(r=>setTimeout(r,25));
 
 async function app(route,locale='en',before){
  const errors=[],vc=new VirtualConsole();vc.on('jsdomError',e=>errors.push(e));
- const dom=new JSDOM(fs.readFileSync(path.join(dir,'index.html'),'utf8'),{url:'https://example.test/Miyar/'+route,runScripts:'outside-only',pretendToBeVisual:true,virtualConsole:vc});const w=dom.window;
+ const dom=new JSDOM(fs.readFileSync(path.join(dir,'index.html'),'utf8'),{url:'https://example.test/Miyar/'+route,runScripts:'outside-only',pretendToBeVisual:true,virtualConsole:vc});const w=dom.window;require('./local-workspace.cjs')(w);
  w.localStorage.setItem('miyar-language',locale);w.structuredClone=structuredClone;w.AbortSignal=AbortSignal;w.scrollTo=()=>{};w.HTMLElement.prototype.scrollIntoView=()=>{};w.confirm=()=>true;w.URL.createObjectURL=()=>'blob:test';w.URL.revokeObjectURL=()=>{};
  w.fetch=async url=>{const value=String(url);if(value.startsWith('./')){const file=path.join(dir,value.split('?')[0]);return {ok:true,json:async()=>JSON.parse(fs.readFileSync(file,'utf8')),blob:async()=>new w.Blob(['pdf'])};}return {ok:false,status:404,json:async()=>({})};};
  w.HTMLDialogElement.prototype.showModal=function(){this.open=true;};w.HTMLDialogElement.prototype.close=function(){this.open=false;};
@@ -140,7 +140,7 @@ test('OD package shows level and validation status in the interface language',as
  const a=await app('#enterprise/create','ar');try{
   const panel=a.$('miyar-od-workbench');panel.querySelector('[data-od-example]').click();await settle();panel.querySelector('[data-od-generate]').click();await settle();
   const result=panel.querySelector('[data-od-result]');assert.ok(result.textContent.length>100);
-  assert.equal(result.querySelector('.od-level').textContent,'مدير');assert.doesNotMatch(result.querySelector('.od-grade-note strong').textContent,/manager/);
+  assert.equal(result.querySelector('.od-level').textContent,'أخصائي');assert.doesNotMatch(result.querySelector('.od-grade-note strong').textContent,/manager/);
   for(const li of result.querySelectorAll('.demo-validation li'))assert.doesNotMatch(li.textContent,/^(pass|warn|fail) ·/);
   assert.deepEqual([...panel.querySelectorAll('.od-roadmap a')].map(x=>x.getAttribute('href')),['#enterprise/manpower','#enterprise/compensation']);
  }finally{a.dom.window.close();}
