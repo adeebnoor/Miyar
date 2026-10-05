@@ -32,3 +32,17 @@ for(const department of ['','Nursing','التمريض'])for(const locale of ['ar
 test('privacy and CSV acceptance',()=>{for(const id of ['501234567','A12345678','PASSPORT-A12345678'])assert.throws(()=>C.parseRoster('id,currentSalary\n'+id+',25000'),e=>e.code==='ROSTER_PRIVACY');for(const id of ['Pos-Senior-Accountant','EMP-0001','E17'])assert.equal(C.parseRoster('ID;CurrentSalary\n'+id+';٢٥٠٠٠')[0].currentSalary,'25000');assert.equal(C.parseRoster('id,currentSalary\nE17,"25,000"')[0].currentSalary,'25000');});
 test('Saudi salary coercion happens before arithmetic',()=>{const raw={asOf:'2026-10-05',regime:'saudi-existing',applicabilityConfirmed:true,sanedEligible:true,housingMonthly:'2500',otherMonthly:0,contributoryExtraMonthly:0,medicalAnnual:0,serviceYears:0};assert.deepEqual(C.saudiCost('10000','monthly',raw),C.saudiCost(10000,'monthly',raw));for(const salary of [-1,NaN,Infinity])assert.throws(()=>C.saudiCost(salary,'monthly',raw),/positive finite/);});
 test('brief supported scope asks for confirmation without fabricating duties',()=>{const input={department:'Finance',responsibilities:'Review receivables',strategyObjective:'Deliver department objectives'};const r=R.recommend(input);assert.equal(r.status,'needs-confirmation');assert.equal(r.candidates.length,3);assert.ok(r.candidates.some(x=>x.titleEn==='AR Accountant'));assert.equal(E.generate(input).status,'needs-confirmation');const confirmed=E.generate({...input,confirmedRole:'AR Accountant'});assert.equal(confirmed.content.title,'AR Accountant');});
+
+for(const [department,responsibilities,title,level]of [
+ ['Administration','Maintain the executive calendar; arrange meetings; coordinate travel','Executive Assistant','assistant'],
+ ['الشؤون الإدارية','متابعة البريد الوارد؛ تسجيل الصادر؛ ترتيب الأرشيف','Records & Correspondence Clerk','assistant'],
+ ['Administration','Review facilities contracts; order office supplies; arrange catering','Office Services Coordinator','specialist'],
+ ['Administration','Update commercial registration; process visas through Absher and Muqeem','Government Relations Officer','specialist'],
+ ['Finance','Reconcile petty cash; record receipts','Accounts Clerk','assistant'],
+ ['Finance','Review receivables; collect overdue invoices; reconcile customer collections','AR Accountant','specialist'],
+ ['Finance','Prepare VAT tax return; reconcile ZATCA and zakat records','Tax & Zakat Accountant','specialist'],
+ ['Finance','Review the cash position; prepare the cash forecast; maintain banking relationships','Treasury Analyst','specialist'],
+ ['Finance','Maintain the fixed asset register; calculate depreciation','Fixed Assets Accountant','specialist'],
+ ['Finance','Prepare management accounts; update the rolling forecast','Management Accountant','specialist'],
+ ['Human Resources','Coordinate performance review; check objective setting; consolidate ratings','Performance Management Specialist','specialist']
+])test('expanded role coverage: '+title,()=>{const input={department,responsibilities,strategyObjective:'Deliver department objectives'},r=R.recommend(input);assert.equal(r.candidate?.titleEn,title);assert.equal(r.candidate.level,level);assert.equal(E.generate(input).content.title,title);});

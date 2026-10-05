@@ -168,7 +168,7 @@ function recommend(input={},nodes=null,education=null){
  const {family,text}=detection,roles=catalog.roles.filter(r=>r.family===family.id);
  const levelAnalysis=analyzeLevel(input);let requested=levelAnalysis.level;
  if(levelAnalysis.leadershipConflict)return {status:'blocked',candidate:null,finalTitle:null,detection,levelAnalysis,directReports:levelAnalysis.directReports,checks:[{id:levelAnalysis.levelExceedsEvidence?'levelExceedsEvidence':'leadership',status:'fail',ar:'المستوى المطلوب أعلى مما تدل عليه المهام أو يتعارض معها. أضف مسؤوليات القيادة والاعتماد، أو غيّر المستوى.',en:'Requested level conflicts with duty evidence. Add owned leadership and approval responsibilities or change the level.'}],message:levelAnalysis.levelExceedsEvidence?'المستوى المطلوب ('+(input.seniority||input.requestedLevel||input.title||input.jobTitle)+') أعلى مما تدل عليه المهام. أضف مسؤوليات القيادة والاعتماد، أو غيّر المستوى.':'أدلة القيادة تتعارض مع المستوى المدخل',anchors:[]};
- const ranked=roles.filter(r=>['specialist','assistant','technician'].includes(r.level)).map(r=>({role:r,score:score(text,r.taskKeywords)})).sort((a,b)=>b.score-a.score);
+ const ranked=roles.filter(r=>['specialist','assistant','technician'].includes(r.level)).map(r=>({role:r,score:score(text,r.taskKeywords.filter(x=>!sharedWords.has(normalize(x))))})).sort((a,b)=>b.score-a.score);
  let intent=ranked[0]?.score?ranked[0].role.intent:'general';
  if(family.id==='finance'&&['payroll cost','تكلفة الرواتب','تكاليف الرواتب'].some(x=>has(text,x)))intent='cost';
  // Preserve the expert's mixed HC portfolio only for genuinely multi-workstream scope.
@@ -180,6 +180,7 @@ function recommend(input={},nodes=null,education=null){
  if(['maintenance','engineering'].includes(family.id)&&!['manager','director','executive'].includes(chosenLevel)&&!engineeringEvidence){chosenLevel='technician';intent=family.id==='maintenance'&&['hvac','تكييف','التكييف','air conditioning'].some(x=>has(text,x))?'hvac':'technician';}
  if(family.id==='finance'&&!['manager','director','executive'].includes(chosenLevel)&&['invoice entry','enter invoices','supplier invoices','إدخال فواتير الموردين','فواتير الموردين'].some(x=>has(text,x))&&['enter','entry','إدخال','أرشفة','archive','match','مطابقة'].some(x=>has(text,x))){chosenLevel='assistant';intent='payableClerk';}
  if(family.id==='hc'&&!['manager','director','executive'].includes(chosenLevel)&&intent!=='payroll'&&roles.some(r=>r.intent==='coordinator'&&score(text,r.taskKeywords)>0)&&anchors(text,['entry','enter','archive','schedule','إدخال','أرشفة','تنسيق المقابلات','تحديث ملفات']).length>=2&&!['screen','screening','source candidates','job offers','فرز','استقطاب','عروض وظيفية'].some(x=>has(text,x))){chosenLevel='assistant';intent='coordinator';}
+ if(['admin','finance'].includes(family.id)&&['specialist','assistant'].includes(chosenLevel)&&roles.some(r=>r.intent===intent&&r.level==='assistant'))chosenLevel='assistant';
  if(family.id==='securitySafety'&&intent==='guard'&&!['manager','director','executive','supervisor'].includes(chosenLevel))chosenLevel='assistant';
  if(family.id==='securitySafety'&&chosenLevel==='specialist')intent='safety';
  let candidate=roles.find(r=>r.intent===intent&&r.level===chosenLevel);
