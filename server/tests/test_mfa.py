@@ -27,8 +27,9 @@ def test_enrolled_account_needs_a_valid_code_to_sign_in(env):
     assert c.post('/api/v1/auth/login',json={**login,'otp':'000000'}).status_code==401
     time.sleep(0)  # the confirm step consumed the current window; the next window is accepted once
     with app.state.sessions() as db:db.get(UserMfa,'org-a-finance').last_step-=2;db.commit()
-    good=c.post('/api/v1/auth/login',json={**login,'otp':current_code(secret)});assert good.status_code==200
-    assert c.post('/api/v1/auth/login',json={**login,'otp':current_code(secret)}).status_code==401  # replay
+    code=current_code(secret)  # one captured code: a 30-second boundary between the two requests must not turn the replay into a fresh step
+    good=c.post('/api/v1/auth/login',json={**login,'otp':code});assert good.status_code==200
+    assert c.post('/api/v1/auth/login',json={**login,'otp':code}).status_code==401  # replay
     me=c.get('/api/v1/me',headers={'Authorization':'Bearer '+good.json()['accessToken']}).json();assert me['mfaEnabled']
 
 
