@@ -97,3 +97,44 @@ test('an OD input example keeps the old draft blocked until generated, while a n
   assert.deepEqual(a.errors,[]);
  }finally{a.dom.window.close();}
 });
+
+function matrixValues(a,key,field){return [...a.w.document.querySelectorAll('[data-matrix-key="'+key+'"][data-matrix-field="'+field+'"]')].map(el=>el.value);}
+test('matrices use the accepted package once; edits during a pending update cannot create new matrices or a success',async()=>{
+ const a=await app();try{
+  const original=a.w.MiyarODEngine.generate;let calls=0,accepted=0,last;
+  a.w.MiyarODEngine.generate=(...args)=>{calls++;return original(...args);};
+  a.w.addEventListener('miyar:od-generated',event=>{accepted++;last=event.detail.proposal;});
+  await generate(a,leadership);
+  assert.equal(calls,1,'matrix synchronization does not rerun the engine');assert.equal(accepted,1);
+  assert.deepEqual(matrixValues(a,'kpis','metric'),Array.from(last.content.kpis,row=>row.metric));
+  assert.deepEqual(matrixValues(a,'skillRequirements','name'),Array.from(last.content.skillRequirements,row=>row.name));
+  const previousMetrics=matrixValues(a,'kpis','metric'),previousSkills=matrixValues(a,'skillRequirements','name');
+  const pending=generate(a,'Lead a team of 6 accountants; approve accounting entries; review the financial close.');
+  set(a,'[data-od-responsibilities]',conflicting);
+  await pending;await new Promise(r=>setTimeout(r,250));
+  assert.equal(calls,2,'the submitted attempt is the only further engine call');assert.equal(accepted,1,'changed inputs cannot emit an accepted-package event');
+  assert.match(a.panel().querySelector('[data-od-status]').textContent,/Inputs changed/);
+  assert.equal(a.panel().querySelector('[data-od-result]').textContent,'');
+  assert.equal(a.$('ent-save').disabled,true);
+  assert.deepEqual(matrixValues(a,'kpis','metric'),previousMetrics);assert.deepEqual(matrixValues(a,'skillRequirements','name'),previousSkills);
+  assert.deepEqual(a.errors,[]);
+ }finally{a.dom.window.close();}
+});
+
+test('a package waiting on references cannot populate a newly created draft after model replacement',async()=>{
+ const a=await app();let release;try{
+  const fetch=a.w.fetch,gate=new Promise(resolve=>{release=resolve;});
+  a.w.fetch=async url=>{if(String(url).includes('classifications/'))await gate;return fetch(url);};
+  let accepted=0;a.w.addEventListener('miyar:od-generated',()=>accepted++);
+  set(a,'[data-od-strategy]','Improve accounting accuracy');set(a,'[data-od-department]','Finance');set(a,'[data-od-responsibilities]',leadership);
+  const previousPanel=a.panel(),pending=previousPanel.querySelector('[data-od-generate]').onclick();
+  await tick();a.$('ent-blank').click();await tick();
+  assert.notEqual(a.panel(),previousPanel);
+  release();await pending;await new Promise(r=>setTimeout(r,250));
+  assert.equal(accepted,0);assert.equal(a.w.document.querySelector('[data-field=title]').value,'');
+  assert.deepEqual(matrixValues(a,'kpis','metric'),[]);assert.deepEqual(matrixValues(a,'skillRequirements','name'),[]);
+  assert.equal(a.panel().querySelector('[data-od-result]').textContent,'');
+  assert.doesNotMatch(a.panel().querySelector('[data-od-status]').textContent,/Package generated/);
+  assert.deepEqual(a.errors,[]);
+ }finally{release?.();a.dom.window.close();}
+});

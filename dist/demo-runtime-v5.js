@@ -38,7 +38,7 @@ async function directoryFallback(input,host){
  if(!current())return;
  const out=host.querySelector('.demo-v5-output');if(!out)return;
  let recommendation,rows=[];
- try{recommendation=R?.recommend(input,occupations);}catch(error){out.innerHTML='<h3>'+t('توقف الترشيح','Recommendation stopped')+'</h3><p role="alert">'+esc(error.message)+'</p>';out.classList.add('error');if(badge())badge().textContent=t('يلزم تصحيح المدخل','CORRECTION REQUIRED');return;}
+ try{recommendation=R?.recommend({...input,locale:ar()?'ar':'en'},occupations);}catch(error){out.innerHTML='<h3>'+t('توقف الترشيح','Recommendation stopped')+'</h3><p role="alert">'+esc(error.message)+'</p>';out.classList.add('error');if(badge())badge().textContent=t('يلزم تصحيح المدخل','CORRECTION REQUIRED');return;}
  const query=C.normalize(input.objective),direct=occupations.find(r=>String(r.code)===R?.normalize(input.objective)||C.normalize(r.titleAr)===query);
  // An exact occupation lookup remains a lookup; an entered field/level requests validated analysis.
  if(direct&&!input.domain&&!input.seniority){recommendation=null;rows=[direct];}
