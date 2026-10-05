@@ -91,7 +91,18 @@ jobs:
           node-version: 22
           cache: npm
       - name: Install free Playwright browser runner
+        timeout-minutes: 10
         run: |
+          # The runner's Azure Ubuntu mirror can stall dependency downloads.
+          # Use the same signed Ubuntu archive and retain every failure gate.
+          if [ -f /etc/apt/apt-mirrors.txt ]; then
+            sudo sed -i -E 's|https?://azure\.archive\.ubuntu\.com/ubuntu/?|https://archive.ubuntu.com/ubuntu|g' /etc/apt/apt-mirrors.txt
+          fi
+          sudo tee /etc/apt/apt.conf.d/99-miyar-ci-network >/dev/null <<'APT_CONFIG'
+          Acquire::Retries "1";
+          Acquire::http::Timeout "20";
+          Acquire::https::Timeout "20";
+          APT_CONFIG
           npm ci --ignore-scripts --no-audit --no-fund
           npm install --no-save --ignore-scripts --no-audit --no-fund @playwright/test@1.55.0
           npx playwright install --with-deps chromium
