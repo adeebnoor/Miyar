@@ -9,14 +9,15 @@ test.beforeAll(async()=>{
  for(let i=0;i<100;i++){try{if((await fetch(API+'/health')).ok)return;}catch{}if(server.exitCode!==null)throw Error(logs);await new Promise(r=>setTimeout(r,200));}throw Error('Isolated API did not start: '+logs);
 });
 test.afterAll(()=>server?.kill());
-// Finish pending API route callbacks before Playwright disposes the page.
-// The previous release failed MFA teardown after its assertions passed.
-test.afterEach(async({page})=>{await page.unrouteAll({behavior:'wait'});});
+// Assertions await mutations; teardown cancels any abandoned navigation reads.
+test.afterEach(async({page})=>{await page.unrouteAll({behavior:'ignoreErrors'});});
 async function setup(page){await page.addInitScript(()=>localStorage.setItem('miyar-language','en'));await page.route('https://miyar-enterprise-api.onrender.com/**',async r=>{
  // Retry one connection reset for idempotent reads from the disposable API.
  // Writes remain single-attempt so this harness cannot duplicate mutations.
  const response=await r.fetch({url:r.request().url().replace('https://miyar-enterprise-api.onrender.com',API),maxRetries:r.request().method()==='GET'?1:0});
- await r.fulfill({response});
+ // Playwright can finish a canceled read during navigation or route teardown.
+ // Ignore only that handled-read error; writes and all other failures remain fatal.
+ try{await r.fulfill({response});}catch(error){if(!(r.request().method()==='GET'&&error.message.includes('Route is already handled')))throw error;}
 });await page.goto(BASE+'#enterprise/connection');}
 async function login(page,email){await page.locator('#ent-email').fill(email);await page.locator('#ent-password').fill('isolated-test-password-928');await page.locator('#ent-login button[type=submit]').click();await page.waitForURL(/#enterprise\/overview$/);}
 async function openAdvancedOD(page){await expect(page.locator('#miyar-od-advanced > summary')).toBeVisible();if(!await page.locator('[data-od-example]').isVisible())await page.locator('#miyar-od-advanced > summary').click();}

@@ -97,7 +97,7 @@ def validate_position_scope(value):
     scope=normalized(' '.join(str(value.get(k,'')) for k in ['team','seniority','recommendedLevel']))
     individual=any(x in scope for x in ['individual contributor','independent contributor','مساهم فردي','ممارس مستقل','دور تخصصي','لا يوجد مرؤوسون مباشرون'])
     if individual and reports>0:raise ValueError('Individual contributor positions must have zero direct reports')
-    if cost is not None and cost/count<1000:raise ValueError('Annual cost per position is implausibly low; 25 people cannot cost SAR 1,000 per year')
+    if cost is not None and cost/count<1000:raise ValueError('Annual employer cost below SAR 1,000 per person is blocked even with a manual exception')
     low,high=value.get('annualCostMin'),value.get('annualCostMax')
     if low is not None or high is not None:
         if not all(isinstance(v,(int,float)) and not isinstance(v,bool) and math.isfinite(v) and v>0 for v in [low,high]) or high<low:raise ValueError('Annual per-person cost range must be positive and ordered')
@@ -116,6 +116,9 @@ def validate_submission(content,position_id,revision):
 
 def evaluation_consistency(framework,answers,evidence):
     factors={f['id']:f for f in framework.get('factors',[])};flags=[]
+    from collections import Counter
+    counts=Counter(normalized(str(evidence.get(key,''))) for key in factors)
+    if any(text and count>2 for text,count in counts.items()):raise ValueError('Provide distinct job-specific evidence for each factor; the same text is repeated in more than two factors')
     if {'people','autonomy','impact'}.issubset(factors):
         for other in ['autonomy','impact']:
             p=next((i for i,x in enumerate(factors['people']['levels']) if x['id']==str(answers.get('people'))),None)

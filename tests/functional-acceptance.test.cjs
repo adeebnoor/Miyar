@@ -18,7 +18,7 @@ test('a corrected job evaluation clears the prior error and recalculation hint',
  const a=await app('grading');try{
   a.d.getElementById('ent-calculate').click();await settle();assert.equal(a.d.getElementById('ent-message').getAttribute('role'),'alert');await selectGradePosition(a);
   for(const x of a.d.querySelectorAll('[data-factor]')){x.value='2';x.dispatchEvent(new a.w.Event('input',{bubbles:true}));}
-  for(const x of a.d.querySelectorAll('[data-factor-evidence]')){x.value='Independent responsibilities and authority evidence';x.dispatchEvent(new a.w.Event('input',{bubbles:true}));}
+  for(const x of a.d.querySelectorAll('[data-factor-evidence]')){x.value='Independent responsibilities and authority evidence'+' — '+(x.dataset.factorEvidence||'');x.dispatchEvent(new a.w.Event('input',{bubbles:true}));}
   a.d.getElementById('ent-calculate').click();await settle();assert.match(a.d.getElementById('ent-grade-result').textContent,/148/);assert.equal(a.d.getElementById('ent-grade-hint').textContent,'');assert.equal(a.d.getElementById('ent-message').getAttribute('role'),'status');assert.match(a.d.getElementById('ent-message').textContent,/calculated/);assert.deepEqual(a.errors,[]);
  }finally{a.dom.window.close();}
 });

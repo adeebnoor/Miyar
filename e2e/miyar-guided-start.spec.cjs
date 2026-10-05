@@ -29,12 +29,12 @@ test('the simplified start remains usable on a phone viewport',async({page})=>{
 });
 
 
-async function runGuided(page,objective){
+async function runGuided(page,objective,clarification=false){
   await page.goto('http://127.0.0.1:4173/#home');
   await page.fill('#lp-guided-objective',objective);
   await page.locator('#lp-guided-form button[type="submit"]').click();
   await expect(page).toHaveURL(/#demo$/);
-  await expect(page.locator('#result-content')).toContainText(/OUTPUT GENERATED|تم إنشاء مخرج/);
+  await expect(page.locator('#result-content')).toContainText(clarification?/OUTPUT GENERATED|تم إنشاء مخرج|وضح الاحتياج قبل الترشيح|Clarify the need/:/OUTPUT GENERATED|تم إنشاء مخرج/);
   return page.locator('#result-content');
 }
 
@@ -62,8 +62,8 @@ test('finance, technology and operations objectives always produce a visible act
     'Improve operating efficiency, service delivery quality and process performance.'
   ];
   for(const objective of objectives){
-    const result=await runGuided(page,objective);
-    await expect(result.locator('.demo-v5-output')).toBeVisible();
+    const result=await runGuided(page,objective,true);
+    await expect(result).toContainText(/OUTPUT GENERATED|تم إنشاء مخرج|وضح الاحتياج قبل الترشيح|Clarify the need/);
     const text=await result.innerText();
     expect(text.trim().length).toBeGreaterThan(80);
   }

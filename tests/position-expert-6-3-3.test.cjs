@@ -6,7 +6,7 @@ const kpi={outcome:'Shorter service processing',metric:'Median processing days',
 const storage=()=>{let value;return {getItem:()=>value||null,setItem:(_,v)=>{value=v;}};};
 test('expert 25 positions / SAR 1,000 is blocked on import and direct local save, even with manual reason',()=>{
  const bad={...band,annualCost:1000,costBasis:'manual-exception',costExceptionReason:'A reviewer entered this total in the demonstration form.'};
- for(const fn of [()=>C.importDraft({content:bad}),()=>C.save(storage(),bad)])assert.throws(fn,e=>e.fields.includes('annualCost')&&/implausibly low/.test(e.message));
+ for(const fn of [()=>C.importDraft({content:bad}),()=>C.save(storage(),bad)])assert.throws(fn,e=>e.fields.includes('annualCost')&&/below 1,000/.test(e.message));
 });
 test('position cost uses annual grade band midpoint times headcount with explicit per-person limits',()=>{
  assert.deepEqual(C.positionCost(band),{annualCost:3600000,annualCostMin:120000,annualCostMax:168000,costBasis:'grade-band'});
@@ -75,14 +75,14 @@ test('grade annotation stays tied to the selected revision; a changed source cre
   let row=JSON.parse(a.w.localStorage.getItem(C.KEY))[0];
   a.w.MiyarEnterprise.open('grading');await settle();a.$('grade-position').value='0';a.$('grade-position').dispatchEvent(new a.w.Event('change'));await settle();
   for(const input of a.w.document.querySelectorAll('[data-factor]'))input.value='2';
-  for(const input of a.w.document.querySelectorAll('[data-factor-evidence]'))input.value='Develop and test software and analyze user requirements under documented department policies.';
+  for(const input of a.w.document.querySelectorAll('[data-factor-evidence]'))input.value='Develop and test software and analyze user requirements under documented department policies for '+input.dataset.factorEvidence;
   for(const input of a.w.document.querySelectorAll('[data-second-factor]'))input.value='2';
   for(const [key,value]of Object.entries({salaryMin:'10000',salaryMax:'14000',salarySource:'Documented internal software-development band'})){const input=a.w.document.querySelector('[data-pay="'+key+'"]');input.value=value;}
   a.$('calculate').focus();a.$('calculate').click();await settle();
   a.w.document.querySelector('[data-evaluator="0"]').value='Evaluator A';a.w.document.querySelector('[data-evaluator="1"]').value='Evaluator B';
   a.$('bind-grade').focus();a.$('bind-grade').click();await settle();
   const annotation=a.w.MiyarEnterpriseGrade.contextFor(row);assert.equal(annotation.evaluatedPositionId,row.id);assert.equal(annotation.evaluatedPositionRevision,1);assert.ok(annotation.salaryGrade);
-  assert.equal(JSON.parse(a.w.localStorage.getItem(C.KEY))[0].content.evaluatedPositionId,undefined,'source snapshot does not acquire a claimed evaluation');assert.equal(JSON.parse(a.w.localStorage.getItem(C.KEY))[0].content.salaryMax,30000,'proposed source band is immutable');
+  assert.equal(JSON.parse(a.w.localStorage.getItem(C.KEY))[0].content.evaluatedPositionId,undefined,'source snapshot does not acquire a claimed evaluation');assert.equal(JSON.parse(a.w.localStorage.getItem(C.KEY))[0].content.salaryMax,25000,'proposed source band is immutable');
   a.w.MiyarEnterprise.open('workspace');await settle();a.w.document.querySelector('[data-position="'+row.id+'"]').click();await settle();
   a.$('export-json').onclick;assert.match(a.$('position-detail').textContent,new RegExp(annotation.salaryGrade));
   a.$('edit-position').click();await settle();
@@ -130,12 +130,12 @@ test('work-location dropdown saves a Saudi city and preserves an imported custom
 test('initial budget request has an explicit proposed band and can submit without claiming a completed evaluation',async()=>{
  for(const locale of ['ar','en']){const a=await ui(locale);try{
   a.$('sample').click();a.$('save').focus();a.$('save').click();await settle();const row=JSON.parse(a.w.localStorage.getItem(C.KEY))[0];
-  assert.equal(row.content.salaryGrade,'G04');assert.equal(row.content.salaryMin,10000);assert.equal(row.content.salaryMax,30000);assert.equal(row.content.costBasis,'grade-band');assert.equal(row.content.annualCost,240000);assert.equal(row.content.annualCostMin,120000);assert.equal(row.content.annualCostMax,360000);
+  assert.equal(row.content.salaryGrade,'G04');assert.equal(row.content.salaryMin,15000);assert.equal(row.content.salaryMax,25000);assert.equal(row.content.costBasis,'grade-band');assert.equal(row.content.annualCost,240000);assert.equal(row.content.annualCostMin,180000);assert.equal(row.content.annualCostMax,300000);
   for(const key of ['evaluatedPositionId','evaluatedPositionRevision','evaluationSummary','evaluationCommitteeJSON'])assert.equal(row.content[key],undefined,key);
   assert.doesNotThrow(()=>C.validatePosition(row.content,{submit:true,positionId:row.id,revision:1}));assert.equal(a.w.MiyarPositionContext.grade,null);assert.equal(a.w.MiyarPositionContext.proposedGrade,'G04');
   const html=D.html(row.content,locale,row);assert.match(html,new RegExp(locale==='ar'?'الدرجة والنطاق المدخلان مقترحان':'entered grade and range are proposals'));
   for(const key of ['salaryGrade','salarySource','salaryCurrency','salaryPeriod'])assert.ok(a.w.document.querySelector('[data-field="'+key+'"]'));
-  const maximum=a.w.document.querySelector('[data-number="salaryMax"]');assert.ok(maximum);maximum.value='32000';maximum.dispatchEvent(new a.w.Event('input'));assert.equal(a.w.document.querySelector('[data-number="annualCost"]').value,'252000');assert.deepEqual(a.errors,[]);
+  const maximum=a.w.document.querySelector('[data-number="salaryMax"]');assert.ok(maximum);maximum.value='32000';maximum.dispatchEvent(new a.w.Event('input'));assert.equal(a.w.document.querySelector('[data-number="annualCost"]').value,'282000');assert.deepEqual(a.errors,[]);
  }finally{a.dom.window.close();}}
 });
 

@@ -48,7 +48,7 @@ def decide(c,auth,p,role,evidence,decision='approve'):
     return c.post('/api/v1/positions/'+p['id']+'/decisions',headers=auth(role),json={'revision':p['revision'],'decision':decision,'comment':'Reviewed evidence for test','evidence':evidence})
 def activate(c,auth,p):
     submit(c,auth,p);r=decide(c,auth,p,'od_specialist',{'scopeReviewed':True,'mappingReviewed':True,'businessValidated':True,'roleNotPerson':True,'businessReviewer':'Department reviewer for test','businessReviewDate':'2026-09-01'});assert r.status_code==200,r.text
-    body={'revision':p['revision'],'answers':{factor['id']:'2' for factor in DEFAULT_FRAMEWORK['factors']},'evidence':{k:'Specific test scope evidence quoting reviewed responsibilities and delegated decision authority' for k in [factor['id'] for factor in DEFAULT_FRAMEWORK['factors']]}}
+    body={'revision':p['revision'],'answers':{factor['id']:'2' for factor in DEFAULT_FRAMEWORK['factors']},'evidence':{k:'Specific test scope evidence quoting reviewed responsibilities and delegated decision authority'+" — "+str(k) for k in [factor['id'] for factor in DEFAULT_FRAMEWORK['factors']]}}
     for reviewer in ['total_rewards','total_rewards2']:
         r=c.post('/api/v1/positions/'+p['id']+'/evaluation',headers=auth(reviewer),json=body);assert r.status_code==200,r.text
     r=decide(c,auth,p,'total_rewards',{'payFrameworkReviewed':True});assert r.status_code==200,r.text

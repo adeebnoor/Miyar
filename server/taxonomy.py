@@ -35,7 +35,7 @@ class Catalog:
         self.role_skills={k:p['skills'] for k,p in self.profiles.items()};self.model=None;self.matrix=None;self.model_lock=threading.Lock()
         self.skill_matrix=None;self.semantic_index_status='pending';self.semantic_indexed_documents=0;self.semantic_failure=None
     def match_occupation(self,title):
-        q=normalize_phrase(title);singular=re.sub(r'\b(engineers|teachers|nurses|accountants|drivers|cleaners)\b',lambda m:m.group()[:-1],q);matches=[];seen=set()
+        q=normalize_phrase(title).replace('hr manager','human resources manager');singular=re.sub(r'\b(engineers|teachers|nurses|accountants|drivers|cleaners)\b',lambda m:m.group()[:-1],q);matches=[];seen=set()
         masculine=' '.join(self.title_word_forms.get(word,word) for word in q.split());terms=list(dict.fromkeys([q,singular,masculine]))
         for term in terms:
             for code,basis,title_en in self.title_index.get(term,[]):
@@ -322,8 +322,11 @@ def bulk_diagnosis(rows,catalog):
         if hierarchy_provided and not row['positionId']:row['flags'].append('missing_position_id')
         if row['parentPositionId'] and row['parentPositionId'] not in by_id:row['flags'].append('missing_parent')
         row['layer']=depth(row);parent=by_id.get(row['parentPositionId']);grade=rank(row['grade']);parent_grade=rank(parent['grade']) if parent else None
-        if parent and grade is not None and parent_grade is not None and grade>=parent_grade:row['flags'].append('grade_inversion')
+        if parent and parent is not row and 'hierarchy_cycle' not in row['flags'] and grade is not None and parent_grade is not None and grade>=parent_grade:row['flags'].append('grade_inversion')
         if row['grade'] and grade is None:row['flags'].append('unknown_grade')
+    for row in output:
+        row['actualDirectReports']=sum(child is not row and child['parentPositionId']==row['positionId'] for child in output)
+        if hierarchy_provided and row['positionId'] and row['directReports'] is not None and row['directReports']!=row['actualDirectReports']:row['flags'].append('direct_reports_mismatch')
     spans=sorted(row['directReports'] for row in output if row['directReports'] is not None and row['directReports']>0 and row['directReports']==int(row['directReports']))
     span={'managers':len(spans),'averageSpan':round(sum(spans)/len(spans),1),'medianSpan':(spans[(len(spans)-1)//2]+spans[len(spans)//2])/2,'singleReportManagers':sum(n==1 for n in spans),'narrowManagers':sum(n<=3 for n in spans),'wideManagers':sum(n>=15 for n in spans)} if spans else None
     hierarchy={'layers':max((r['layer'] or 0 for r in output),default=0),'roots':sum(bool(r['positionId']) and not r['parentPositionId'] for r in output),'missingParents':[r['row'] for r in output if 'missing_parent' in r['flags']],'cycleRows':[r['row'] for r in output if 'hierarchy_cycle' in r['flags']],'gradeInversions':[{'row':r['row'],'positionId':r['positionId'],'parentPositionId':r['parentPositionId'],'grade':r['grade'],'parentGrade':by_id[r['parentPositionId']]['grade']} for r in output if 'grade_inversion' in r['flags']]}

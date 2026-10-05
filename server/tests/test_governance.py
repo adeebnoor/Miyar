@@ -27,7 +27,7 @@ def test_all_stages_budget_and_duplicate_approval(env):
     assert decide(c,auth,p,'od_specialist',{'scopeReviewed':True,'mappingReviewed':True,'businessValidated':True,'roleNotPerson':True,'businessReviewer':'Department reviewer for test','businessReviewDate':'2026-09-01'}).status_code==200
     assert decide(c,auth,p,'od_specialist',{'scopeReviewed':True,'mappingReviewed':True,'businessValidated':True,'roleNotPerson':True,'businessReviewer':'Department reviewer for test','businessReviewDate':'2026-09-01'}).status_code==403
     assert decide(c,auth,p,'total_rewards',{'payFrameworkReviewed':True}).status_code==422
-    body={'revision':1,'answers':{factor['id']:'2' for factor in DEFAULT_FRAMEWORK['factors']},'evidence':dict.fromkeys([factor['id'] for factor in DEFAULT_FRAMEWORK['factors']],'Scoped role evidence quoting the responsibilities and delegated decision authority')}
+    body={'revision':1,'answers':{factor['id']:'2' for factor in DEFAULT_FRAMEWORK['factors']},'evidence':{factor['id']: 'Scoped role evidence quoting the responsibilities and delegated decision authority'+' — '+factor['id'] for factor in DEFAULT_FRAMEWORK['factors']}}
     for reviewer in ['total_rewards','total_rewards2']:assert c.post('/api/v1/positions/'+p['id']+'/evaluation',headers=auth(reviewer),json=body).status_code==200
     assert decide(c,auth,p,'total_rewards',{'payFrameworkReviewed':True}).status_code==200
     for count,budget in [(True,240000),(1,239999),(0,240000),(1.5,240000)]:
@@ -135,7 +135,7 @@ def test_free_text_field_seniority_roundtrip_and_exports(env):
 def test_approved_evaluation_is_locked_after_rewards_stage(env):
     app,c,auth,create=env;p=create();submit(c,auth,p)
     decide(c,auth,p,'od_specialist',{'scopeReviewed':True,'mappingReviewed':True,'businessValidated':True,'roleNotPerson':True,'businessReviewer':'Department reviewer for test','businessReviewDate':'2026-09-01'})
-    url='/api/v1/positions/'+p['id']+'/evaluation';body={'revision':1,'answers':dict.fromkeys([factor['id'] for factor in DEFAULT_FRAMEWORK['factors']],'2'),'evidence':dict.fromkeys([factor['id'] for factor in DEFAULT_FRAMEWORK['factors']],'Reviewed scope quoting responsibilities and authority in the position description')}
+    url='/api/v1/positions/'+p['id']+'/evaluation';body={'revision':1,'answers':dict.fromkeys([factor['id'] for factor in DEFAULT_FRAMEWORK['factors']],'2'),'evidence':{factor['id']: 'Reviewed scope quoting responsibilities and authority in the position description'+' — '+factor['id'] for factor in DEFAULT_FRAMEWORK['factors']}}
     for reviewer in ['total_rewards','total_rewards2']:assert c.post(url,headers=auth(reviewer),json=body).status_code==200
     assert decide(c,auth,p,'total_rewards',{'payFrameworkReviewed':True}).status_code==200
     body['answers']['impact']='4'

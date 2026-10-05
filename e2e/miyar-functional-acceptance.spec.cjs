@@ -66,7 +66,7 @@ for(const lang of ['en','ar'])test('complete real organization workflow, five st
  expect(approved.content.salaryGrade).toBe('G04');expect(approved.proposedGrade.status).toBe('preliminary-proposal');expect(approved.evaluatedGrade.grade).toBe('G03');
  expect(await page.evaluate(()=>window.MiyarEnterprise.positionContext())).toMatchObject({positionId:approved.id,revision:1,grade:'G03'});
  await page.goto(BASE+'#enterprise/compensation');await expect(page.locator('#cp-grade')).toHaveValue('G03');await page.locator('[data-cp-reviewed-band]').click();
- await expect(page.locator('#cp-min')).toHaveValue('10000');await expect(page.locator('#cp-max')).toHaveValue('30000');await page.locator('[data-cp-run]').click();
+ await expect(page.locator('#cp-min')).toHaveValue('15000');await expect(page.locator('#cp-max')).toHaveValue('25000');await page.locator('[data-cp-run]').click();
  expect(await page.evaluate(()=>window.MiyarCompensationWorkbench.getCostContext())).toMatchObject({positionId:approved.id,revision:1,grade:'G03',annualEmployerCostPerFte:240000});
  await page.goto(BASE+'#enterprise/manpower');await page.locator('#mp-position').selectOption(approved.id);await expect(page.locator('#mp-grade')).toHaveValue('G03');await expect(page.locator('#mp-cost')).toHaveValue('240000');
  await expect(page.locator('#mp-current')).toHaveValue('');await expect(page.locator('#mp-vacant')).toHaveValue('');await open(page,title);
@@ -114,6 +114,8 @@ test('paired pilot evaluation computes agreement and time saving, exports and re
 
 test('local package preview, editable fields, JSON, HTML and real PDF contain the authored role',async({page})=>{
  await setup(page);await page.goto(BASE+'#enterprise/create');await page.locator('#ent-sample').click();await page.locator('[data-field="title"]').fill('Synthetic local package');await page.locator('#ent-generate-kpis').click();await page.locator('#ent-generate-raci').click();
+ // Generated KPIs are drafts; the author supplies the measured baseline and reviewed target duration.
+ for(const [field,value]of Object.entries({baseline:'80% measured in the synthetic quality report',target:'95% of synthetic acceptance checks',duration:'90 days'}))for(const cell of await page.locator('#ent-kpi-matrix [data-matrix-field="'+field+'"]').all())if(!(await cell.inputValue()).trim())await cell.fill(value);
  const draft=json(await download(page,'#ent-local-json'));expect(draft.content?.title||draft.title).toBe('Synthetic local package');
  await page.locator('#ent-preview-draft').click();await expect(page.locator('.ent-report-dialog')).toContainText('Synthetic local package');await page.locator('#ent-close-report').click();
  const html=await download(page,'#ent-html-draft');expect(html.bytes.toString()).toContain('Synthetic local package');expect(html.bytes.toString()).toContain('RACI');

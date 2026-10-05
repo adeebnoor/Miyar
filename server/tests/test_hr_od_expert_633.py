@@ -10,7 +10,7 @@ DEPARTMENT={'businessValidated':True,'budgetOwnerConfirmed':True,'headcountConfi
 OD={'scopeReviewed':True,'mappingReviewed':True,'businessValidated':True,'roleNotPerson':True,'businessReviewer':'Synthetic budget owner','businessReviewDate':'2026-09-01'}
 def raw_submit(c,auth,p):return c.post('/api/v1/positions/'+p['id']+'/submit',headers=auth(),json={'revision':p['revision'],'reason':'Expert acceptance submission'})
 def evaluation_body(p,**answers):
-    return {'revision':p['revision'],'answers':{**{f['id']:'2' for f in DEFAULT_FRAMEWORK['factors']},**answers},'evidence':{f['id']:'Specific responsibility evidence: analyze requirements, develop code, test releases and document delegated decisions.' for f in DEFAULT_FRAMEWORK['factors']}}
+    return {'revision':p['revision'],'answers':{**{f['id']:'2' for f in DEFAULT_FRAMEWORK['factors']},**answers},'evidence':{f['id']:'Specific responsibility evidence: analyze requirements, develop code, test releases and document delegated decisions.'+" — "+str(f['id']) for f in DEFAULT_FRAMEWORK['factors']}}
 def reach_rewards(c,auth,p):submit(c,auth,p);assert decide(c,auth,p,'od_specialist',OD).status_code==200
 
 def test_new_request_starts_with_budget_owner_and_department_scope(env):

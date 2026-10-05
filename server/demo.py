@@ -131,7 +131,7 @@ def seed(app, password):
                     if stage == 'total_rewards':
                         for reviewer in ['total_rewards','total_rewards2']:
                             client.post('/api/v1/positions/' + p['id'] + '/evaluation', headers=auth(reviewer), json={'revision': p['revision'], 'answers': {f['id']: '3' if f['id']=='knowledge' else '2' for f in DEFAULT_FRAMEWORK['factors']},
-                                    'evidence': {f['id']: 'Synthetic evidence quoting the position responsibilities and delegated authority' for f in DEFAULT_FRAMEWORK['factors']}}).raise_for_status()
+                                    'evidence': {f['id']: 'Synthetic evidence quoting the position responsibilities and delegated authority for '+f['id'] for f in DEFAULT_FRAMEWORK['factors']}}).raise_for_status()
                     evidence = {**EVIDENCE[stage], **({'approvedAnnualBudget': cost} if stage == 'finance' else {})}
                     reviewer='department_manager_ops' if stage=='department_manager' and dept=='OPS' else stage
                     r = client.post('/api/v1/positions/' + p['id'] + '/decisions', headers=auth(reviewer), json={'revision': p['revision'], 'decision': 'approve', 'comment': 'Synthetic approval for the demonstration', 'evidence': evidence})

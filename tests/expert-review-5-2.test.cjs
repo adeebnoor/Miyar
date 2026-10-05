@@ -122,7 +122,7 @@ test('job evaluation resolves points to the approved institution grade and shows
  const a=await app('#enterprise/grading');try{
   await selectGradePosition(a);const I=a.w.MiyarInstitutionProfile;I.saveLocal(I.profileExample(),true);
   const events=[];a.w.addEventListener('miyar:grade-calculated',e=>events.push(e.detail.grade));
-  for(const s of a.d.querySelectorAll('[data-factor]'))s.value='5';for(const e of a.d.querySelectorAll('[data-factor-evidence]'))e.value='Leads a programme with cross-functional decisions';
+  for(const s of a.d.querySelectorAll('[data-factor]'))s.value='5';for(const e of a.d.querySelectorAll('[data-factor-evidence]'))e.value='Leads a programme with cross-functional decisions — '+e.dataset.factorEvidence;
   a.$('ent-calculate').click();await settle();
   const out=a.$('ent-grade-result');assert.match(out.querySelector('.ent-grade-output').textContent,/741/);assert.equal(out.querySelectorAll('.ent-grade-breakdown tbody tr').length,8);
   assert.match(out.querySelector('.ent-institution-grade').textContent,/Approved structure grade: G11 · Manager/);assert.deepEqual(events,[]);committeeRatings(a,5);a.$('ent-bind-grade').click();await settle();a.$('ent-grade-to-compensation').click();await settle();assert.deepEqual(events,['G11 · Manager']);
@@ -133,7 +133,7 @@ test('job evaluation resolves points to the approved institution grade and shows
 test('job evaluation keeps the illustrative band when no institution grade structure exists',async()=>{
  const a=await app('#enterprise/grading');try{
   await selectGradePosition(a);const events=[];a.w.addEventListener('miyar:grade-calculated',e=>events.push(e.detail.grade));
-  for(const s of a.d.querySelectorAll('[data-factor]'))s.value='2';for(const e of a.d.querySelectorAll('[data-factor-evidence]'))e.value='Develop and test software under documented technical review authority';
+  for(const s of a.d.querySelectorAll('[data-factor]'))s.value='2';for(const e of a.d.querySelectorAll('[data-factor-evidence]'))e.value='Develop and test software under documented technical review authority — '+e.dataset.factorEvidence;
   a.$('ent-calculate').click();await settle();
   assert.match(a.$('ent-grade-result').querySelector('.ent-institution-grade').textContent,/No institution grade structure/);assert.deepEqual(events,[]);committeeRatings(a,2);a.$('ent-bind-grade').click();await settle();a.$('ent-grade-to-compensation').click();await settle();assert.deepEqual(events,['G04']);
  }finally{a.dom.window.close();}

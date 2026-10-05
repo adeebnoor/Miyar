@@ -2,7 +2,7 @@
 (function(root){
 'use strict';
 const catalog=root.MiyarRoleCatalog||(typeof require==='function'?require('./role-catalog.js'):null);
-function normalize(value){return String(value??'').normalize('NFKC').toLowerCase().replace(/ًا|اً/g,'').replace(/[\u064b-\u065f\u0670ـ]/g,'').replace(/[أإآٱ]/g,'ا').replace(/ى/g,'ي').replace(/[٠-٩۰-۹]/g,c=>'٠١٢٣٤٥٦٧٨٩'.includes(c)?'٠١٢٣٤٥٦٧٨٩'.indexOf(c):'۰۱۲۳۴۵۶۷۸۹'.indexOf(c)).replace(/[^\p{L}\p{N}\s]/gu,' ').split(/\s+/).filter(Boolean).map(w=>w.replace(/^(?:و|ب|ك)ال(?=.{3,})/,'ال').replace(/^لل(?=.{3,})/,'ال').replace(/^ب(?=شؤون)/,'').replace(/^ال(?=.{3,})/,'')).join(' ');}
+function normalize(value){return String(value??'').normalize('NFKC').toLowerCase().replace(/\bapps?\b/g,'application').replace(/\bautomobiles?\b/g,'car').replace(/\bceo\b/g,'chief executive').replace(/ًا|اً/g,'').replace(/[\u064b-\u065f\u0670ـ]/g,'').replace(/[أإآٱ]/g,'ا').replace(/ى/g,'ي').replace(/[٠-٩۰-۹]/g,c=>'٠١٢٣٤٥٦٧٨٩'.includes(c)?'٠١٢٣٤٥٦٧٨٩'.indexOf(c):'۰۱۲۳۴۵۶۷۸۹'.indexOf(c)).replace(/[^\p{L}\p{N}\s]/gu,' ').split(/\s+/).filter(Boolean).map(w=>w.replace(/^(?:و|ب|ك)ال(?=.{3,})/,'ال').replace(/^لل(?=.{3,})/,'ال').replace(/^ب(?=شؤون)/,'').replace(/^ال(?=.{3,})/,'')).join(' ');}
 // Arabic conjunctions attach to task nouns (وتخطيط، واستثمار). Keep word
 // boundaries in English so "it" cannot match "audit" or "investment".
 function includesTerm(n,q){
@@ -17,7 +17,7 @@ const score=(text,terms)=>anchors(text,terms).reduce((n,x)=>n+Math.min(50,x.leng
 // One title/translation matcher is used by the directory, recommendation and
 // structure audit. English labels are authored search aids; source titles remain Arabic.
 let occupationAliases={},indexedRoles=null,indexedAliases=null;
-function occupationalTerms(title){const n=normalize(title),singular=n.replace(/\b(engineers|teachers|nurses|accountants|drivers|cleaners)\b/g,w=>w.slice(0,-1));const masculine=n.split(' ').map(w=>catalog.titleWordForms?.[w]||w).join(' ');return [...new Set([n,singular,masculine])];}
+function occupationalTerms(title){const original=normalize(title),n=original.replace(/\bhuman resources?\b/g,'human resources').replace(/\bhr\b/g,'human resources'),singular=n.replace(/\b(engineers|teachers|nurses|accountants|drivers|cleaners)\b/g,w=>w.slice(0,-1));const masculine=n.split(' ').map(w=>catalog.titleWordForms?.[w]||w).join(' ');return [...new Set([original,n,singular,masculine])];}
 const occupationIndexCache=new WeakMap();
 const catalogTitleIndex=new Map();
 function refreshCatalogIndex(){if(indexedRoles===catalog.roles&&indexedAliases===catalog.occupationAliases)return;indexedRoles=catalog.roles;indexedAliases=catalog.occupationAliases;occupationAliases=Object.fromEntries(Object.entries(catalog.occupationAliases||{}).map(([key,code])=>[normalize(key),code]));catalogTitleIndex.clear();for(const role of catalog.roles)for(const label of [role.titleAr,role.titleEn,role.referenceTitleAr]){const n=normalize(label);catalogTitleIndex.set(n,[...(catalogTitleIndex.get(n)||[]),role]);}}
@@ -38,6 +38,7 @@ function directorySearch(nodes,q,parent){
 }
 function objectiveReview(input={}){
  refreshCatalogIndex();const work=String(input.responsibilities||input.objective||input.strategyObjective||'').trim(),n=normalize(work);
+ if(!/[;؛\n]/.test(work)&&/\b(?:reduce|lower|decrease|cut|improve|increase)\b|خفض|تقليل|تحسين|رفع/.test(n)&&/\b(?:absenteeism|absence|costs?|expenses?|profitability|productivity)\b|غياب|تكاليف|تكلفة|نفقات|انتاجية/.test(n)&&!String(input.responsibilities||'').trim()&&!/\b(?:calculate|reconcile|develop|design|audit|prepare|monitor)\b|تسوية|تصميم|تطوير|تدقيق|حساب/.test(n))return {kind:'work-design',context:'business-outcome',candidates:[],messageAr:'ما العملية التي ستتغير، وما مسؤوليات صاحبها؟ هل يكفي تحسين العمل الحالي أم يلزم منصب جديد؟ حدّد المهام قبل ترشيح مهنة.',messageEn:'Which process will change, and what will its owner do? Can existing work be improved, or is a new position needed? Specify the duties before recommending an occupation.',alternativesAr:['تحسين العملية القائمة','توزيع المسؤوليات على الفريق الحالي','تحديد مهام المنصب عند ثبوت الحاجة'],alternativesEn:['Improve the current process','Distribute responsibilities within the existing team','Define position duties if a new role is justified']};
  const concreteCare=/(?:administer|record|check|monitor) (?:medication|medications|vital signs)|اعطاء الادوية|قياس العلامات الحيوية|توثيق الرعاية/.test(n);
  const retentionOutcome=/turnover|retention|patient safety|دوران|الاحتفاظ|احتفاظ|سلامة المرضي|سلامة المرضى/.test(n)||/\bretain\s+(?:(?:key|our|the|qualified|skilled)\s+){0,2}(?:employees?|staff|nurses?|talent|customers?|clients?)\b/.test(n);
  if(!concreteCare&&/\b(?:reduce|lower|improve|increase|retain)\b|خفض|تقليل|تحسين|رفع|احتفاظ/.test(n)&&retentionOutcome){
@@ -176,7 +177,7 @@ function canonicalDuty(text){return normalize(text).split(' ').map(word=>dutyVer
 const dutyScoreCache=new Map();
 function dutyScore(text,f){
  const scope=canonicalDuty(text),key=f.id+'\0'+scope;if(dutyScoreCache.has(key))return dutyScoreCache.get(key);
- if(f.id==='generalManagement'&&/calendar|diary|travel|مواعيد|مفكرة|سفر/.test(scope)&&!/(?:lead|manage) (?:the )?company|قيادة شركة|قيادة الشركة/.test(scope))return {value:0,specific:[]};
+ if(f.id==='generalManagement'&&/calendar|diary|travel|drive|driving|chauffeur|قيادة سيارة|قيادة السيارة|مواعيد|مفكرة|سفر/.test(scope)&&!/(?:lead|manage) (?:the )?company|قيادة شركة|قيادة الشركة/.test(scope))return {value:0,specific:[]};
  if(f.id==='securitySafety'&&/cyber|firewall|siem|vulnerability|\bsoc\b|penetration|database|digital access|security events|identity and access|\biam\b|\bedr\b|endpoint|جدار حماية|جدران حماية|ثغرات|information security|امن معلومات|امن سيبراني|سيبراني|امن بيانات|قواعد بيانات|صلاحيات رقمية/.test(scope)&&!/(?:guard|patrol|workplace|occupational|visitor|حارس|حراس|حراسة|جولات امنية|سلامة مهنية|معدات وقاية|اخطار مهنية)/.test(scope))return {value:0,specific:[]};
  const terms=domainTerms(f),specific=anchors(scope,terms);let value=score(scope,terms);
  // Shared finance nouns are usable only inside an expressly financial action.
