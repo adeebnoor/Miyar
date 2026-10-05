@@ -27,3 +27,26 @@ for(const locale of ['ar','en'])test('guided position suggests source-linked fie
  await page.locator('[data-number=headcount]').fill('0');await page.locator('#ent-position-budget > summary').click();await page.locator('#ent-save').click();
  await expect(page.locator('#ent-position-budget')).toHaveAttribute('open','');await expect(page.locator('[data-number=headcount]')).toBeFocused();await expect(page.locator('[data-number=headcount]')).toHaveAttribute('aria-invalid','true');
 });
+
+for(const locale of ['ar','en'])for(const viewport of [{name:'desktop',width:1440,height:1100},{name:'mobile',width:390,height:844}])test('guided position labels and purpose guidance remain uncovered / '+locale+' / '+viewport.name,async({page})=>{
+ await page.setViewportSize({width:viewport.width,height:viewport.height});
+ await page.addInitScript(locale=>localStorage.setItem('miyar-language',locale),locale);
+ await page.route('https://miyar-enterprise-api.onrender.com/**',r=>r.fulfill({status:401,json:{detail:'Local visual acceptance'}}));
+ await page.goto('http://127.0.0.1:4173/#enterprise/create');
+ const keys=['businessNeed','responsibilities','title','successMeasures'];
+ await expect(page.locator('#ent-position-start .ent-form-grid > label')).toHaveCount(4);
+ const inspect=()=>page.evaluate(keys=>{
+  const start=document.getElementById('ent-position-start'),actions=start.closest('.ent-card').querySelector(':scope > .ent-form-actions'),actionRect=actions.getBoundingClientRect();
+  const overlaps=[],obscured=[],missingGuidance=[];
+  const hit=(key,part,node,rect)=>{const x=(rect.left+rect.right)/2,y=(rect.top+rect.bottom)/2;if(x<0||x>=innerWidth||y<0||y>=innerHeight)return;const top=document.elementFromPoint(x,y);if(!top||!(top===node||node.contains(top)))obscured.push(key+':'+part);};
+  for(const key of keys){const input=start.querySelector('[data-field="'+key+'"]'),label=input.closest('label'),rect=label.getBoundingClientRect(),why=label.querySelector('small');
+   if(Math.min(rect.right,actionRect.right)>Math.max(rect.left,actionRect.left)&&Math.min(rect.bottom,actionRect.bottom)>Math.max(rect.top,actionRect.top))overlaps.push(key);
+   if(!why||why.textContent.trim().length<20)missingGuidance.push(key);
+   hit(key,'input',input,input.getBoundingClientRect());if(why)hit(key,'purpose',why,why.getBoundingClientRect());
+   const text=[...label.childNodes].find(n=>n.nodeType===Node.TEXT_NODE&&n.textContent.trim());if(text){const range=document.createRange();range.selectNodeContents(text);hit(key,'label',label,range.getBoundingClientRect());}
+  }
+  return {overlaps,obscured,missingGuidance,overflow:document.documentElement.scrollWidth>innerWidth};
+ },keys);
+ for(const state of ['initial','start-scrolled']){if(state==='start-scrolled')await page.locator('#ent-position-start').evaluate(e=>e.scrollIntoView({block:'start',behavior:'instant'}));const layout=await inspect();expect(layout.overlaps,state+' action overlap').toEqual([]);expect(layout.obscured,state+' obscured input or guidance').toEqual([]);expect(layout.missingGuidance).toEqual([]);expect(layout.overflow).toBe(false);}
+ for(const key of keys){await page.locator('#ent-position-start [data-field='+key+']').evaluate(e=>e.scrollIntoView({block:'center',behavior:'instant'}));const layout=await inspect();expect(layout.overlaps,key+' action overlap after scroll').toEqual([]);expect(layout.obscured,key+' obscured input or guidance after scroll').toEqual([]);}
+});

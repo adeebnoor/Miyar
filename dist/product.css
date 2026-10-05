@@ -31,3 +31,6 @@
 [data-review-tab]{white-space:nowrap;min-width:3.5rem;word-break:normal;overflow-wrap:normal}
 [data-action-feedback]{scroll-margin-block:5rem;margin-block:.75rem}
 [aria-invalid="true"]{border-color:#a53a34!important;outline:2px solid rgba(165,58,52,.18);outline-offset:2px}
+
+/* Keep guided-start fields and their explanations clear of the save actions. */
+#ent-content .ent-card:has(#ent-position-start) > .ent-form-actions{position:static}
