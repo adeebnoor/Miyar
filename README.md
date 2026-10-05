@@ -1,4 +1,8 @@
-## Current release: 6.1.1
+## Current release: 7.0.1
+
+The website is at https://adeebnoor.github.io/Miyar/?v=7.0.1#home. Release 7 answers the expert's fifteen items (see the public change log and `expert-v7.html`). 7.0.1 makes one saved position read the same on the evaluation, planning and compensation screens, points the guided tour at the visible position-design path, and fixes the last contrast failures ([expert handoff](docs/expert-handoff-7.0.1.md)).
+
+## Release 6.1.1
 
 The website is at https://adeebnoor.github.io/Miyar/#home. The entrance explains the product's proposed advantage: a Saudi, bilingual workforce decision journey connecting role scope, headcount, grade, cost and revision-bound review. The six-service directory distinguishes local tools from services requiring an organization account or server configuration.
 
@@ -64,7 +68,7 @@ The compensation workspace links an evaluated grade to an **organization-provide
 - 599 educational specializations and nine levels from the supplied 2020 education edition; leading zeros are preserved.
 - SSCO-based professional-license review signals for engineering, accounting and health families; these are review alerts, not individual-license verification.
 - Saudization requirements remain unverified until a source URL and verification date are recorded.
-- Four-stage institutional workflow: OD → Total Rewards → Finance → Final Authority.
+- Five-stage institutional workflow: Budget owner → OD → Total Rewards → Finance → Final Authority (earlier four-stage approvals stay recorded as historical).
 - Tenant/department isolation, role-based access, immutable audit history, versioned position records, signed internal receipts and DOCX/XLSX/PDF exports.
 - Imported approvals and external identities do not grant authority in Miyar.
 

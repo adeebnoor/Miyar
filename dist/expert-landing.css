@@ -22,7 +22,7 @@
 .landing.expert-landing .lp-hero-copy>.lp-hero-lead{font-size:17px;line-height:1.8;color:#d1e2e9;max-width:48ch}
 .expert-landing .lp-guided-start{margin-top:22px;background:#fff;border:1px solid #dbe7eb;border-radius:16px;box-shadow:0 18px 40px rgba(0,15,27,.16);padding:21px;color:#102f40}
 .expert-landing .lp-start-label{display:flex;align-items:center;gap:9px;padding-bottom:14px;margin-bottom:15px;border-bottom:1px solid #e5ecef;line-height:1.6;flex-wrap:wrap}
-.expert-landing .lp-start-label>span{font:13px/1.5 ui-monospace,monospace;color:#087f83;background:#eaf7f4;border-radius:5px;padding:4px 7px}
+.expert-landing .lp-start-label>span{font:13px/1.5 ui-monospace,monospace;color:#066a6d;background:#eaf7f4;border-radius:5px;padding:4px 7px}
 .expert-landing .lp-start-label strong{font-size:13px;font-weight:700;color:#102f40}
 .expert-landing .lp-start-label small{margin-inline-start:auto;font-size:12px;letter-spacing:.015em;color:#526b77}
 .expert-landing .lp-guided-start label{font-size:14px;font-weight:700;color:#294757}
@@ -125,7 +125,7 @@
 .expert-landing .release-phase-card{background:#fff;border:1px solid #dbe5ec;border-radius:13px;padding:24px;box-shadow:0 3px 9px rgba(16,47,64,.025)}
 .expert-landing .release-phase-card h3{color:#153e52;font-size:19px;line-height:1.7}
 .expert-landing .release-phase-card p{color:#526c7d;font-size:14px;line-height:1.85}
-.expert-landing .release-phase-number{color:#087f83;background:#eaf6f3;border-radius:6px}
+.expert-landing .release-phase-number{color:#066a6d;background:#eaf6f3;border-radius:6px}
 .expert-landing .release-phase-status{color:#496a77;background:#f1f6f8;border-color:#dce7ec;font-size:12px}
 .expert-landing .release-phase-tags span{color:#45677a;border-color:#dbe6ed;background:#f4f8fa;font-size:12px}
 .expert-landing .release-phase-card>a{color:#08796f;border-color:#dce7ec;font-weight:700}
