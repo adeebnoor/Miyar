@@ -20,7 +20,7 @@ The [5.1.0 consultant audit response](docs/audit-remediation-5.1.0.md) and [oper
 
 # معيار | MI’YĀR 5.0
 
-A bilingual strategy-to-workforce intelligence platform by Prof. Adeeb Noor and Ahmad Raza Khan, King Abdulaziz University.
+A bilingual strategy-to-workforce decision-support platform by Prof. Adeeb Noor and Ahmad Raza Khan, King Abdulaziz University.
 
 [Open Miyar](https://adeebnoor.github.io/Miyar/) · [Enterprise API](https://miyar-enterprise-api.onrender.com/) · [Architecture](docs/enterprise-architecture.md) · [OD Phase 1](docs/phase1-od-engine.md) · [Manpower Phase 2](docs/phase-2-manpower.md) · [Compensation Phase 3](docs/phase-3-compensation.md)
 
