@@ -26,6 +26,8 @@ function professionalReview(p,input,locale){
  const leading=supervisor||/manager|director|رئيس|مدير/.test(String(p.content.seniority).toLowerCase());
  p.content.purpose=ar?(leading?'الإشراف على تنفيذ نطاق الدور':'تنفيذ نطاق الدور التخصصي')+' لدعم الهدف الاستراتيجي: '+String(input.strategyObjective||''):(leading?'Oversee delivery of the role scope':'Deliver the professional role scope')+' in support of the strategic objective: '+String(input.strategyObjective||'');
  p.content.successMeasures=p.content.kpis.map(x=>x.outcome).join('\n');
+ if(p.content.finalProposedTitle)p.content.finalProposedTitle=p.content.title;
+ if(supervisor){const check=p.validation?.find(x=>x.id==='level');if(check&&check.status!=='fail'){check.status='warn';check.ar='الإشراف مستدل من المسؤوليات؛ راجع عدد المرؤوسين والصلاحيات مع الهيكل';check.en='Supervision is evidenced by duties; confirm direct-report count and authority against the structure';}p.content.careerPath=ar?'مشرف تمريض ← مسؤول تمريض أعلى (بعد التقييم والتحقق المهني)':'Nursing Supervisor → Senior nursing responsibility (subject to evaluation and professional review)';if(family!=='health')p.content.careerPath=ar?'مشرف ← مدير في '+p.family.label+' (بعد التقييم)':'Supervisor → '+p.family.label+' Manager (subject to evaluation)';}
  if(!['hc','finance','admin'].includes(family))p.notices.unshift(ar?'هذا المجال خارج نطاق التجربة الأولي (الموارد البشرية والمالية والإدارة)؛ المخرج مسودة تحتاج مراجعة خبير المجال.':'Outside the initial HR, Finance and Administration pilot; this draft needs domain-expert validation.');
  return p;
 }
