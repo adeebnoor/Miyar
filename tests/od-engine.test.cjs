@@ -5,7 +5,7 @@ require('../dist/od-engine-priority.js');
 const engine=globalThis.MiyarODEngine;
 const settle=()=>new Promise(r=>setImmediate(r));
 
-test('HC expert case becomes a reviewable Manager-level OD package without pretending vendor grading',()=>{
+test('HC project-coordination example stays a specialist OD package without pretending vendor grading',()=>{
  const p=engine.generate(engine.hcExample,'en');
  assert.equal(p.family.id,'hc');
  assert.equal(p.content.title,'Human Capital Projects & Operations Specialist');

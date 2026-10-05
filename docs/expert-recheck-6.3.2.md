@@ -19,7 +19,7 @@ leadership duties. JSDOM outside-only tests now serve the real deferred workspac
 asset through script load events.
 
 Validation: npm run build succeeds and runs catalog engine parity as a build gate.
-All 524 Node tests pass. Report acceptance cases run through recommendation and
+All 529 Node tests pass. Report acceptance cases run through recommendation and
 OD. Browser acceptance cases include requested-level inputs, confirmation, and
 home-to-workspace lazy loading. Server/browser CI and deployment must be verified
 on the published commit before claiming release completion.

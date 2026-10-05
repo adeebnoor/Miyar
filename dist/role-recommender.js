@@ -70,7 +70,7 @@ function parseCount(value){
  const en='zero one two three four five six seven eight nine ten eleven twelve thirteen fourteen fifteen sixteen seventeen eighteen nineteen twenty'.split(' '), map=Object.fromEntries(en.map((x,i)=>[x,i]));
  Object.assign(map,{thirty:30,forty:40,fifty:50,sixty:60,seventy:70,eighty:80,ninety:90,hundred:100,واحد:1,واحدة:1,اثنان:2,اثنين:2,اثنتان:2,اثنتين:2,اثنتا:2,اثنتي:2,ثلاثة:3,ثلاث:3,اربعة:4,اربع:4,خمسة:5,خمس:5,ستة:6,ست:6,سبعة:7,سبع:7,ثمانية:8,ثمان:8,ثماني:8,تسعة:9,تسع:9,عشرة:10,عشر:10,عشرين:20,عشرون:20,ثلاثون:30,ثلاثين:30,اربعون:40,اربعين:40,خمسون:50,خمسين:50,ستون:60,ستين:60,سبعون:70,سبعين:70,ثمانون:80,ثمانين:80,تسعون:90,تسعين:90,مائة:100,مئة:100,احد:1,احدي:1,اثنا:2,اثني:2});
  const parts=n.split(/\s+/).filter(x=>x!=='and'&&x!=='و');let count=0;
- for(let part of parts){if(!(part in map)&&part.startsWith('و'))part=part.slice(1);if(!(part in map))return null;count=part==='hundred'?(count||1)*100:count+map[part];}return count||null;
+ for(let part of parts){if(!(part in map)&&part.startsWith('و'))part=part.slice(1);if(!(part in map)&&part.endsWith('ا')&&part.slice(0,-1) in map)part=part.slice(0,-1);if(!(part in map))return null;count=part==='hundred'?(count||1)*100:count+map[part];}return count||null;
 }
 function analyzeLevel(input={}){
  const interpretation=interpret(dutyInput(input)),n=normalize(interpretation.text),ownTitle=input.title||input.jobTitle||'';
@@ -140,7 +140,7 @@ function detect(input={}){
  if(hasResponsibilities&&!ranked.some(x=>x.textScore>0)&&!new RegExp('(?:'+englishAction+'|'+arabicAction+'|'+arabicTask+')','i').test(text))return null;
  if(selected.family.id==='operations'&&textHit?.family.id==='maintenance')selected=textHit;
  const isPayroll=['payroll','salary processing','رواتب','مسير الرواتب'].some(x=>has(text,x));
- const government=['government relations','علاقات حكومية','ابشر','مقيم','muqeem','absher'].some(x=>has(text,x))&&['hc','admin'].includes(selected.family.id);
+ const government=catalog.roles.filter(r=>r.family==='admin'&&r.intent==='governmentRelations').flatMap(r=>r.taskKeywords).some(x=>has(text,x))&&['hc','admin'].includes(selected.family.id);
  const payrollHome=(isPayroll&&selected.family.id==='hc')||government;
  const financePayroll=isPayroll&&selected.family.id==='finance';
  // Payroll is an established HR/Finance shared process, not a nursing-like mismatch.

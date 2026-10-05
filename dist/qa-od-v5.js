@@ -35,7 +35,7 @@ E.generate=function(input={},locale='en'){
  const recommendation=R?.recommend({objective:input.strategyObjective,responsibilities:input.responsibilities,domain:input.department,seniority:input.requestedLevel,title:input.title,confirmedRole:input.confirmedRole,directReports:input.directReports,constraints:input.constraints});
  if(!recommendation)throw Error(locale==='ar'?'لا تتوفر تغطية كافية للمسمى والمستوى المطلوبين؛ يلزم تأكيد النطاق من المختص.':'The requested title and level do not have sufficient supported coverage; a specialist must confirm the scope.');
  if(recommendation?.status==='needs-confirmation')return recommendation;
- if(recommendation?.status==='blocked')throw Error(locale==='ar'?'لا يمكن توليد الوصف قبل تصحيح تعارض المجال أو المستوى أو القيود.':'Correct the domain, level or constraint conflict before generating the job description.');
+ if(recommendation?.status==='blocked')throw Error(locale==='ar'?(recommendation.message||'لا يمكن توليد الوصف قبل تصحيح تعارض المجال أو المستوى أو القيود.'):'Correct the requested level: '+(recommendation.checks.find(x=>x.status==='fail')?.en||'domain, level or constraint conflict.'));
  const p=baseGenerate({...input,requestedLevel:recommendation.candidate.level},locale);
  if(recommendation){
   const r=recommendation.candidate,f=recommendation.detection.family,ar=locale==='ar',title=ar?r.titleAr:r.titleEn,manager=['manager','director','executive'].includes(r.level);
