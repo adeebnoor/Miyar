@@ -19,10 +19,11 @@ async function setup(page){await page.addInitScript(()=>localStorage.setItem('mi
  await r.fulfill({response});
 });await page.goto(BASE+'#enterprise/connection');}
 async function login(page,email){await page.locator('#ent-email').fill(email);await page.locator('#ent-password').fill('isolated-test-password-928');await page.locator('#ent-login button[type=submit]').click();await page.waitForURL(/#enterprise\/overview$/);}
+async function openAdvancedOD(page){await expect(page.locator('#miyar-od-advanced > summary')).toBeVisible();if(!await page.locator('[data-od-example]').isVisible())await page.locator('#miyar-od-advanced > summary').click();}
 
 test('authenticated manager reads institution profile before designing a position',async({page})=>{
  await setup(page);await login(page,'a-line_manager@audit.test');await page.goto(BASE+'#enterprise/create');await expect(page.locator('[data-institution-context]')).toContainText('Configured · 2 units · 2 grades');await expect(page.locator('[data-inst-open]')).toHaveCount(0);
- await page.locator('[data-od-example]').click();await page.locator('[data-od-responsibilities]').fill((await page.locator('[data-od-responsibilities]').inputValue())+'; lead six employees; approve work plans');await page.locator('[data-od-generate]').click();await expect(page.locator('[data-inst-match]')).toContainText('G11-A');
+ await openAdvancedOD(page);await page.locator('[data-od-example]').click();await page.locator('[data-od-responsibilities]').fill((await page.locator('[data-od-responsibilities]').inputValue())+'; lead six employees; approve work plans');await page.locator('[data-od-generate]').click();await expect(page.locator('[data-inst-match]')).toContainText('G11-A');
 });
 
 test('organization switch replaces institution profile and isolates locally saved scenarios',async({page})=>{

@@ -42,5 +42,5 @@ test('financial reporting recommendations exclude unrelated labor inspection',as
 });
 
 test('local institution editor rejects a reporting cycle before saving',async({page})=>{
- await setup(page,'#enterprise/create');await page.locator('[data-inst-open]').click();await page.locator('[data-inst-example]').click();await page.locator('[data-inst-units]').fill('A | أ | A | B\nB | ب | B | A');await page.locator('[data-inst-save]').click();await expect(page.locator('[data-inst-message]')).toContainText('reporting cycle');await expect(page.locator('.institution-dialog .institution-status')).toContainText('Not configured');
+ await setup(page,'#enterprise/create');await page.locator('#miyar-od-advanced > summary').click();await page.locator('[data-inst-open]').click();await page.locator('[data-inst-example]').click();await page.locator('[data-inst-units]').fill('A | أ | A | B\nB | ب | B | A');await page.locator('[data-inst-save]').click();await expect(page.locator('[data-inst-message]')).toContainText('reporting cycle');await expect(page.locator('.institution-dialog .institution-status')).toContainText('Not configured');
 });
