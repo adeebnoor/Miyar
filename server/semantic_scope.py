@@ -192,7 +192,7 @@ class OccupationScope:
                     or source.get('sourcePage') != role.get('sourcePage')
                     or source.get('parent') not in nodes):
                 continue
-            adjacent = role.get('mappingStatus') == 'adjacent-reference-for-review'
+            adjacent = role.get('mappingStatus') in {'adjacent-reference-for-review','emerging-occupation-nearest-reference'}
             reference = self.references.setdefault(code, {'families': [], 'mappingStatus':
                 'adjacent-reference-for-review' if adjacent else 'source-title-reference-for-review'})
             if family not in reference['families']:

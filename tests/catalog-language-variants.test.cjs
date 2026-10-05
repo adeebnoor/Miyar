@@ -22,7 +22,7 @@ const cases=[
  ['Administration','Handle office supply orders; monitor cleaning contractors; manage catering bookings','Office Services Coordinator','specialist'],
  ['Administration','Renew employees residency permits; handle visa applications; update company registrations','Government Relations Officer','specialist'],
  ['Information Technology','Implement web services; develop server-side applications; review source code','Software Engineer','specialist'],
- ['Information Technology','Create business intelligence reports; query relational databases; build dashboards','BI / Data Analyst','specialist'],
+ ['Information Technology','Create business intelligence reports; query relational databases; build dashboards','Business Intelligence Analyst','specialist'],
  ['Information Technology','Maintain firewall rules; investigate SOC alerts; assess vulnerabilities','Information Security Specialist','specialist'],
  ['Information Technology','Administer access control on databases; monitor security events; respond to incidents','Information Security Specialist','specialist'],
  ['Security','Conduct site rounds; check CCTV footage; log security incidents','Security Guard','assistant'],

@@ -84,7 +84,7 @@ def test_360_withdraw_evaluation_history_and_skill_extraction(env):
     evaluation=c.post('/api/v1/positions/'+p2['id']+'/evaluation',headers=auth('total_rewards'),json={
         'revision':p2['revision'],
         'answers':{factor['id']:'2' for factor in DEFAULT_FRAMEWORK['factors']},
-        'evidence':{factor['id']:'Audit scope evidence' for factor in DEFAULT_FRAMEWORK['factors']}
+        'evidence':{factor['id']:'Audit scope evidence quoting the reviewed responsibilities and delegated decision authority' for factor in DEFAULT_FRAMEWORK['factors']}
     })
     assert evaluation.status_code==200,evaluation.text
     history=c.get('/api/v1/positions/'+p2['id']+'/evaluations',headers=auth('line_manager'))

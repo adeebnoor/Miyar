@@ -27,7 +27,8 @@ def test_all_stages_budget_and_duplicate_approval(env):
     assert decide(c,auth,p,'od_specialist',{'scopeReviewed':True,'mappingReviewed':True,'businessValidated':True,'roleNotPerson':True,'businessReviewer':'Department reviewer for test','businessReviewDate':'2026-09-01'}).status_code==200
     assert decide(c,auth,p,'od_specialist',{'scopeReviewed':True,'mappingReviewed':True,'businessValidated':True,'roleNotPerson':True,'businessReviewer':'Department reviewer for test','businessReviewDate':'2026-09-01'}).status_code==403
     assert decide(c,auth,p,'total_rewards',{'payFrameworkReviewed':True}).status_code==422
-    assert c.post('/api/v1/positions/'+p['id']+'/evaluation',headers=auth('total_rewards'),json={'revision':1,'answers':{factor['id']:'2' for factor in DEFAULT_FRAMEWORK['factors']},'evidence':dict.fromkeys([factor['id'] for factor in DEFAULT_FRAMEWORK['factors']],'Scoped role evidence')}).status_code==200
+    body={'revision':1,'answers':{factor['id']:'2' for factor in DEFAULT_FRAMEWORK['factors']},'evidence':dict.fromkeys([factor['id'] for factor in DEFAULT_FRAMEWORK['factors']],'Scoped role evidence quoting the responsibilities and delegated decision authority')}
+    for reviewer in ['total_rewards','total_rewards2']:assert c.post('/api/v1/positions/'+p['id']+'/evaluation',headers=auth(reviewer),json=body).status_code==200
     assert decide(c,auth,p,'total_rewards',{'payFrameworkReviewed':True}).status_code==200
     for count,budget in [(True,240000),(1,239999),(0,240000),(1.5,240000)]:
         assert decide(c,auth,p,'finance',{'vacancyConfirmed':True,'budgetConfirmed':True,'approvedAnnualBudget':budget,'approvedHeadcount':count}).status_code==422
@@ -88,7 +89,7 @@ def test_export_is_scoped_editable_and_signed(env,monkeypatch):
     d=c.get(url+'docx',headers=auth());assert d.status_code==200;assert any('مهندس' in p.text for p in Document(io.BytesIO(d.content)).paragraphs)
     from server.release import RELEASE
     document=Document(io.BytesIO(d.content));assert any(RELEASE['buildId'] in p.text for p in document.paragraphs)
-    sign=document.tables[-1];assert len(sign.rows)==5 and all(row.cells[1].text for row in sign.rows[1:])  # every approved stage carries its signer
+    sign=document.tables[-1];assert len(sign.rows)==6 and all(row.cells[1].text for row in sign.rows[1:])  # every approved stage carries its signer
     x=c.get(url+'xlsx',headers=auth());assert x.status_code==200;w=load_workbook(io.BytesIO(x.content));assert set(w.sheetnames)=={'Position','RACI','Skills','KPIs'};assert w['RACI']['C2'].value=='Manager'
     pdf=c.get(url+'pdf',headers=auth());assert pdf.status_code==200;assert pdf.content.startswith(b'%PDF')
 
@@ -107,7 +108,7 @@ def test_concurrent_approvals_advance_one_stage_only(env):
     def approve():return decide(c,auth,p,'od_specialist',{'scopeReviewed':True,'mappingReviewed':True,'businessValidated':True,'roleNotPerson':True,'businessReviewer':'Department reviewer for test','businessReviewDate':'2026-09-01'}).status_code
     with ThreadPoolExecutor(max_workers=2) as pool:statuses=list(pool.map(lambda _:approve(),range(2)))
     assert statuses.count(200)==1;assert all(s in [200,403,409] for s in statuses)
-    assert c.get('/api/v1/positions/'+p['id'],headers=auth()).json()['approvalStage']==1
+    assert c.get('/api/v1/positions/'+p['id'],headers=auth()).json()['approvalStage']==2
 
 def test_organization_rules_are_enforced_at_approval_and_snapshotted(env):
     app,c,auth,create=env
@@ -134,8 +135,8 @@ def test_free_text_field_seniority_roundtrip_and_exports(env):
 def test_approved_evaluation_is_locked_after_rewards_stage(env):
     app,c,auth,create=env;p=create();submit(c,auth,p)
     decide(c,auth,p,'od_specialist',{'scopeReviewed':True,'mappingReviewed':True,'businessValidated':True,'roleNotPerson':True,'businessReviewer':'Department reviewer for test','businessReviewDate':'2026-09-01'})
-    url='/api/v1/positions/'+p['id']+'/evaluation';body={'revision':1,'answers':dict.fromkeys([factor['id'] for factor in DEFAULT_FRAMEWORK['factors']],'2'),'evidence':dict.fromkeys([factor['id'] for factor in DEFAULT_FRAMEWORK['factors']],'Reviewed scope')}
-    assert c.post(url,headers=auth('total_rewards'),json=body).status_code==200
+    url='/api/v1/positions/'+p['id']+'/evaluation';body={'revision':1,'answers':dict.fromkeys([factor['id'] for factor in DEFAULT_FRAMEWORK['factors']],'2'),'evidence':dict.fromkeys([factor['id'] for factor in DEFAULT_FRAMEWORK['factors']],'Reviewed scope quoting responsibilities and authority in the position description')}
+    for reviewer in ['total_rewards','total_rewards2']:assert c.post(url,headers=auth(reviewer),json=body).status_code==200
     assert decide(c,auth,p,'total_rewards',{'payFrameworkReviewed':True}).status_code==200
     body['answers']['impact']='4'
     assert c.post(url,headers=auth('total_rewards'),json=body).status_code==409

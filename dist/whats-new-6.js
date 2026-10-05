@@ -9,17 +9,17 @@ const SEEN='miyar-whats-new-'+RELEASE_MINOR,VISITED='miyar-new-badges-6',TOUR='m
 const store={get(k,s=localStorage){try{return s.getItem(k);}catch{return null;}},set(k,v,s=localStorage){try{s.setItem(k,v);}catch{}},del(k,s=localStorage){try{s.removeItem(k);}catch{}}};
 const version=()=>window.MIYAR_RELEASE?.version||'6.0';
 const ITEMS=[
- ['#home','واجهة جديدة بهوية موحدة، وبداية موجهة وتنقل مرتب حسب رحلة القرار.','A unified visual identity, guided start and navigation organized around the decision journey.'],
- ['#enterprise/intelligence','ترشيح دلالي للمهن والمهارات على خادم معيار، مع المرجع وحدود التغطية.','Locally hosted semantic occupation and skill proposals with traceable references and coverage limits.'],
- ['#enterprise/create','مؤشرات AI قابلة للتعديل مع فحص الصيغ وموافقة المعالجة الخارجية؛ المخرجات تحتاج مراجعة.','Editable AI KPI proposals with formula checks and external-processing consent; outputs require review.'],
- ['#enterprise/manpower','نماذج أوضح ونتائج منظمة للتخطيط والتعويضات والتقييم، مع أمثلة وأدلة وافتراضات.','Clearer forms and structured planning, compensation and evaluation results, with examples, evidence and assumptions.'],
- ['tour','بيانات عرض بنقرة واحدة وجولة موجهة في 10 دقائق.','Demo data in one click and a guided 10-minute tour.']
+ ['#demo','ترشيح موحّد للمهن من المهام، مع توضيح الهدف والسؤال عند غموض الدور.','Unified task-to-occupation matching with goal clarification and questions for ambiguous roles.'],
+ ['#enterprise/create','ابدأ بوصف الحاجة؛ تعبئة مقترحة قابلة للتعديل وإرشاد يوضح سبب كل معلومة، ثم التفاصيل عند الحاجة.','Start with the need: editable suggestions, guidance explaining why information matters, and details when needed.'],
+ ['#enterprise/grading','تقييم مرتبط بالمنصب ونسخته، وفحص اتساق العوامل ومراجعات اللجنة.','Evaluation bound to a position and revision, with factor consistency and committee reviews.'],
+ ['#enterprise/compensation','تفصيل تكلفة صاحب العمل ومصادر التأمينات، وفحص العدالة وانضغاط الرواتب.','Employer cost and social-insurance sources, with pay equity and compression checks.'],
+ ['#enterprise/manpower','تخطيط يرتبط بتكلفة المنصب ويأخذ مدة التعيين والتسرب في الحسبان.','Planning linked to position costs, hiring lead time and attrition.']
 ];
 const BADGES={manpower:'[data-manpower-nav]',compensation:'[data-comp-nav]',grading:'.nav-link[data-enterprise-open="grading"]',connection:'.nav-link[data-enterprise-open="connection"]',tour:'.nav-link[data-enterprise-open="tour"]'};
 const STEPS=[
- ['#demo','المحرك الاستراتيجي','Strategic engine','اختر سيناريو مثل «كفاءة التشغيل» ثم اضغط «ابحث / حلّل الاحتياج». يظهر ترشيح بمرجع مهني وسبب واضح.','Pick a scenario such as “Operational efficiency”, then press “Search / analyze the need”. You get a recommended role with its occupation reference and rationale.'],
+ ['#demo','ابحث عن الدور المناسب','Find the right role','اختر سيناريو مثل «كفاءة التشغيل» ثم اضغط «ابحث / حلّل الاحتياج». يظهر ترشيح بمرجع مهني وسبب واضح.','Pick a scenario such as “Operational efficiency”, then press “Search / analyze the need”. You get a recommended role with its occupation reference and rationale.'],
  ['#enterprise/create','تصميم المنصب','Position design','اضغط «تحميل مثال HC» ثم «توليد حزمة OD»: وصف وظيفي وجدارات ومؤشرات أداء ومسار مهني.','Press “Load HC example”, then “Generate OD package”: job description, competencies, KPIs and a career path.'],
- ['#enterprise/grading','التقييم الوظيفي','Job evaluation','اختر مستوى لكل عامل واكتب دليلًا ثم احسب. النقاط تتحول إلى درجة الهيكل المعتمد، ثم «استخدام الدرجة في التعويضات».','Choose a level and evidence for each factor, then calculate. Points become your approved grade; then use “Use grade in compensation”.'],
+ ['#enterprise/grading','التقييم الوظيفي','Job evaluation','احفظ مسودة المنصب أولًا، ثم اخترها ونسختها في التقييم. أدخل مستويات العوامل وأدلتها وراجع فروق اللجنة قبل تسجيل الدرجة.','Save the position draft, then select it and its revision for evaluation. Document factor levels and evidence, and review committee differences before recording the grade.'],
  ['#enterprise/manpower','تخطيط القوى العاملة','Manpower planning','افتح الخطة المحفوظة من «المحفوظات على هذا الجهاز»: الجسر يفصل الإحلال عن النمو، ثم البدائل الخمسة والحساسية والتوطين.','Open the saved plan under “Saved on this device”: the bridge separates backfill from growth, then the five options, sensitivity and localization.'],
  ['#enterprise/compensation','التعويضات','Compensation','افتح السيناريو المحفوظ: موضع الراتب، فحص تصميم النطاق وتكلفة الحزمة السنوية.','Open the saved scenario: pay position, band design check and annual package cost.']
 ];

@@ -17,6 +17,10 @@ async function goto(page,hash,lang='ar'){
   const pageErrors=[];page.on('pageerror',e=>pageErrors.push(String(e)));
   await page.goto(BASE+hash);
   await page.waitForTimeout(180);
+  if(hash==='#enterprise/create'){
+    await page.locator('#miyar-od-advanced > summary').waitFor({state:'visible'});
+    if(!await page.locator('[data-od-example]').isVisible())await page.locator('#miyar-od-advanced > summary').click();
+  }
   await expect(page.locator('body')).toBeVisible();
   expect(pageErrors,'Uncaught browser errors on '+hash).toEqual([]);
 }
@@ -74,6 +78,7 @@ test('360 Arabic-English switch changes direction and preserves typed demo input
   await goto(page,'#demo','ar');
   await expect(page.locator('html')).toHaveAttribute('dir','rtl');
   await page.fill('#objective','إدارة الرواتب والتقارير الشهرية للموظفين');
+  await page.locator('#demo-context-fields > summary').click();
   await page.fill('#domain','الموارد البشرية');
   await page.fill('#seniority','مدير');
   await page.locator('#language-btn').click();

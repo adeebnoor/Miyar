@@ -9,7 +9,7 @@ function institutionGrade(role){
 function capture(e){
  if(!e.target.closest?.('[data-cp-from-mp]'))return;
  let v=null;try{v=JSON.parse(sessionStorage.getItem('miyar-compensation-handoff')||'null');}catch{}
- if(v){const grade=institutionGrade(v.role)||v.grade||'';sessionStorage.setItem(KEY,JSON.stringify({...v,grade,_at:Date.now()}));}
+ if(v){const grade=v.grade||(v.positionId?'':institutionGrade(v.role))||'';sessionStorage.setItem(KEY,JSON.stringify({...v,grade,_at:Date.now()}));}
 }
 function repair(){
  if(location.hash!=='#enterprise/compensation')return;
@@ -18,7 +18,7 @@ function repair(){
  const role=document.getElementById('cp-role'),headcount=document.getElementById('cp-headcount'),grade=document.getElementById('cp-grade');
  if(role&&!role.value)role.value=v.role||'';
  if(headcount&&(!headcount.value||headcount.value==='1')&&v.headcount)headcount.value=v.headcount;
- const expectedGrade=institutionGrade(v.role||role?.value||'')||v.grade||'';
+ const expectedGrade=v.grade||(v.positionId?'':institutionGrade(v.role||role?.value||''))||'';
  if(grade&&expectedGrade&&grade.value!==expectedGrade)grade.value=expectedGrade;
  if(role?.value&&(grade?.value||!expectedGrade))setTimeout(()=>{try{sessionStorage.removeItem(KEY);}catch{}},50);
 }

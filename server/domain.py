@@ -49,10 +49,10 @@ def external_evaluation(framework,answers,evidence):
     valid_date(evidence['evaluationDate'])
     return {'points':value,'band':{'id':band.strip()},'breakdown':[], 'frameworkId':framework['id'],'frameworkVersion':framework.get('version',1),'method':'external-korn-ferry-record','illustrative':False,'status':'specialist-report-recorded','computedBy':'external-specialist-report','externalReport':{k:evidence[k] for k in keys},'authorization':{k:framework[k] for k in ['licenseReference','approvedBy','approvedOn']},'warning':'Score and grade were supplied by the organization specialist from an external report. Miyar does not calculate or independently certify Korn Ferry results.'}
 
-ROLES={'line_manager','od_specialist','total_rewards','finance','chro','admin','integration'}
-DEFAULT_WORKFLOW=[{'role':'od_specialist','nameAr':'التطوير التنظيمي','nameEn':'Organization Development'}, {'role':'total_rewards','nameAr':'التعويضات والمزايا','nameEn':'Total Rewards'}, {'role':'finance','nameAr':'المالية وتخطيط القوى العاملة','nameEn':'Finance & Workforce Planning'}, {'role':'chro','nameAr':'صاحب الصلاحية','nameEn':'Final authority'}]
+ROLES={'line_manager','department_manager','hrbp','od_specialist','total_rewards','finance','chro','admin','integration'}
+DEFAULT_WORKFLOW=[{'role':'department_manager','nameAr':'مدير الإدارة / شريك الموارد البشرية','nameEn':'Department Manager / HRBP','slaHours':48,'escalationRole':'chro'}, {'role':'od_specialist','nameAr':'التطوير التنظيمي','nameEn':'Organization Development','slaHours':72,'escalationRole':'chro'}, {'role':'total_rewards','nameAr':'التعويضات والمزايا','nameEn':'Total Rewards','slaHours':72,'escalationRole':'chro'}, {'role':'finance','nameAr':'المالية وتخطيط القوى العاملة','nameEn':'Finance & Workforce Planning','slaHours':48,'escalationRole':'chro'}, {'role':'chro','nameAr':'صاحب الصلاحية','nameEn':'Final authority','slaHours':48,'escalationRole':'admin'}]
 CORE=['title','businessNeed','alternatives','successMeasures','purpose','responsibilities','team','budget','authority','impact','stakeholders','qualifications','experience','skills','behaviors']
-REQUEST_TYPES={'additional-headcount','proposed-role','redesign'}
+REQUEST_TYPES={'additional-headcount','proposed-role','redesign','replacement'}
 from pathlib import Path
 DEFAULT_FRAMEWORK=json.loads((Path(__file__).resolve().parents[1]/'dist/classifications/framework-example.json').read_text(encoding='utf-8'))
 CURRENCY_CODES=set(json.loads((Path(__file__).resolve().parents[1]/'dist/classifications/currencies.json').read_text(encoding='utf-8')))
@@ -67,14 +67,62 @@ def required_content(content):
     missing=[k for k in CORE if not str(content.get(k,'')).strip()]
     if content.get('requestType') not in REQUEST_TYPES:missing.append('requestType')
     if len([x for x in str(content.get('responsibilities','')).splitlines() if x.strip()])<3:missing.append('three_responsibilities')
+    if not any(all(isinstance(row.get(k),str) and row[k].strip() for k in ['outcome','metric','baseline','target','duration']) for row in content.get('kpis',[])):missing.append('kpi_baseline_target_duration')
+    if any(not all(isinstance(row.get(k),str) and row[k].strip() for k in ['outcome','metric','baseline','target','duration']) for row in content.get('kpis',[])):missing.append('complete_every_kpi')
+    for key in ['jobFamily','salaryGrade','costBasis']:
+        if not str(content.get(key,'')).strip():missing.append(key)
+    if not all(isinstance(content.get(k),(int,float)) and not isinstance(content.get(k),bool) and math.isfinite(content[k]) and content[k]>0 for k in ['annualCost','annualCostMin','annualCostMax']):missing.append('annual_cost_and_range')
     return missing
 
 def validate_workflow(steps):
-    if not isinstance(steps,list) or not 4<=len(steps)<=12:raise ValueError('Workflow requires 4–12 approval stages')
-    allowed={'od_specialist','total_rewards','finance','chro'};roles=[s.get('role') for s in steps]
+    if not isinstance(steps,list) or not 5<=len(steps)<=12:raise ValueError('Workflow requires 5–12 approval stages, beginning with Department Manager / HRBP')
+    allowed={'department_manager','hrbp','od_specialist','total_rewards','finance','chro'};roles=[s.get('role') for s in steps]
     if any(x not in allowed for x in roles) or roles[-1]!='chro' or not {'od_specialist','total_rewards','finance'}.issubset(roles):raise ValueError('Keep OD, Rewards, Finance and final CHRO review')
+    if roles[0] not in {'department_manager','hrbp'}:raise ValueError('Department Manager / HRBP must review the budget owner request before OD')
+    if len(roles)!=len(set(roles)):raise ValueError('Approval roles cannot repeat in a workflow')
     if roles.index('od_specialist')>roles.index('total_rewards') or roles.index('total_rewards')>roles.index('finance'):raise ValueError('OD must precede Rewards and Finance')
-    return [{'role':s['role'],'nameAr':str(s.get('nameAr',s['role']))[:100],'nameEn':str(s.get('nameEn',s['role']))[:100]} for s in steps]
+    for s in steps:
+        if type(s.get('slaHours',72)) is not int or not 1<=s.get('slaHours',72)<=720:raise ValueError('Each stage SLA must be 1–720 hours')
+        if s.get('escalationRole','chro') not in {'chro','admin'}:raise ValueError('Stage escalation goes to CHRO or administrator')
+    return [{'role':s['role'],'nameAr':str(s.get('nameAr',s['role']))[:100],'nameEn':str(s.get('nameEn',s['role']))[:100],'slaHours':s.get('slaHours',72),'escalationRole':s.get('escalationRole','admin' if s['role']=='chro' else 'chro')} for s in steps]
+
+def submission_workflow(steps):
+    """Upgrade legacy organization configuration only; never re-number signed stages."""
+    value=copy.deepcopy(steps)
+    if value and value[0].get('role') not in {'department_manager','hrbp'}:value.insert(0,copy.deepcopy(DEFAULT_WORKFLOW[0]))
+    return validate_workflow(value)
+
+def validate_position_scope(value):
+    count=value.get('headcount',1);cost=value.get('annualCost');reports=value.get('directReports',0)
+    scope=normalized(' '.join(str(value.get(k,'')) for k in ['team','seniority','recommendedLevel']))
+    individual=any(x in scope for x in ['individual contributor','independent contributor','مساهم فردي','ممارس مستقل','دور تخصصي','لا يوجد مرؤوسون مباشرون'])
+    if individual and reports>0:raise ValueError('Individual contributor positions must have zero direct reports')
+    if cost is not None and cost/count<1000:raise ValueError('Annual cost per position is implausibly low; 25 people cannot cost SAR 1,000 per year')
+    low,high=value.get('annualCostMin'),value.get('annualCostMax')
+    if low is not None or high is not None:
+        if not all(isinstance(v,(int,float)) and not isinstance(v,bool) and math.isfinite(v) and v>0 for v in [low,high]) or high<low:raise ValueError('Annual per-person cost range must be positive and ordered')
+    basis=value.get('costBasis')
+    if basis and basis not in {'grade-band','manual-exception'}:raise ValueError('Choose grade-band or manual-exception cost basis')
+    if basis=='manual-exception' and len(str(value.get('costExceptionReason','')).strip())<30:raise ValueError('A manual cost exception requires a rationale of at least 30 characters')
+    if cost is not None and cost/count<12000 and basis!='manual-exception':raise ValueError('Annual cost is below the illustrative SAR 12,000 review threshold; document a manual exception. This is not a statutory wage minimum.')
+    if cost is not None and low is not None and high is not None and not low*count<=cost<=high*count and basis!='manual-exception':raise ValueError('Total annual cost must fall within the per-person grade range multiplied by headcount')
+
+def validate_submission(content,position_id,revision):
+    """A proposed grade starts review; it never substitutes for the authenticated Rewards committee."""
+    validate_position_scope(content)
+    claimed=any(content.get(key) not in (None,'') for key in ['evaluatedPositionId','evaluatedPositionRevision','evaluationSummary'])
+    if claimed and (content.get('evaluatedPositionId')!=position_id or content.get('evaluatedPositionRevision')!=revision):raise ValueError('A claimed assessment must identify this exact position and revision; a preliminary grade proposal does not require an assessment claim')
+    return required_content(content)
+
+def evaluation_consistency(framework,answers,evidence):
+    factors={f['id']:f for f in framework.get('factors',[])};flags=[]
+    if {'people','autonomy','impact'}.issubset(factors):
+        for other in ['autonomy','impact']:
+            p=next((i for i,x in enumerate(factors['people']['levels']) if x['id']==str(answers.get('people'))),None)
+            o=next((i for i,x in enumerate(factors[other]['levels']) if x['id']==str(answers.get(other))),None)
+            if p is not None and o is not None and abs(p-o)>2:flags.append({'factor':'people','comparedWith':other,'levelDifference':abs(p-o)})
+    if flags and len(str(evidence.get('consistencyJustification','')).strip())<40:raise ValueError('People responsibility differs from autonomy or impact by more than two levels; provide a consistency justification of at least 40 characters')
+    return flags
 
 def validate_framework(framework):
     f=copy.deepcopy(framework);method=f.get('method')

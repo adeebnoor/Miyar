@@ -15,7 +15,7 @@ function catalogInput(role,locale){
  return {department:ar?family.ar:family.en,strategyObjective:ar?'تحقيق أهداف الإدارة':'Deliver department objectives',responsibilities:duties.join('; '),requestedLevel:role.level==='executive'?'Chief Executive Officer':role.level,locale};
 }
 
-test('282 bilingual catalog cases produce proposals with exact recommender/OD family, level and title parity',()=>{
+test(`${R.catalog.roles.length*2} bilingual catalog cases produce proposals with exact recommender/OD family, level and title parity`,()=>{
  let checked=0;
  for(const role of R.catalog.roles)for(const locale of ['ar','en']){
   const input=catalogInput(role,locale),label=role.family+'/'+role.intent+'/'+role.level+'/'+locale;

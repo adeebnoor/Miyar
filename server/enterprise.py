@@ -38,7 +38,14 @@ def install(app,session,current,organization,audit,present,content,department,sn
             actor=db.get(User,a.actor_id);approvals.append({'id':a.id,'actorId':a.actor_id,'actorName':actor.name,'role':a.role,'createdAt':a.created_at,'decision':a.decision,'comment':a.comment,'evidence':copy.deepcopy(a.evidence),'evidenceDigest':digest(a.evidence)})
             if a.role=='total_rewards':evaluation_id=a.evidence.get('evaluationId')
         evaluation=db.get(Evaluation,evaluation_id) if evaluation_id else db.scalar(select(Evaluation).where(Evaluation.position_id==id,Evaluation.revision==rev).order_by(Evaluation.created_at.desc()).limit(1))
-        return {'id':p.id,'internalCode':p.internal_code,'revision':rev,'content':v.content,'approved':approved,'approvals':approvals,'evaluation':{'id':evaluation.id,'result':evaluation.result,'createdAt':evaluation.created_at} if evaluation else None,'lang':lang}
+        from .domain import DEFAULT_WORKFLOW
+        from .approval_governance import committee_summary
+        stages={s['role']:s for s in DEFAULT_WORKFLOW};stages['hrbp']={**DEFAULT_WORKFLOW[0],'role':'hrbp'}
+        workflow=[copy.deepcopy(stages.get(a['role'],{'role':a['role'],'nameAr':a['role'],'nameEn':a['role']})) for a in approvals] if approved and approvals else copy.deepcopy(p.workflow or DEFAULT_WORKFLOW)
+        evaluation_value={'id':evaluation.id,'positionId':evaluation.position_id,'revision':evaluation.revision,'result':{**evaluation.result,'positionId':evaluation.position_id,'positionRevision':evaluation.revision,'committee':committee_summary(db,db.get(Position,evaluation.position_id),evaluation.revision)},'createdAt':evaluation.created_at} if evaluation else None
+        proposed_grade={'grade':v.content.get('salaryGrade'),'family':v.content.get('jobFamily'),'status':'preliminary-proposal','salaryBand':{k:v.content[k] for k in ['salaryMin','salaryMax','salaryCurrency','salaryPeriod','salarySource'] if k in v.content}}
+        evaluated_grade={'grade':evaluation.result['band']['id'],'positionId':p.id,'revision':rev,'evaluationId':evaluation.id,'sourcePositionId':evaluation.position_id,'sourceRevision':evaluation.revision,'frameworkId':evaluation.result['frameworkId'],'frameworkVersion':evaluation.result['frameworkVersion'],'salaryBand':evaluation.result.get('compensation'),'committee':evaluation_value['result']['committee'],'status':'approved-by-organization' if approved else 'awaiting-workflow-approval'} if evaluation else None
+        return {'id':p.id,'internalCode':p.internal_code,'revision':rev,'content':v.content,'proposedGrade':proposed_grade,'evaluatedGrade':evaluated_grade,'approved':approved,'approvals':approvals,'workflow':workflow,'evaluation':evaluation_value,'lang':lang}
     @app.get('/api/v1/signing/public-key')
     def signing_public_key():
         try:return exports.public_key()

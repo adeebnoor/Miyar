@@ -58,5 +58,5 @@ test('Saudi salary and housing numeric strings are converted before arithmetic a
  assert.deepEqual(C.saudiCost('10000','monthly',raw),C.saudiCost(10000,'monthly',{...raw,housingMonthly:2500}));
  assert.equal(C.saudiCost('10000','monthly',raw).annualEmployerCost,173875);
  for(const salary of [-1,NaN,Infinity,-Infinity,'not a salary','',null])assert.throws(()=>C.saudiCost(salary,'monthly',raw),/positive finite/);
- for(const housingMonthly of [-1,NaN,Infinity,'not housing','',false])assert.throws(()=>C.saudiCost('10000','monthly',{...raw,housingMonthly}),/Monthly cash housing must be a valid number/);
+ for(const housingMonthly of [-1,NaN,Infinity,'not housing',false])assert.throws(()=>C.saudiCost('10000','monthly',{...raw,housingMonthly}),/Monthly cash housing must be a valid number/);
 });

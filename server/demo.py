@@ -15,7 +15,9 @@ from .domain import CORE
 
 DOMAIN = 'demo.miyar.invalid'
 ROLES = [('admin', 'Demo Administrator'), ('line_manager', 'Demo Requester — Human Capital'),
+         ('department_manager','Demo Department Manager — Human Capital'), ('department_manager_ops','Demo Department Manager — Operations'),
          ('od_specialist', 'Demo OD Reviewer'), ('total_rewards', 'Demo Total Rewards Reviewer'),
+         ('total_rewards2','Demo Independent Total Rewards Evaluator'),
          ('finance', 'Demo Finance Reviewer'), ('chro', 'Demo Final Authority')]
 PROFILE = {
     'schema': 'miyar-institution-profile/1.0', 'organizationName': 'Miyar Demo Organization (synthetic)',
@@ -49,8 +51,9 @@ POSITIONS = [
     ('مشرف مباني', '311201', 'OPS', 144000, 'od_specialist'),
     ('أخصائي علاقات المستثمرين', '243203', 'OPS', 234000, 'draft'),
 ]
-STAGES = ['od_specialist', 'total_rewards', 'finance', 'chro']
+STAGES = ['department_manager','od_specialist', 'total_rewards', 'finance', 'chro']
 EVIDENCE = {
+    'department_manager':{'businessValidated':True,'budgetOwnerConfirmed':True,'headcountConfirmed':True},
     'od_specialist': {'scopeReviewed': True, 'mappingReviewed': True, 'businessValidated': True, 'roleNotPerson': True,
                       'businessReviewer': 'Synthetic department reviewer', 'businessReviewDate': '2026-09-20'},
     'total_rewards': {'payFrameworkReviewed': True},
@@ -62,6 +65,8 @@ EVIDENCE = {
 def _content(title, code, cost):
     value = {k: 'Synthetic ' + k + ' for the demonstration tenant' for k in CORE}
     value.update(title=title, requestType='additional-headcount', occupationCode=code, annualCost=cost, headcount=1,
+                 jobFamily='Synthetic reference family',salaryGrade='G04',costBasis='grade-band',annualCostMin=cost*.8,annualCostMax=cost*1.2,
+                 kpis=[{'outcome':'Deliver agreed work programme','metric':'Work programme completed on schedule','baseline':'80% on-time delivery','target':'95% on-time delivery','duration':'90 days','frequency':'Monthly','deliverable':'Synthetic work programme report'}],
                  responsibilities='Plan the work programme\nDeliver agreed outcomes\nReport progress and risks',
                  raci=[{'responsibility': 'Deliver outcomes', 'R': title, 'A': 'Department director', 'C': 'Human Capital', 'I': 'Finance'}])
     return value
@@ -88,7 +93,7 @@ def seed(app, password):
     with app.state.sessions() as db:
         archived = archive(db)
         db.flush()  # release archived e-mail addresses before the new accounts are inserted
-        org = Organization(name=PROFILE['organizationName'], settings={'demoMode': True, 'demoTenant': True, 'institutionProfile': {**copy.deepcopy(PROFILE), 'version': 1, 'updatedAt': '2026-09-29T00:00:00Z'}})
+        org = Organization(name=PROFILE['organizationName'], settings={'demoMode': True, 'demoTenant': True,'demoWorkflowVersion':3, 'institutionProfile': {**copy.deepcopy(PROFILE), 'version': 1, 'updatedAt': '2026-09-29T00:00:00Z'}})
         db.add(org)
         db.flush()
         departments = {}
@@ -100,8 +105,9 @@ def seed(app, password):
         tokens, emails = {}, {}
         for role, name in ROLES:
             email = role.replace('_', '-') + '@' + DOMAIN
-            u = User(org_id=org.id, email=email, name=name, role=role, password_hash=password_hash(password),
-                     department_id=departments['HC'] if role == 'line_manager' else None)
+            actual_role='total_rewards' if role=='total_rewards2' else 'department_manager' if role=='department_manager_ops' else role
+            u = User(org_id=org.id, email=email, name=name, role=actual_role, password_hash=password_hash(password),
+                     department_id=departments['HC'] if role in {'line_manager','department_manager'} else departments['OPS'] if role=='department_manager_ops' else None)
             db.add(u)
             db.flush()
             tokens[role], emails[role] = issue_token(u, app.state.secret), email
@@ -123,10 +129,12 @@ def seed(app, password):
                     if stage == target:
                         break
                     if stage == 'total_rewards':
-                        client.post('/api/v1/positions/' + p['id'] + '/evaluation', headers=auth(stage), json={'revision': p['revision'], 'answers': {f['id']: '3' if f['id']=='knowledge' else '2' for f in DEFAULT_FRAMEWORK['factors']},
-                                    'evidence': {f['id']: 'Synthetic evidence' for f in DEFAULT_FRAMEWORK['factors']}}).raise_for_status()
+                        for reviewer in ['total_rewards','total_rewards2']:
+                            client.post('/api/v1/positions/' + p['id'] + '/evaluation', headers=auth(reviewer), json={'revision': p['revision'], 'answers': {f['id']: '3' if f['id']=='knowledge' else '2' for f in DEFAULT_FRAMEWORK['factors']},
+                                    'evidence': {f['id']: 'Synthetic evidence quoting the position responsibilities and delegated authority' for f in DEFAULT_FRAMEWORK['factors']}}).raise_for_status()
                     evidence = {**EVIDENCE[stage], **({'approvedAnnualBudget': cost} if stage == 'finance' else {})}
-                    r = client.post('/api/v1/positions/' + p['id'] + '/decisions', headers=auth(stage), json={'revision': p['revision'], 'decision': 'approve', 'comment': 'Synthetic approval for the demonstration', 'evidence': evidence})
+                    reviewer='department_manager_ops' if stage=='department_manager' and dept=='OPS' else stage
+                    r = client.post('/api/v1/positions/' + p['id'] + '/decisions', headers=auth(reviewer), json={'revision': p['revision'], 'decision': 'approve', 'comment': 'Synthetic approval for the demonstration', 'evidence': evidence})
                     r.raise_for_status()
                     p = r.json()
             counts[target] = counts.get(target, 0) + 1
@@ -139,7 +147,7 @@ def ensure(app, password):
     from .security import verify_password
     with app.state.sessions() as db:
         current = db.scalar(select(User).where(User.email == 'admin@' + DOMAIN, User.active.is_(True)))
-        if current and verify_password(password, current.password_hash):
+        if current and db.get(Organization,current.org_id).settings.get('demoWorkflowVersion')==3 and verify_password(password, current.password_hash):
             return None
     return seed(app, password)
 

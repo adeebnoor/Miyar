@@ -32,7 +32,7 @@ function professionalReview(p,input,locale){
 E.generate=function(input={},locale='en'){
  const R=root.MiyarRoleRecommender;
  R?.validateScope(input,locale);
- const recommendation=R?.recommend({objective:input.strategyObjective,responsibilities:input.responsibilities,domain:input.department,seniority:input.requestedLevel,title:input.title,confirmedRole:input.confirmedRole,directReports:input.directReports,constraints:input.constraints});
+ const recommendation=R?.recommend({objective:input.strategyObjective,responsibilities:input.responsibilities,domain:input.department,seniority:input.requestedLevel,title:input.title,confirmedRole:input.confirmedRole,directReports:input.directReports,constraints:input.constraints,locale});
  if(!recommendation)throw Error(locale==='ar'?'لا تتوفر تغطية كافية للمسمى والمستوى المطلوبين؛ يلزم تأكيد النطاق من المختص.':'The requested title and level do not have sufficient supported coverage; a specialist must confirm the scope.');
  if(recommendation?.status==='needs-confirmation')return recommendation;
  if(recommendation?.status==='blocked')throw Error(locale==='ar'?(recommendation.message||'لا يمكن توليد الوصف قبل تصحيح تعارض المجال أو المستوى أو القيود.'):'Correct the requested level: '+(recommendation.checks.find(x=>x.status==='fail')?.en||'domain, level or constraint conflict.'));
@@ -53,7 +53,7 @@ E.generate=function(input={},locale='en'){
    p.content.kpis=metric?metric.split(/[;؛]/).filter(x=>x.trim()).map(metric=>({outcome:ar?'جودة وفعالية '+title:title+' effectiveness',metric,target:ar?'يحدد من خط الأساس ويعتمده مالك العملية':'Set from baseline and approved by the process owner',frequency:ar?'شهريًا':'Monthly',deliverable:ar?'سجل قياس بمصدر موثق':'Measurement log with documented source'})):p.content.kpis;
    p.content.successMeasures=p.content.kpis.map(x=>x.metric).join('\n');
    p.content.careerPath=manager?(ar?'مدير أول في '+f.ar+' ← مدير إدارة (بعد التقييم)':'Senior '+f.en+' Manager → Director (subject to evaluation)'):(ar?'أخصائي أول في '+f.ar+' ← مدير (بعد التقييم)':'Senior '+f.en+' Specialist → Manager (subject to evaluation)');
-   p.content.qualifications=ar?'مؤهل مرتبط بـ '+f.ar+'؛ الرموز التعليمية روابط مقترحة تحتاج مراجعة.':'Qualification relevant to '+f.en+'; education-code links are proposed and require review.';
+   p.content.qualifications=ar?r.educationDefaultAr:r.educationDefaultEn;
    p.content.certifications=ar?'تحدد الشهادات حسب تخصص الدور وسياسة الجهة؛ لا يُفترض اشتراط شهادة مشاريع.':'Certifications depend on the role and organization policy; no project certificate is assumed.';
   }
   if(f.id==='internalAudit'){
@@ -62,7 +62,8 @@ E.generate=function(input={},locale='en'){
   }
   if(recommendation.detection.workstreams.length>1)p.notices.unshift(ar?'نطاق متعدد الوظائف: راجع المهمة الرئيسية والمهام المساندة أو افصلها إلى أدوار قبل الاعتماد.':'Multi-function scope: confirm primary and supporting work, or split it into roles before approval.');
   p.content.odGenerationBasis=ar?'اقتراح قواعد شفافة من الهدف والمسؤوليات مع فحص المجال والمستوى والقيود؛ بانتظار اعتماد المختص.':'Transparent rule-based proposal from the objective and responsibilities, with domain, level and constraint checks; expert approval pending.';
-  p.referenceQueries={ssco:[r.referenceTitleAr],education:r.educationCodes,educationLevel:['assistant','technician'].includes(r.level)?'':'6'};
+  const educationLabels={'1':['التعليم الابتدائي','Primary education'],'3':['التعليم الثانوي','Secondary education'],'5':['الدبلوم المتوسط','Intermediate diploma'],'6':['بكالوريوس أو ما يعادلها','Bachelor or equivalent']};
+  p.referenceQueries={ssco:[r.referenceTitleAr],education:r.educationCodes,educationLevel:r.educationLevel||'6',educationLevelLabel:(educationLabels[r.educationLevel||'6']||educationLabels['6'])[ar?0:1]};p.content.educationLevelLabel=p.referenceQueries.educationLevelLabel;p.content.educationDefault=ar?r.educationDefaultAr:r.educationDefaultEn;
   if(r.licenseReviewRequired)p.notices.unshift(ar?r.licenseNoteAr:r.licenseNoteEn);
   p.validation=recommendation.checks;p.content.roleValidation=recommendation.checks;p.content.finalProposedTitle=recommendation.finalTitle?title:'';
   if(recommendation.detection.conflict)p.notices.unshift(ar?'نطاق مختلط: معالجة الرواتب في المالية؛ راجع توزيع مسؤولياتها بين الإدارتين.':'Mixed function scope: payroll is processed in Finance; confirm the departmental accountability.');

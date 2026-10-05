@@ -5,6 +5,7 @@ async function start(page,route='#demo'){
  await page.addInitScript(()=>localStorage.setItem('miyar-language','en'));
  await page.route('https://miyar-enterprise-api.onrender.com/**',route=>route.fulfill({status:401,contentType:'application/json',body:'{"detail":"Sign in required"}'}));
  await page.goto(BASE+route);
+ if(route==='#demo')await page.locator('#demo-context-fields > summary').click();
 }
 test('expert payroll recipient case validates specialist, then transfers all inputs to OD',async({page})=>{
  await start(page);await page.locator('#objective').fill('اعداد ومعالجة الرواتب شهريا وارفع تقارير للمدير المالي');await page.locator('#domain').fill('الموارد البشرية');await page.locator('#seniority').fill('أخصائي');await page.locator('#role-form button[type=submit]').click();

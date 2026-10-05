@@ -32,7 +32,7 @@ def require(user,*roles):
 
 def position_for(db,user,id,lock=False):
     query=select(Position).where(Position.id==id,Position.org_id==user.org_id)
-    if user.role=='line_manager':query=query.where(Position.department_id==user.department_id)
+    if user.role in {'line_manager','department_manager','hrbp'}:query=query.where(Position.department_id==user.department_id)
     if lock:query=query.with_for_update()
     value=db.scalar(query)
     if not value:raise HTTPException(404,'Position not found')
@@ -40,5 +40,5 @@ def position_for(db,user,id,lock=False):
 
 def scoped_positions(user):
     query=select(Position).where(Position.org_id==user.org_id)
-    if user.role=='line_manager':query=query.where(Position.department_id==user.department_id)
+    if user.role in {'line_manager','department_manager','hrbp'}:query=query.where(Position.department_id==user.department_id)
     return query

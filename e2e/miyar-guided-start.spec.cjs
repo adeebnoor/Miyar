@@ -38,11 +38,21 @@ async function runGuided(page,objective){
   return page.locator('#result-content');
 }
 
-test('long HR objective returns reviewable occupation references instead of an empty result',async({page})=>{
-  const result=await runGuided(page,'Improve employee retention, workforce planning and talent development across human resources.');
-  await expect(result.locator('.demo-v5-directory')).toBeVisible();
-  await expect(result.locator('.demo-v5-directory')).toContainText(/Human Capital|رأس المال البشري/);
-  await expect(result.locator('[data-demo-ref]').first()).toBeVisible();
+test('long HR retention objective asks about work design and shows relevant HR ownership',async({page})=>{
+  await page.goto('http://127.0.0.1:4173/#home');
+  await page.fill('#lp-guided-objective','Improve employee retention, workforce planning and talent development across human resources.');
+  await page.locator('#lp-guided-form button[type="submit"]').click();
+  await expect(page).toHaveURL(/#demo$/);
+  const result=page.locator('#result-content');
+  await expect(result).toContainText(/هدف احتفاظ|retention or quality outcome/);
+  const choices=result.locator('[data-confirm-role]');await expect(choices).toHaveCount(3);
+  for(const code of ['242302','242319','242307'])await expect(choices.filter({hasText:code})).toBeVisible();
+  await expect(result).not.toContainText(/222101|Nursing|nursing|patient|تمريض|مرضى|OUTPUT GENERATED|تم إنشاء مخرج/);
+  await expect(result.locator('.demo-final-title')).toHaveCount(0);await expect(result.locator('[data-demo-primary-hr]')).toHaveCount(0);
+  await choices.filter({hasText:'242302'}).click();
+  await expect(result).toContainText(/أضف مسؤولياته الفعلية|Add its actual duties/);
+  await expect(result).not.toContainText(/OUTPUT GENERATED|تم إنشاء مخرج/);
+  await expect(result.locator('.demo-final-title')).toHaveCount(0);await expect(result.locator('[data-demo-primary-hr]')).toHaveCount(0);
 });
 
 test('finance, technology and operations objectives always produce a visible actionable result',async({page})=>{
@@ -74,6 +84,7 @@ test('major Miyar surfaces render without uncaught browser errors',async({page})
 async function runDemoCase(page,{objective,domain='',seniority=''}) {
   await page.goto('http://127.0.0.1:4173/#demo');
   await page.fill('#objective',objective);
+  if((domain||seniority)&&!await page.locator('#domain').isVisible())await page.locator('#demo-context-fields > summary').click();
   if(domain)await page.fill('#domain',domain);
   if(seniority)await page.fill('#seniority',seniority);
   await page.locator('#role-form button[type="submit"]').click();

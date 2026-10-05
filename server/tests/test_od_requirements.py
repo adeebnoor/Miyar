@@ -44,13 +44,14 @@ def test_authorized_specialist_report_completes_workflow_and_exports_complete_ev
     submit(c,auth,p);assert decide(c,auth,p,'od_specialist',{**OD,'regulatoryReviewed':True}).status_code==200
     assert c.post(url+'/evaluation',headers=auth('finance'),json=body).status_code==403
     assert c.post(url+'/evaluation',headers=auth('total_rewards'),json=body).status_code==200
+    assert c.post(url+'/evaluation',headers=auth('total_rewards2'),json=body).status_code==200
     assert decide(c,auth,p,'total_rewards',{'payFrameworkReviewed':True}).status_code==200
     assert decide(c,auth,p,'finance',{'vacancyConfirmed':True,'budgetConfirmed':True,'approvedAnnualBudget':240000,'approvedHeadcount':1}).status_code==200
     assert decide(c,auth,p,'chro',{}).status_code==200
     assert c.post(url+'/evaluation',headers=auth('total_rewards'),json=body).status_code==409
     result=c.get(url+'/export/json?lang=en',headers=auth()).json()
     assert result['approved'] and result['evaluation']['result']['points']==412
-    assert result['approvals'][0]['evidence']['businessReviewer']==OD['businessReviewer']
+    assert result['approvals'][1]['evidence']['businessReviewer']==OD['businessReviewer']
     doc=c.get(url+'/export/docx?lang=en',headers=auth());assert doc.status_code==200
     text='\n'.join(p.text for p in Document(io.BytesIO(doc.content)).paragraphs)
     for value in ['071501','2027-01-01','Synthetic certificate requirement',EVIDENCE['rationale'],OD['businessReviewer'],'not calculated']:assert value in text

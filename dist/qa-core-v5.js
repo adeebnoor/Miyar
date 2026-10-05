@@ -6,8 +6,7 @@ const norm=C.normalize||function(v){return String(v||'').toLowerCase().trim();};
 
 if(C.search&&!C.__qaSearch){
  C.__qaSearch=true;const original=C.search.bind(C);
- const aliases={'accountant':'محاسب','accounting':'محاسب','nurse':'ممرض','registered nurse':'ممرض','software engineer':'مهندس برمجيات','software developer':'مطور برامج','programmer':'مطور برامج','sales manager':'مدير مبيعات','sales specialist':'اختصاصي مبيعات','human resources':'أخصائي موارد بشرية','human capital':'أخصائي موارد بشرية','hr specialist':'أخصائي موارد بشرية','recruitment':'أخصائي توظيف','recruiter':'أخصائي توظيف','talent acquisition':'أخصائي توظيف','payroll':'اخصائي رواتب وبدلات','compensation':'اخصائي رواتب وبدلات','compensation and benefits':'اخصائي رواتب وبدلات','employee relations':'أخصائي علاقات الموظفين','personnel':'اختصاصي شؤون موظفين','workforce planning':'مدير القوى العاملة','learning and development':'أخصائي تدريب','organizational development':'أخصائي تطوير تنظيمي','mechanical engineer':'مهندس ميكانيكي','civil engineer':'مهندس مدني'};
- C.search=function(nodes,q,parent){const raw=norm(q),mapped=aliases[raw]||String(q??''),soft=mapped.split(/\s+/).map(x=>x.length>3&&/[ةه]$/.test(x)?x.slice(0,-1):x).join(' ');let rows=original(nodes,soft,parent);if(!rows.length&&soft!==mapped)rows=original(nodes,mapped,parent);return rows;};
+ C.search=function(nodes,q,parent){const R=window.MiyarRoleRecommender;return R?.directorySearch?R.directorySearch(nodes,q,parent):original(nodes,q,parent);};
 }
 
 if(C.skills&&!C.__qaSkills){

@@ -35,7 +35,7 @@ test('long objectives use the OD family detector instead of being dropped by a s
   assert.match(src,/MiyarRoleRecommender/);
   const R=require('../dist/role-recommender.js');
   assert.equal(R.recommend({objective:'Manage recruitment and payroll services for the human resources department',domain:'Human Resources'}).candidate.family,'hc');
-  assert.match(src,/No confident occupation reference yet/);
+  assert.match(src,/no job output was generated/);
 });
 
 
@@ -76,7 +76,7 @@ test('public recommendation surface no longer labels itself as a five-engineerin
  const src=fs.readFileSync(path.join(dist,'app.js'),'utf8');
  assert.doesNotMatch(src,/العينة الحالية: 5 مهن هندسية|Current sample: 5 engineering occupations|Original sample - 5 roles/);
  assert.match(src,/محرك سريع \+ دليل مهني موسع/);
- assert.match(src,/Role recommendation engine/);
+ assert.match(src,/Find the right role/);assert.match(src,/ابحث عن الدور المناسب/);
 });
 
 

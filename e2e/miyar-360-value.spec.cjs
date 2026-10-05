@@ -37,7 +37,7 @@ test('every service and trust route renders and every linked first-party file re
 });
 
 test('zero salary minimum and an unrecognized three-letter currency block calculation',async({page})=>{
- await page.addInitScript(()=>localStorage.setItem('miyar-language','en'));await page.goto(BASE+'#enterprise/compensation');await page.locator('[data-cp-example]').click();await page.locator('#cp-min').fill('0');await page.locator('[data-cp-run]').click();await expect(page.locator('[data-cp-message]')).toContainText('Band minimum must be a valid number');await expect(page.locator('.cp-result')).toHaveCount(0);await expect(page.locator('[data-cp-export]')).toHaveCount(0);
+ await page.addInitScript(()=>localStorage.setItem('miyar-language','en'));await page.goto(BASE+'#enterprise/compensation');await page.locator('[data-cp-example]').click();await page.locator('#cp-min').fill('0');await page.locator('[data-cp-run]').click();await expect(page.locator('[data-cp-message]')).toContainText('Band minimum must be greater than zero');await expect(page.locator('.cp-result')).toHaveCount(0);await expect(page.locator('[data-cp-export]')).toHaveCount(0);
  await page.locator('#cp-min').fill('24000');await page.locator('#cp-currency').fill('ZZZ');await page.locator('[data-cp-run]').click();await expect(page.locator('[data-cp-message]')).toContainText('Currency must be a recognized currency code');await expect(page.locator('.cp-result')).toHaveCount(0);
  await page.goto(BASE+'#enterprise/create');await expect(page.locator('#ent-pdf-draft')).toHaveText('Download position PDF');
 });

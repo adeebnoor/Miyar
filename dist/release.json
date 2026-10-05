@@ -1,8 +1,14 @@
 {
-  "version": "6.3.2",
-  "buildId": "14a301b516e7e8f3",
+  "version": "6.3.3",
+  "buildId": "867822828b732779",
   "releasedAt": "2026-10-05",
   "changes": [
+    "6.3.3: guided forms with progressive details, field-purpose guidance and editable source-linked suggestions",
+    "6.3.3: unified task-to-occupation matching, objective and actor clarification, and source-checked education defaults",
+    "6.3.3: revision-bound position evaluation, committee and factor consistency, grade-based costs and complete submission KPIs",
+    "6.3.3: Department Manager / HRBP approval, authenticated separation of duties, SLA escalation and controlled replacement reuse",
+    "6.3.3: hierarchy health, salary equity and compression, hiring lead time and explicit position-linked costs",
+    "6.3.3: field-level accessible errors, adjacent results and bilingual form corrections",
     "6.3.2: duty evidence bounds requested levels and titles; membership and reporting recipients cannot confer leadership",
     "6.3.2: confirmation choices for brief supported scope, expanded bilingual catalog and unified OD titles",
     "6.3.2: pseudonym privacy, robust CSV numbers and salary coercion; workspace assets loaded on demand",

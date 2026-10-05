@@ -1,0 +1,809 @@
+{
+  "schema": "miyar-authored-goal-regression/1.0",
+  "authoredOn": "2026-10-05",
+  "provenance": "50 manually authored occupational task goals, each expressed in Arabic and English. Expected reference codes checked against supplied SSCO2019. A development regression set, not independently collected or adjudicated expert gold; adjacent reference mappings remain review proposals. Ambiguous hiring and outcome-only goals are separate safety tests and are not scored as automatic job recommendations.",
+  "sourceSha256": "d8c603f1b6457709e9d9d44aa7282d55c1fcb4b2960be7de2dd7dccdfa57be47",
+  "minimumFirstReferenceAccuracy": 0.85,
+  "cases": [
+    {
+      "id": "goal-01-ar",
+      "locale": "ar",
+      "goal": "تنظيف المكاتب يومياً",
+      "expectedCode": "911201",
+      "sourceTitleAr": "عامل نظافة",
+      "sourcePage": 202
+    },
+    {
+      "id": "goal-01-en",
+      "locale": "en",
+      "goal": "Clean the offices every day",
+      "expectedCode": "911201",
+      "sourceTitleAr": "عامل نظافة",
+      "sourcePage": 202
+    },
+    {
+      "id": "goal-02-ar",
+      "locale": "ar",
+      "goal": "مسح الأرضيات وتنظيف المرافق",
+      "expectedCode": "911201",
+      "sourceTitleAr": "عامل نظافة",
+      "sourcePage": 202
+    },
+    {
+      "id": "goal-02-en",
+      "locale": "en",
+      "goal": "Mop floors and clean facilities",
+      "expectedCode": "911201",
+      "sourceTitleAr": "عامل نظافة",
+      "sourcePage": 202
+    },
+    {
+      "id": "goal-03-ar",
+      "locale": "ar",
+      "goal": "كنس المكاتب وتنظيف الأسطح",
+      "expectedCode": "911201",
+      "sourceTitleAr": "عامل نظافة",
+      "sourcePage": 202
+    },
+    {
+      "id": "goal-03-en",
+      "locale": "en",
+      "goal": "Sweep the offices and clean surfaces",
+      "expectedCode": "911201",
+      "sourceTitleAr": "عامل نظافة",
+      "sourcePage": 202
+    },
+    {
+      "id": "goal-04-ar",
+      "locale": "ar",
+      "goal": "قيادة سيارة الرئيس التنفيذي",
+      "expectedCode": "832201",
+      "sourceTitleAr": "سائق سيارة",
+      "sourcePage": 198
+    },
+    {
+      "id": "goal-04-en",
+      "locale": "en",
+      "goal": "Drive the chief executive in a car",
+      "expectedCode": "832201",
+      "sourceTitleAr": "سائق سيارة",
+      "sourcePage": 198
+    },
+    {
+      "id": "goal-05-ar",
+      "locale": "ar",
+      "goal": "نقل الركاب وقيادة المركبة بأمان",
+      "expectedCode": "832201",
+      "sourceTitleAr": "سائق سيارة",
+      "sourcePage": 198
+    },
+    {
+      "id": "goal-05-en",
+      "locale": "en",
+      "goal": "Drive passengers safely in a car",
+      "expectedCode": "832201",
+      "sourceTitleAr": "سائق سيارة",
+      "sourcePage": 198
+    },
+    {
+      "id": "goal-06-ar",
+      "locale": "ar",
+      "goal": "تعليم الرياضيات لطلاب الثانوي",
+      "expectedCode": "233010",
+      "sourceTitleAr": "مدرس ثانوي رياضيات",
+      "sourcePage": 53
+    },
+    {
+      "id": "goal-06-en",
+      "locale": "en",
+      "goal": "Teach mathematics to secondary students",
+      "expectedCode": "233010",
+      "sourceTitleAr": "مدرس ثانوي رياضيات",
+      "sourcePage": 53
+    },
+    {
+      "id": "goal-07-ar",
+      "locale": "ar",
+      "goal": "تدريس الرياضيات للمرحلة الابتدائية",
+      "expectedCode": "234107",
+      "sourceTitleAr": "معلم رياضيات ابتدائي ومتوسط",
+      "sourcePage": 54
+    },
+    {
+      "id": "goal-07-en",
+      "locale": "en",
+      "goal": "Teach math to primary pupils",
+      "expectedCode": "234107",
+      "sourceTitleAr": "معلم رياضيات ابتدائي ومتوسط",
+      "sourcePage": 54
+    },
+    {
+      "id": "goal-08-ar",
+      "locale": "ar",
+      "goal": "تعليم الرياضيات لطلاب المتوسط",
+      "expectedCode": "234107",
+      "sourceTitleAr": "معلم رياضيات ابتدائي ومتوسط",
+      "sourcePage": 54
+    },
+    {
+      "id": "goal-08-en",
+      "locale": "en",
+      "goal": "Teach mathematics to middle school students",
+      "expectedCode": "234107",
+      "sourceTitleAr": "معلم رياضيات ابتدائي ومتوسط",
+      "sourcePage": 54
+    },
+    {
+      "id": "goal-09-ar",
+      "locale": "ar",
+      "goal": "تعليم رياض الأطفال وتنمية مهارات أطفال الروضة",
+      "expectedCode": "234202",
+      "sourceTitleAr": "معلمة رياض أطفال",
+      "sourcePage": 55
+    },
+    {
+      "id": "goal-09-en",
+      "locale": "en",
+      "goal": "Teach kindergarten children and develop their skills",
+      "expectedCode": "234202",
+      "sourceTitleAr": "معلمة رياض أطفال",
+      "sourcePage": 55
+    },
+    {
+      "id": "goal-10-ar",
+      "locale": "ar",
+      "goal": "تطوير تطبيقات الويب وكتابة الكود",
+      "expectedCode": "251204",
+      "sourceTitleAr": "مهندس برمجيات",
+      "sourcePage": 63
+    },
+    {
+      "id": "goal-10-en",
+      "locale": "en",
+      "goal": "Develop web applications and write source code",
+      "expectedCode": "251204",
+      "sourceTitleAr": "مهندس برمجيات",
+      "sourcePage": 63
+    },
+    {
+      "id": "goal-11-ar",
+      "locale": "ar",
+      "goal": "برمجة واجهات المستخدم واختبارات آلية",
+      "expectedCode": "251204",
+      "sourceTitleAr": "مهندس برمجيات",
+      "sourcePage": 63
+    },
+    {
+      "id": "goal-11-en",
+      "locale": "en",
+      "goal": "Build user interfaces and automated tests",
+      "expectedCode": "251204",
+      "sourceTitleAr": "مهندس برمجيات",
+      "sourcePage": 63
+    },
+    {
+      "id": "goal-12-ar",
+      "locale": "ar",
+      "goal": "تطوير التطبيقات ومراجعة الشفرة",
+      "expectedCode": "251204",
+      "sourceTitleAr": "مهندس برمجيات",
+      "sourcePage": 63
+    },
+    {
+      "id": "goal-12-en",
+      "locale": "en",
+      "goal": "Develop applications and review source code",
+      "expectedCode": "251204",
+      "sourceTitleAr": "مهندس برمجيات",
+      "sourcePage": 63
+    },
+    {
+      "id": "goal-13-ar",
+      "locale": "ar",
+      "goal": "بناء مستودع بيانات ولوحات المعلومات",
+      "expectedCode": "242102",
+      "sourceTitleAr": "خبير ذكاء الأعمال",
+      "sourcePage": 59
+    },
+    {
+      "id": "goal-13-en",
+      "locale": "en",
+      "goal": "Build a data warehouse and dashboards",
+      "expectedCode": "242102",
+      "sourceTitleAr": "خبير ذكاء الأعمال",
+      "sourcePage": 59
+    },
+    {
+      "id": "goal-14-ar",
+      "locale": "ar",
+      "goal": "تطوير لوحات مؤشرات ذكاء الأعمال",
+      "expectedCode": "242102",
+      "sourceTitleAr": "خبير ذكاء الأعمال",
+      "sourcePage": 59
+    },
+    {
+      "id": "goal-14-en",
+      "locale": "en",
+      "goal": "Develop business intelligence dashboards",
+      "expectedCode": "242102",
+      "sourceTitleAr": "خبير ذكاء الأعمال",
+      "sourcePage": 59
+    },
+    {
+      "id": "goal-15-ar",
+      "locale": "ar",
+      "goal": "بناء نماذج تنبؤية وتقييم نماذج التعلم الآلي",
+      "expectedCode": "212002",
+      "sourceTitleAr": "أخصائي بيانات",
+      "sourcePage": 30
+    },
+    {
+      "id": "goal-15-en",
+      "locale": "en",
+      "goal": "Build predictive models and validate machine learning models",
+      "expectedCode": "212002",
+      "sourceTitleAr": "أخصائي بيانات",
+      "sourcePage": 30
+    },
+    {
+      "id": "goal-16-ar",
+      "locale": "ar",
+      "goal": "حماية الشبكات من الهجمات السيبرانية",
+      "expectedCode": "252904",
+      "sourceTitleAr": "اختصاصي أمن وحماية نظم المعلومات",
+      "sourcePage": 65
+    },
+    {
+      "id": "goal-16-en",
+      "locale": "en",
+      "goal": "Protect the network against cyber attacks",
+      "expectedCode": "252904",
+      "sourceTitleAr": "اختصاصي أمن وحماية نظم المعلومات",
+      "sourcePage": 65
+    },
+    {
+      "id": "goal-17-ar",
+      "locale": "ar",
+      "goal": "مراجعة جدران الحماية والتحكم بالوصول",
+      "expectedCode": "252904",
+      "sourceTitleAr": "اختصاصي أمن وحماية نظم المعلومات",
+      "sourcePage": 65
+    },
+    {
+      "id": "goal-17-en",
+      "locale": "en",
+      "goal": "Review firewalls and digital access controls",
+      "expectedCode": "252904",
+      "sourceTitleAr": "اختصاصي أمن وحماية نظم المعلومات",
+      "sourcePage": 65
+    },
+    {
+      "id": "goal-18-ar",
+      "locale": "ar",
+      "goal": "إعداد القيود المحاسبية وتسوية الحسابات البنكية",
+      "expectedCode": "241101",
+      "sourceTitleAr": "محاسب",
+      "sourcePage": 57
+    },
+    {
+      "id": "goal-18-en",
+      "locale": "en",
+      "goal": "Prepare journal entries and bank reconciliations",
+      "expectedCode": "241101",
+      "sourceTitleAr": "محاسب",
+      "sourcePage": 57
+    },
+    {
+      "id": "goal-19-ar",
+      "locale": "ar",
+      "goal": "تسجيل المعاملات المالية وإعداد القوائم المالية",
+      "expectedCode": "241101",
+      "sourceTitleAr": "محاسب",
+      "sourcePage": 57
+    },
+    {
+      "id": "goal-19-en",
+      "locale": "en",
+      "goal": "Record financial transactions and prepare financial statements",
+      "expectedCode": "241101",
+      "sourceTitleAr": "محاسب",
+      "sourcePage": 57
+    },
+    {
+      "id": "goal-20-ar",
+      "locale": "ar",
+      "goal": "إدخال فواتير الموردين ومطابقتها بأوامر الشراء",
+      "expectedCode": "331305",
+      "sourceTitleAr": "فني حسابات تأديات",
+      "sourcePage": 98
+    },
+    {
+      "id": "goal-20-en",
+      "locale": "en",
+      "goal": "Enter supplier invoices and match them to purchase orders",
+      "expectedCode": "331305",
+      "sourceTitleAr": "فني حسابات تأديات",
+      "sourcePage": 98
+    },
+    {
+      "id": "goal-21-ar",
+      "locale": "ar",
+      "goal": "فرز السير الذاتية وإعداد عروض العمل",
+      "expectedCode": "242305",
+      "sourceTitleAr": "أخصائي توظيف",
+      "sourcePage": 60
+    },
+    {
+      "id": "goal-21-en",
+      "locale": "en",
+      "goal": "Screen applicants and prepare job offers",
+      "expectedCode": "242305",
+      "sourceTitleAr": "أخصائي توظيف",
+      "sourcePage": 60
+    },
+    {
+      "id": "goal-22-ar",
+      "locale": "ar",
+      "goal": "إعداد مسير الرواتب وتسوية اشتراكات التأمينات",
+      "expectedCode": "242322",
+      "sourceTitleAr": "اخصائي رواتب وبدلات",
+      "sourcePage": 61
+    },
+    {
+      "id": "goal-22-en",
+      "locale": "en",
+      "goal": "Prepare payroll and reconcile social insurance contributions",
+      "expectedCode": "242322",
+      "sourceTitleAr": "اخصائي رواتب وبدلات",
+      "sourcePage": 61
+    },
+    {
+      "id": "goal-23-ar",
+      "locale": "ar",
+      "goal": "تصميم هيكل الرواتب ومراجعة التعويضات",
+      "expectedCode": "242306",
+      "sourceTitleAr": "أخصائي مكافآت",
+      "sourcePage": 60
+    },
+    {
+      "id": "goal-23-en",
+      "locale": "en",
+      "goal": "Design the pay structure and review compensation",
+      "expectedCode": "242306",
+      "sourceTitleAr": "أخصائي مكافآت",
+      "sourcePage": 60
+    },
+    {
+      "id": "goal-24-ar",
+      "locale": "ar",
+      "goal": "معالجة شكاوى الموظفين ومراجعة علاقات الموظفين",
+      "expectedCode": "242302",
+      "sourceTitleAr": "أخصائي علاقات الموظفين",
+      "sourcePage": 60
+    },
+    {
+      "id": "goal-24-en",
+      "locale": "en",
+      "goal": "Resolve employee grievances and review employee relations",
+      "expectedCode": "242302",
+      "sourceTitleAr": "أخصائي علاقات الموظفين",
+      "sourcePage": 60
+    },
+    {
+      "id": "goal-25-ar",
+      "locale": "ar",
+      "goal": "تخطيط القوى العاملة وتحليل احتياجات العدد",
+      "expectedCode": "242319",
+      "sourceTitleAr": "اختصاصي قوى عمالة",
+      "sourcePage": 61
+    },
+    {
+      "id": "goal-25-en",
+      "locale": "en",
+      "goal": "Prepare workforce planning and analyze manpower requirements",
+      "expectedCode": "242319",
+      "sourceTitleAr": "اختصاصي قوى عمالة",
+      "sourcePage": 61
+    },
+    {
+      "id": "goal-26-ar",
+      "locale": "ar",
+      "goal": "تصميم برامج التدريب وتقييم أثر التدريب",
+      "expectedCode": "242402",
+      "sourceTitleAr": "أخصائي تدريب",
+      "sourcePage": 61
+    },
+    {
+      "id": "goal-26-en",
+      "locale": "en",
+      "goal": "Design training programs and evaluate learning and development",
+      "expectedCode": "242402",
+      "sourceTitleAr": "أخصائي تدريب",
+      "sourcePage": 61
+    },
+    {
+      "id": "goal-27-ar",
+      "locale": "ar",
+      "goal": "مراجعة التصميم التنظيمي وتطوير الهيكل التنظيمي",
+      "expectedCode": "242109",
+      "sourceTitleAr": "أخصائي تطوير تنظيمي",
+      "sourcePage": 59
+    },
+    {
+      "id": "goal-27-en",
+      "locale": "en",
+      "goal": "Review organization design and develop organization structures",
+      "expectedCode": "242109",
+      "sourceTitleAr": "أخصائي تطوير تنظيمي",
+      "sourcePage": 59
+    },
+    {
+      "id": "goal-28-ar",
+      "locale": "ar",
+      "goal": "تحليل الوظائف ومراجعة تصنيف الوظائف",
+      "expectedCode": "242323",
+      "sourceTitleAr": "محلل وظائف",
+      "sourcePage": 61
+    },
+    {
+      "id": "goal-28-en",
+      "locale": "en",
+      "goal": "Perform job analysis and review job classification",
+      "expectedCode": "242323",
+      "sourceTitleAr": "محلل وظائف",
+      "sourcePage": 61
+    },
+    {
+      "id": "goal-29-ar",
+      "locale": "ar",
+      "goal": "متابعة شؤون الموظفين وتوثيق ملفات شؤون الموظفين",
+      "expectedCode": "242310",
+      "sourceTitleAr": "اختصاصي شؤون موظفين",
+      "sourcePage": 60
+    },
+    {
+      "id": "goal-29-en",
+      "locale": "en",
+      "goal": "Review personnel affairs and document personnel records",
+      "expectedCode": "242310",
+      "sourceTitleAr": "اختصاصي شؤون موظفين",
+      "sourcePage": 60
+    },
+    {
+      "id": "goal-30-ar",
+      "locale": "ar",
+      "goal": "مراقبة الحضور والانصراف ومعالجة استثناءات الحضور",
+      "expectedCode": "441602",
+      "sourceTitleAr": "كاتب دوام",
+      "sourcePage": 123
+    },
+    {
+      "id": "goal-30-en",
+      "locale": "en",
+      "goal": "Monitor attendance and resolve timekeeping exceptions",
+      "expectedCode": "441602",
+      "sourceTitleAr": "كاتب دوام",
+      "sourcePage": 123
+    },
+    {
+      "id": "goal-31-ar",
+      "locale": "ar",
+      "goal": "تنفيذ حملات التسويق الرقمي وتحليل التحويلات",
+      "expectedCode": "243103",
+      "sourceTitleAr": "أخصائي تسويق تجارة إلكترونية",
+      "sourcePage": 61
+    },
+    {
+      "id": "goal-31-en",
+      "locale": "en",
+      "goal": "Run digital marketing campaigns and analyze campaign conversion",
+      "expectedCode": "243103",
+      "sourceTitleAr": "أخصائي تسويق تجارة إلكترونية",
+      "sourcePage": 61
+    },
+    {
+      "id": "goal-32-ar",
+      "locale": "ar",
+      "goal": "فحص جودة المنتجات وتوثيق ضمان الجودة",
+      "expectedCode": "242198",
+      "sourceTitleAr": "اخصائي مواصفات ومقاييس وجودة",
+      "sourcePage": 60
+    },
+    {
+      "id": "goal-32-en",
+      "locale": "en",
+      "goal": "Check product quality and document quality assurance",
+      "expectedCode": "242198",
+      "sourceTitleAr": "اخصائي مواصفات ومقاييس وجودة",
+      "sourcePage": 60
+    },
+    {
+      "id": "goal-33-ar",
+      "locale": "ar",
+      "goal": "معالجة استفسارات العملاء وشكاوى خدمة العملاء",
+      "expectedCode": "332202",
+      "sourceTitleAr": "ممثل خدمة العملاء",
+      "sourcePage": 100
+    },
+    {
+      "id": "goal-33-en",
+      "locale": "en",
+      "goal": "Resolve customer inquiries and customer service complaints",
+      "expectedCode": "332202",
+      "sourceTitleAr": "ممثل خدمة العملاء",
+      "sourcePage": 100
+    },
+    {
+      "id": "goal-34-ar",
+      "locale": "ar",
+      "goal": "مراجعة الحوكمة والامتثال وتوثيق الضوابط",
+      "expectedCode": "242109",
+      "sourceTitleAr": "أخصائي تطوير تنظيمي",
+      "sourcePage": 59
+    },
+    {
+      "id": "goal-34-en",
+      "locale": "en",
+      "goal": "Review governance and compliance controls",
+      "expectedCode": "242109",
+      "sourceTitleAr": "أخصائي تطوير تنظيمي",
+      "sourcePage": 59
+    },
+    {
+      "id": "goal-35-ar",
+      "locale": "ar",
+      "goal": "طرح طلبات العروض وتقييم الموردين للمشتريات",
+      "expectedCode": "242110",
+      "sourceTitleAr": "أخصائي المشتريات",
+      "sourcePage": 59
+    },
+    {
+      "id": "goal-35-en",
+      "locale": "en",
+      "goal": "Prepare procurement RFPs and evaluate vendor sourcing",
+      "expectedCode": "242110",
+      "sourceTitleAr": "أخصائي المشتريات",
+      "sourcePage": 59
+    },
+    {
+      "id": "goal-36-ar",
+      "locale": "ar",
+      "goal": "تخطيط سلاسل الإمداد ومراقبة المخزون",
+      "expectedCode": "242110",
+      "sourceTitleAr": "أخصائي المشتريات",
+      "sourcePage": 59
+    },
+    {
+      "id": "goal-36-en",
+      "locale": "en",
+      "goal": "Plan supply chain and monitor inventory",
+      "expectedCode": "242110",
+      "sourceTitleAr": "أخصائي المشتريات",
+      "sourcePage": 59
+    },
+    {
+      "id": "goal-37-ar",
+      "locale": "ar",
+      "goal": "تقديم المشورة القانونية ومراجعة النزاعات القانونية",
+      "expectedCode": "261102",
+      "sourceTitleAr": "مستشار قانوني",
+      "sourcePage": 66
+    },
+    {
+      "id": "goal-37-en",
+      "locale": "en",
+      "goal": "Provide legal advice and review litigation",
+      "expectedCode": "261102",
+      "sourceTitleAr": "مستشار قانوني",
+      "sourcePage": 66
+    },
+    {
+      "id": "goal-38-ar",
+      "locale": "ar",
+      "goal": "تصنيف البريد الوارد وحفظ المراسلات الصادرة",
+      "expectedCode": "242311",
+      "sourceTitleAr": "اختصاصي شؤون إدارية",
+      "sourcePage": 60
+    },
+    {
+      "id": "goal-38-en",
+      "locale": "en",
+      "goal": "Index incoming mail and file outgoing correspondence",
+      "expectedCode": "242311",
+      "sourceTitleAr": "اختصاصي شؤون إدارية",
+      "sourcePage": 60
+    },
+    {
+      "id": "goal-39-ar",
+      "locale": "ar",
+      "goal": "متابعة المبيعات وتطوير فرص البيع",
+      "expectedCode": "243107",
+      "sourceTitleAr": "اختصاصي مبيعات",
+      "sourcePage": 62
+    },
+    {
+      "id": "goal-39-en",
+      "locale": "en",
+      "goal": "Review the sales pipeline and develop sales opportunities",
+      "expectedCode": "243107",
+      "sourceTitleAr": "اختصاصي مبيعات",
+      "sourcePage": 62
+    },
+    {
+      "id": "goal-40-ar",
+      "locale": "ar",
+      "goal": "إعطاء الأدوية ومراقبة العلامات الحيوية",
+      "expectedCode": "222101",
+      "sourceTitleAr": "ممرض",
+      "sourcePage": 44
+    },
+    {
+      "id": "goal-40-en",
+      "locale": "en",
+      "goal": "Administer medications and monitor vital signs",
+      "expectedCode": "222101",
+      "sourceTitleAr": "ممرض",
+      "sourcePage": 44
+    },
+    {
+      "id": "goal-41-ar",
+      "locale": "ar",
+      "goal": "توثيق الرعاية التمريضية ومراجعة خطط الرعاية",
+      "expectedCode": "222101",
+      "sourceTitleAr": "ممرض",
+      "sourcePage": 44
+    },
+    {
+      "id": "goal-41-en",
+      "locale": "en",
+      "goal": "Document nursing care and review care plans",
+      "expectedCode": "222101",
+      "sourceTitleAr": "ممرض",
+      "sourcePage": 44
+    },
+    {
+      "id": "goal-42-ar",
+      "locale": "ar",
+      "goal": "تحسين العمليات ورسم العمليات التشغيلية",
+      "expectedCode": "242109",
+      "sourceTitleAr": "أخصائي تطوير تنظيمي",
+      "sourcePage": 59
+    },
+    {
+      "id": "goal-42-en",
+      "locale": "en",
+      "goal": "Perform process improvement and map operating processes",
+      "expectedCode": "242109",
+      "sourceTitleAr": "أخصائي تطوير تنظيمي",
+      "sourcePage": 59
+    },
+    {
+      "id": "goal-43-ar",
+      "locale": "ar",
+      "goal": "إعداد دراسة الجدوى وتطوير مشاريع عقارية",
+      "expectedCode": "242114",
+      "sourceTitleAr": "محلل أعمال",
+      "sourcePage": 59
+    },
+    {
+      "id": "goal-43-en",
+      "locale": "en",
+      "goal": "Prepare feasibility studies for project development",
+      "expectedCode": "242114",
+      "sourceTitleAr": "محلل أعمال",
+      "sourcePage": 59
+    },
+    {
+      "id": "goal-44-ar",
+      "locale": "ar",
+      "goal": "تقييم الاستثمارات وإجراء العناية الواجبة",
+      "expectedCode": "241308",
+      "sourceTitleAr": "محلل استثمارات",
+      "sourcePage": 58
+    },
+    {
+      "id": "goal-44-en",
+      "locale": "en",
+      "goal": "Analyze investment valuations and perform due diligence",
+      "expectedCode": "241308",
+      "sourceTitleAr": "محلل استثمارات",
+      "sourcePage": 58
+    },
+    {
+      "id": "goal-45-ar",
+      "locale": "ar",
+      "goal": "تنفيذ المراجعة الداخلية وجمع أدلة المراجعة",
+      "expectedCode": "241321",
+      "sourceTitleAr": "مراجع داخلي",
+      "sourcePage": 58
+    },
+    {
+      "id": "goal-45-en",
+      "locale": "en",
+      "goal": "Perform internal audit testing and gather audit evidence",
+      "expectedCode": "241321",
+      "sourceTitleAr": "مراجع داخلي",
+      "sourcePage": 58
+    },
+    {
+      "id": "goal-46-ar",
+      "locale": "ar",
+      "goal": "صياغة الأهداف الاستراتيجية ومتابعة التنفيذ الاستراتيجي",
+      "expectedCode": "242204",
+      "sourceTitleAr": "أخصائي استراتيجية الشركة",
+      "sourcePage": 60
+    },
+    {
+      "id": "goal-46-en",
+      "locale": "en",
+      "goal": "Develop strategic objectives and monitor strategy execution",
+      "expectedCode": "242204",
+      "sourceTitleAr": "أخصائي استراتيجية الشركة",
+      "sourcePage": 60
+    },
+    {
+      "id": "goal-47-ar",
+      "locale": "ar",
+      "goal": "متابعة مكتب إدارة المشاريع وتوثيق معالم المشاريع",
+      "expectedCode": "242114",
+      "sourceTitleAr": "محلل أعمال",
+      "sourcePage": 59
+    },
+    {
+      "id": "goal-47-en",
+      "locale": "en",
+      "goal": "Track PMO milestones and document project governance",
+      "expectedCode": "242114",
+      "sourceTitleAr": "محلل أعمال",
+      "sourcePage": 59
+    },
+    {
+      "id": "goal-48-ar",
+      "locale": "ar",
+      "goal": "صيانة التكييف وإصلاح أعطال التكييف",
+      "expectedCode": "311547",
+      "sourceTitleAr": "فني تكييف وتبريد تشغيل وصيانة",
+      "sourcePage": 82
+    },
+    {
+      "id": "goal-48-en",
+      "locale": "en",
+      "goal": "Perform HVAC preventive maintenance and repair air conditioning faults",
+      "expectedCode": "311547",
+      "sourceTitleAr": "فني تكييف وتبريد تشغيل وصيانة",
+      "sourcePage": 82
+    },
+    {
+      "id": "goal-49-ar",
+      "locale": "ar",
+      "goal": "حراسة البوابة وفحص دخول الزوار",
+      "expectedCode": "541402",
+      "sourceTitleAr": "حارس أمن",
+      "sourcePage": 136
+    },
+    {
+      "id": "goal-49-en",
+      "locale": "en",
+      "goal": "Guard the gate and screen visitor access",
+      "expectedCode": "541402",
+      "sourceTitleAr": "حارس أمن",
+      "sourcePage": 136
+    },
+    {
+      "id": "goal-50-ar",
+      "locale": "ar",
+      "goal": "فحص السلامة المهنية وتقييم أخطار مكان العمل",
+      "expectedCode": "226302",
+      "sourceTitleAr": "أخصائي صحة وسلامة مهنية",
+      "sourcePage": 47
+    },
+    {
+      "id": "goal-50-en",
+      "locale": "en",
+      "goal": "Conduct safety inspections and assess workplace hazards",
+      "expectedCode": "226302",
+      "sourceTitleAr": "أخصائي صحة وسلامة مهنية",
+      "sourcePage": 47
+    }
+  ]
+}

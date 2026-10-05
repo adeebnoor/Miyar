@@ -1,5 +1,5 @@
 """Tenant-scoped API. Approval checks are enforced here, never by UI role selectors."""
-import copy,json,os,re,secrets,time,math,csv,zipfile,threading
+import copy,json,os,re,secrets,time,math,csv,zipfile,threading,asyncio
 from contextlib import asynccontextmanager,contextmanager
 from datetime import datetime,timezone
 from typing import Annotated,Literal
@@ -17,7 +17,8 @@ from sqlalchemy.exc import IntegrityError,SQLAlchemyError
 from sqlalchemy.orm.exc import StaleDataError
 from .models import Base,Organization,Department,User,Position,PositionVersion,AuditEvent,Approval,OutboxEvent,Evaluation,LoginWindow,TaxonomyRelease,IntegrationReceipt,UserMfa,database,uid,now
 from .security import bearer,actor,require,position_for,scoped_positions,password_hash,verify_password,issue_token,hasher
-from .domain import DEFAULT_WORKFLOW,DEFAULT_FRAMEWORK,ROLES,CORE,normalized,canonical,digest,required_content,validate_workflow,validate_framework,validate_regulatory,valid_date,grade
+from .domain import DEFAULT_WORKFLOW,DEFAULT_FRAMEWORK,ROLES,CORE,normalized,canonical,digest,required_content,validate_workflow,submission_workflow,validate_position_scope,validate_submission,evaluation_consistency,validate_framework,validate_regulatory,valid_date,grade
+from .approval_governance import start_stage,pending_stage,escalate_overdue,committee_summary,replacement_reuse,evaluation_comparisons,approved_evaluation_context
 from .taxonomy import Catalog,read_rows,bulk_diagnosis
 
 class Input(BaseModel):model_config=ConfigDict(extra='forbid',allow_inf_nan=False)
@@ -50,6 +51,7 @@ class WorkflowRequest(Input):steps:list[dict];reason:str=Field(min_length=3,max_
 class BrandingRequest(Input):nameAr:str=Field(max_length=200);nameEn:str=Field(max_length=200);color:str=Field(pattern=r'^#[0-9a-fA-F]{6}$');footer:str=Field(max_length=500)
 
 CONTENT_FIELDS=set(CORE)|{'field','seniority','requestType','department','manager','effectiveDate','experience','certifications','occupationCode','occupationRelease','educationLevel','educationFieldCode','constraints','saudization','saudizationSource','saudizationDate','license','licenseSource','licenseDate','headcount','annualCost','directReports','raci','skillRequirements','mappingJustification','provisional','provisionalParent','sourceDecisionId','sourceDecisionInput','importNotes','kpis','performanceBasis','raciBasis','salaryMin','salaryMax','salaryCurrency','salaryPeriod','salarySource','salaryGrade','evaluationSummary'}
+CONTENT_FIELDS.update({'experienceYears','experienceType','employmentType','location','workMode','parentPositionId','costBasis','costExceptionReason','annualCostMin','annualCostMax','replacementPositionId','evaluatedPositionId','evaluatedPositionRevision','occupiedFte','vacantFte'})
 
 def create_app(db_url=None,jwt_secret=None,catalog=None):
     secret=jwt_secret or os.getenv('MIYAR_JWT_SECRET','');url=db_url or os.getenv('DATABASE_URL','sqlite:///./.runtime/miyar.db')
@@ -73,7 +75,20 @@ def create_app(db_url=None,jwt_secret=None,catalog=None):
     @asynccontextmanager
     async def lifespan(application):
         warm_semantic(references)
-        yield
+        async def escalation_monitor():
+            while True:
+                try:
+                    def scan():
+                        with Session() as db:escalate_overdue(db)
+                    await asyncio.to_thread(scan)
+                except SQLAlchemyError:pass
+                await asyncio.sleep(60)
+        monitor=asyncio.create_task(escalation_monitor())
+        try:yield
+        finally:
+            monitor.cancel()
+            try:await monitor
+            except asyncio.CancelledError:pass
     app=FastAPI(title='Miyar Enterprise Workforce API',version=VERSION,lifespan=lifespan,description='Tenant-scoped positions, revision-bound approvals, versioned classification references and explicit integration boundaries.')
     app.state.sessions=Session;app.state.catalog=references;app.state.secret=secret
     origins=[x.strip() for x in os.getenv('MIYAR_CORS_ORIGINS','https://adeebnoor.github.io').split(',') if x.strip()]
@@ -106,7 +121,7 @@ def create_app(db_url=None,jwt_secret=None,catalog=None):
         if position.revision!=revision:raise HTTPException(409,'A newer revision exists; reload before changing this position')
     def department(db,user,id):
         dep=db.scalar(select(Department).where(Department.id==id,Department.org_id==user.org_id))
-        if not dep or (user.role=='line_manager' and user.department_id!=id):raise HTTPException(403,'Department access denied')
+        if not dep or (user.role in {'line_manager','department_manager','hrbp'} and user.department_id!=id):raise HTTPException(403,'Department access denied')
         return dep
     def audit(db,user,action,detail,position=None):
         # Serialize each organization's audit chain under a PostgreSQL row lock.
@@ -134,10 +149,12 @@ def create_app(db_url=None,jwt_secret=None,catalog=None):
         for key,v in result.items():
             if key in {'raci','skillRequirements','kpis'}:
                 if not isinstance(v,list) or len(v)>100:raise HTTPException(422,'Invalid matrix')
-                allowed={'responsibility','R','A','C','I'} if key=='raci' else {'outcome','metric','target','frequency','deliverable'} if key=='kpis' else {'name','type','level','evidence'}
+                allowed={'responsibility','R','A','C','I'} if key=='raci' else {'outcome','metric','baseline','target','duration','frequency','deliverable'} if key=='kpis' else {'name','type','level','evidence'}
                 if any(not isinstance(row,dict) or set(row)-allowed or any(not isinstance(cell,str) or len(cell)>4000 for cell in row.values()) for row in v):raise HTTPException(422,'Matrix entries must contain named text fields')
-            elif key in {'headcount','annualCost','directReports','salaryMin','salaryMax'}:
-                if not isinstance(v,(int,float)) or isinstance(v,bool) or not 0<=v<=1e12:raise HTTPException(422,'Invalid numeric scope')
+            elif key in {'headcount','annualCost','directReports','salaryMin','salaryMax','experienceYears','annualCostMin','annualCostMax','occupiedFte','vacantFte'}:
+                if not isinstance(v,(int,float)) or isinstance(v,bool) or not math.isfinite(v) or not 0<=v<=1e12:raise HTTPException(422,'Invalid numeric scope')
+            elif key=='evaluatedPositionRevision':
+                if type(v) is not int or v<1:raise HTTPException(422,'Choose a valid evaluated position revision')
             elif key=='provisional':
                 if not isinstance(v,bool):raise HTTPException(422,'Invalid provisional flag')
             elif not isinstance(v,str) or len(v)>4000:raise HTTPException(422,'Invalid field value')
@@ -155,14 +172,25 @@ def create_app(db_url=None,jwt_secret=None,catalog=None):
             validate_regulatory(result)
             from .domain import validate_salary
             validate_salary(result)
+            validate_position_scope(result)
         except (ValueError,TypeError) as e:raise HTTPException(422,str(e))
+        if result.get('employmentType') and result['employmentType'] not in {'permanent','contract','temporary'}:raise HTTPException(422,'Choose permanent, contract or temporary employment')
+        if result.get('workMode') and result['workMode'] not in {'onsite','hybrid','remote'}:raise HTTPException(422,'Choose onsite, hybrid or remote work')
+        if result.get('parentPositionId') and user:position_for(db,user,result['parentPositionId'])
         result['occupationRelease']=selected.occupations['id'];return result
     def snapshot(db,user,p,reason):
         db.add(PositionVersion(position_id=p.id,revision=p.revision,title=p.title,content=copy.deepcopy(p.content),actor_id=user.id,reason=reason))
-    def present(p):return {'id':p.id,'internalCode':p.internal_code,'title':p.title,'departmentId':p.department_id,'state':p.state,'createdBy':p.created_by,'revision':p.revision,'activeRevision':p.active_revision,'content':p.content,'workflow':p.workflow,'approvalStage':p.approval_stage,'createdAt':p.created_at,'updatedAt':p.updated_at}
+    def present(p,db):
+        evaluation=approved_evaluation_context(db,p)
+        return {'id':p.id,'internalCode':p.internal_code,'title':p.title,'departmentId':p.department_id,'state':p.state,'createdBy':p.created_by,'revision':p.revision,'activeRevision':p.active_revision,'content':p.content,'approvedEvaluation':evaluation,'approvedRewards':evaluation['approval'] if evaluation else None,'workflow':p.workflow,'approvalStage':p.approval_stage,'pendingStage':pending_stage(p),'scopeWarnings':[{'code':'wide-span','directReports':p.content['directReports'],'message':'Review spans above 15 direct reports'}] if p.content.get('directReports',0)>15 else [],'createdAt':p.created_at,'updatedAt':p.updated_at}
     def revise(db,user,p,value,reason,restored=None):
         if p.state=='in_review':raise HTTPException(409,'Return or withdraw the request before editing its reviewed content')
-        old={'title':p.title,'revision':p.revision};p.content=content(value,db,user);p.title=p.content['title'];p.revision+=1;p.state='draft';p.approval_stage=0;p.workflow=[];p.updated_at=now();snapshot(db,user,p,reason)
+        checked=content(value,db,user);parent=checked.get('parentPositionId');seen={p.id}
+        while parent:
+            if parent in seen:raise HTTPException(422,'Parent position would create a reporting cycle')
+            seen.add(parent);parent=position_for(db,user,parent).content.get('parentPositionId')
+        for key in ['evaluatedPositionId','evaluatedPositionRevision','evaluationSummary']:checked.pop(key,None)
+        old={'title':p.title,'revision':p.revision};p.content=checked;p.title=p.content['title'];p.revision+=1;p.state='draft';p.approval_stage=0;p.workflow=[];p.updated_at=now();snapshot(db,user,p,reason)
         audit(db,user,'position.restored' if restored else 'position.changed',{'old':old,'newTitle':p.title,'newRevision':p.revision,'reason':reason,'restoredFromRevision':restored},p)
     # Public drafting exports never read organizational records or accept approval claims.
     # Bound concurrent rendering and keep the payload in memory only.
@@ -257,7 +285,7 @@ def create_app(db_url=None,jwt_secret=None,catalog=None):
         return {'accessToken':issue_token(user,secret),'tokenType':'Bearer','expiresIn':1800}
     @app.get('/api/v1/me')
     def me(user=Depends(current),db=Depends(session)):
-        org=organization(db,user);mfa=db.get(UserMfa,user.id);return {'id':user.id,'name':user.name,'email':user.email,'role':user.role,'mfaEnabled':bool(mfa and mfa.enabled),'departmentId':user.department_id,'organization':{'id':org.id,'name':org.name},'capabilities':{'approveAs':user.role if user.role in ['od_specialist','total_rewards','finance','chro'] else None,'configure':user.role=='admin'}}
+        org=organization(db,user);mfa=db.get(UserMfa,user.id);return {'id':user.id,'name':user.name,'email':user.email,'role':user.role,'mfaEnabled':bool(mfa and mfa.enabled),'departmentId':user.department_id,'organization':{'id':org.id,'name':org.name},'capabilities':{'approveAs':user.role if user.role in ['department_manager','hrbp','od_specialist','total_rewards','finance','chro'] else None,'configure':user.role=='admin'}}
     def service_capabilities():
         from importlib.util import find_spec
         from .exports import public_key
@@ -275,7 +303,7 @@ def create_app(db_url=None,jwt_secret=None,catalog=None):
     @app.get('/api/v1/departments')
     def departments(user=Depends(current),db=Depends(session)):
         query=select(Department).where(Department.org_id==user.org_id)
-        if user.role=='line_manager':query=query.where(Department.id==user.department_id)
+        if user.role in {'line_manager','department_manager','hrbp'}:query=query.where(Department.id==user.department_id)
         return [{'id':d.id,'name':d.name} for d in db.scalars(query)]
     @app.post('/api/v1/departments',status_code=201)
     def add_department(body:NewDepartment,user=Depends(current),db=Depends(session)):
@@ -287,7 +315,7 @@ def create_app(db_url=None,jwt_secret=None,catalog=None):
     def add_user(body:NewUser,user=Depends(current),db=Depends(session)):
         require(user,'admin')
         if body.role not in ROLES or '@' not in body.email:raise HTTPException(422,'Invalid role or email')
-        if body.role=='line_manager' and not body.departmentId:raise HTTPException(422,'Line managers require a department')
+        if body.role in {'line_manager','department_manager','hrbp'} and not body.departmentId:raise HTTPException(422,'Requesters, department managers and HRBPs require a department')
         if body.departmentId:department(db,user,body.departmentId)
         u=User(org_id=user.org_id,email=body.email.strip().lower(),name=body.name,role=body.role,department_id=body.departmentId,password_hash=password_hash(body.password));db.add(u);db.flush();audit(db,user,'user.created',{'userId':u.id,'role':u.role,'departmentId':u.department_id});db.commit();return {'id':u.id,'role':u.role}
     @app.post('/api/v1/users/{id}/deactivate')
@@ -298,7 +326,10 @@ def create_app(db_url=None,jwt_secret=None,catalog=None):
         target.active=False;target.session_version+=1;audit(db,user,'user.deactivated',{'userId':id});db.commit();return {'active':False}
     @app.get('/api/v1/settings')
     def settings(user=Depends(current),db=Depends(session)):
-        org=organization(db,user);return {'workflow':org.settings.get('workflow',DEFAULT_WORKFLOW),'framework':org.settings.get('framework',DEFAULT_FRAMEWORK),'branding':org.settings.get('branding',{'nameAr':org.name,'nameEn':org.name,'color':'#146954','footer':''}),'taxonomyRelease':org.settings.get('taxonomyRelease',references.occupations['id']),'integrations':'Configured by environment; no credentials exposed in the browser'}
+        org=organization(db,user)
+        try:steps=submission_workflow(org.settings.get('workflow',DEFAULT_WORKFLOW))
+        except (ValueError,TypeError,KeyError):raise HTTPException(409,'The stored workflow needs administrator review before new submissions; prior approved records remain intact')
+        return {'workflow':steps,'framework':org.settings.get('framework',DEFAULT_FRAMEWORK),'branding':org.settings.get('branding',{'nameAr':org.name,'nameEn':org.name,'color':'#146954','footer':''}),'taxonomyRelease':org.settings.get('taxonomyRelease',references.occupations['id']),'integrations':'Configured by environment; no credentials exposed in the browser'}
     @app.post('/api/v1/settings/workflow')
     def workflow(body:WorkflowRequest,user=Depends(current),db=Depends(session)):
         require(user,'admin')
@@ -326,15 +357,15 @@ def create_app(db_url=None,jwt_secret=None,catalog=None):
         query=scoped_positions(user)
         if q:query=query.where(Position.title.ilike('%'+q.replace('%','\\%').replace('_','\\_')+'%',escape='\\'))
         if state:query=query.where(Position.state==state)
-        total=db.scalar(select(func.count()).select_from(query.subquery()));return {'total':total,'items':[present(p) for p in db.scalars(query.order_by(Position.updated_at.desc()).offset(offset).limit(limit))]}
+        total=db.scalar(select(func.count()).select_from(query.subquery()));return {'total':total,'items':[present(p,db) for p in db.scalars(query.order_by(Position.updated_at.desc()).offset(offset).limit(limit))]}
     @app.post('/api/v1/positions',status_code=201)
     def create_position(body:NewPosition,user=Depends(current),db=Depends(session)):
-        require(user,'line_manager','od_specialist','admin');department(db,user,body.departmentId);value=content(body.content,db,user);id=uid();p=Position(id=id,org_id=user.org_id,department_id=body.departmentId,internal_code='MJR-'+id[:8].upper(),title=value['title'],content=value,created_by=user.id,revision=1);db.add(p);db.flush();snapshot(db,user,p,body.reason);audit(db,user,'position.created',{'title':p.title,'revision':1,'reason':body.reason},p);db.commit();return present(p)
+        require(user,'line_manager','od_specialist','admin');department(db,user,body.departmentId);value=content(body.content,db,user);id=uid();p=Position(id=id,org_id=user.org_id,department_id=body.departmentId,internal_code='MJR-'+id[:8].upper(),title=value['title'],content=value,created_by=user.id,revision=1);db.add(p);db.flush();snapshot(db,user,p,body.reason);audit(db,user,'position.created',{'title':p.title,'revision':1,'reason':body.reason},p);db.commit();return present(p,db)
     @app.get('/api/v1/positions/{id}')
-    def get_position(id:str,user=Depends(current),db=Depends(session)):return present(position_for(db,user,id))
+    def get_position(id:str,user=Depends(current),db=Depends(session)):return present(position_for(db,user,id),db)
     @app.patch('/api/v1/positions/{id}')
     def update_position(id:str,body:ChangePosition,user=Depends(current),db=Depends(session)):
-        require(user,'line_manager','od_specialist','admin');p=position_for(db,user,id,True);check_revision(p,body.revision);revise(db,user,p,body.content,body.reason);db.commit();return present(p)
+        require(user,'line_manager','od_specialist','admin');p=position_for(db,user,id,True);check_revision(p,body.revision);revise(db,user,p,body.content,body.reason);db.commit();return present(p,db)
     @app.get('/api/v1/positions/{id}/versions')
     def versions(id:str,user=Depends(current),db=Depends(session)):
         p=position_for(db,user,id);return [{'revision':v.revision,'title':v.title,'content':v.content,'actorId':v.actor_id,'reason':v.reason,'createdAt':v.created_at} for v in db.scalars(select(PositionVersion).where(PositionVersion.position_id==p.id).order_by(PositionVersion.revision.desc()))]
@@ -342,40 +373,75 @@ def create_app(db_url=None,jwt_secret=None,catalog=None):
     def restore(id:str,body:RestoreRequest,user=Depends(current),db=Depends(session)):
         require(user,'line_manager','od_specialist','admin');p=position_for(db,user,id,True);check_revision(p,body.revision);v=db.scalar(select(PositionVersion).where(PositionVersion.position_id==p.id,PositionVersion.revision==body.restoreRevision))
         if not v:raise HTTPException(404,'Revision not found')
-        revise(db,user,p,v.content,body.reason,v.revision);db.commit();return present(p)
+        revise(db,user,p,v.content,body.reason,v.revision);db.commit();return present(p,db)
     @app.post('/api/v1/positions/{id}/submit')
     def submit(id:str,body:RevisionRequest,user=Depends(current),db=Depends(session)):
         require(user,'line_manager','od_specialist','admin');p=position_for(db,user,id,True);check_revision(p,body.revision)
         if p.state!='draft':raise HTTPException(409,'Only drafts can be submitted')
-        missing=required_content(p.content)
+        try:missing=validate_submission(p.content,p.id,p.revision)
+        except ValueError as error:raise HTTPException(422,str(error))
         if missing:raise HTTPException(422,{'missing':missing})
         if not p.content.get('occupationCode') and not (p.content.get('provisional') and p.content.get('mappingJustification')):raise HTTPException(422,'An unmapped position needs a provisional-code justification')
-        p.workflow=copy.deepcopy(organization(db,user).settings.get('workflow',DEFAULT_WORKFLOW));p.policy_snapshot=copy.deepcopy(organization(db,user).settings.get('decisionPolicy',{}));p.approval_stage=0;p.state='in_review';p.updated_at=now();audit(db,user,'position.submitted',{'revision':p.revision,'reason':body.reason,'workflow':p.workflow},p);db.commit();return present(p)
+        parent=p.content.get('parentPositionId');seen={p.id}
+        while parent:
+            if parent in seen:raise HTTPException(422,'Parent position would create a reporting cycle')
+            seen.add(parent);parent=position_for(db,user,parent).content.get('parentPositionId')
+        try:workflow=submission_workflow(organization(db,user).settings.get('workflow',DEFAULT_WORKFLOW))
+        except (ValueError,TypeError,KeyError) as error:raise HTTPException(422,'The stored workflow needs administrator review: '+str(error))
+        policy=copy.deepcopy(organization(db,user).settings.get('decisionPolicy',{}))
+        if p.content.get('requestType')=='replacement':
+            source_id=p.content.get('replacementPositionId')
+            if not source_id or source_id==p.id:raise HTTPException(422,'Choose a separate approved and funded position for replacement')
+            source=position_for(db,user,source_id)
+            source_version=db.scalar(select(PositionVersion).where(PositionVersion.position_id==source.id,PositionVersion.revision==source.active_revision))
+            try:policy['evaluationReuse']=replacement_reuse(db,p,source,source_version.content if source_version else {})
+            except ValueError as error:raise HTTPException(422,str(error))
+        p.workflow=start_stage(workflow,0,now());p.policy_snapshot=policy;p.approval_stage=0;p.state='in_review';p.updated_at=now();audit(db,user,'position.submitted',{'revision':p.revision,'reason':body.reason,'workflow':p.workflow,'evaluationReuse':policy.get('evaluationReuse')},p);db.commit();return present(p,db)
     @app.post('/api/v1/positions/{id}/withdraw')
     def withdraw(id:str,body:RevisionRequest,user=Depends(current),db=Depends(session)):
         require(user,'line_manager','od_specialist','admin');p=position_for(db,user,id,True);check_revision(p,body.revision)
         if p.state!='in_review':raise HTTPException(409,'Only requests in review can be withdrawn')
-        p.state='changes_requested';audit(db,user,'position.withdrawn',{'revision':p.revision,'reason':body.reason},p);db.commit();return present(p)
+        p.state='changes_requested';audit(db,user,'position.withdrawn',{'revision':p.revision,'reason':body.reason},p);db.commit();return present(p,db)
     @app.post('/api/v1/positions/{id}/evaluation')
     def evaluate(id:str,body:GradeRequest,user=Depends(current),db=Depends(session)):
         require(user,'total_rewards');p=position_for(db,user,id,True);check_revision(p,body.revision)
         if p.state!='in_review' or p.approval_stage>=len(p.workflow) or p.workflow[p.approval_stage]['role']!='total_rewards':raise HTTPException(409,'Evaluation is only open during the Total Rewards review stage')
+        if p.workflow[0].get('role') not in {'department_manager','hrbp'}:raise HTTPException(409,'Legacy request must be withdrawn, revised and resubmitted through Department Manager / HRBP review')
+        if p.policy_snapshot.get('evaluationReuse'):raise HTTPException(409,'Unchanged approved funded replacement reuses its source evaluation; no new evaluation is required')
         if p.created_by==user.id:raise HTTPException(403,'The requester cannot evaluate their own request')
+        revision=db.scalar(select(PositionVersion).where(PositionVersion.position_id==p.id,PositionVersion.revision==p.revision))
+        if revision and revision.actor_id==user.id:raise HTTPException(403,'The revision author cannot evaluate their own request')
+        if db.scalar(select(Approval).where(Approval.position_id==p.id,Approval.revision==p.revision,Approval.actor_id==user.id,Approval.decision=='approve')):raise HTTPException(403,'A prior stage approver cannot also act as a Rewards evaluator')
         f=organization(db,user).settings.get('framework',DEFAULT_FRAMEWORK)
-        try:result=grade(f,body.answers,body.evidence)
+        try:
+            if f.get('method')=='custom':
+                for factor in f['factors']:
+                    text=body.evidence.get(factor['id'])
+                    if not isinstance(text,str) or len(text.strip())<40 or re.fullmatch(r'Documented evidence\s*\d*',text.strip(),re.I):raise ValueError('Each factor needs at least 40 characters of specific position responsibility or authority evidence')
+                flags=evaluation_consistency(f,body.answers,body.evidence)
+            else:flags=[]
+            result=grade(f,body.answers,body.evidence);result.update(positionId=p.id,positionRevision=p.revision,positionTitle=p.title,consistencyWarnings=flags,consistencyJustification=body.evidence.get('consistencyJustification',''),comparisons=evaluation_comparisons(db,p,result))
         except (ValueError,TypeError,KeyError,ArithmeticError) as e:raise HTTPException(422,str(e))
-        record=Evaluation(position_id=p.id,revision=p.revision,actor_id=user.id,result=result,answers=body.answers,evidence=body.evidence);db.add(record);db.flush();audit(db,user,'position.evaluated',{'revision':p.revision,'evaluationId':record.id,'frameworkId':result['frameworkId'],'points':result['points']},p);db.commit();return {'id':record.id,'revision':p.revision,'result':result}
+        record=Evaluation(position_id=p.id,revision=p.revision,actor_id=user.id,result=result,answers=body.answers,evidence=body.evidence);db.add(record);db.flush();committee=committee_summary(db,p);result={**result,'committee':committee};audit(db,user,'position.evaluated',{'revision':p.revision,'evaluationId':record.id,'frameworkId':result['frameworkId'],'points':result['points'],'committee':committee},p);db.commit();return {'id':record.id,'positionId':p.id,'revision':p.revision,'result':result}
     @app.get('/api/v1/positions/{id}/evaluations')
     def evaluations(id:str,user=Depends(current),db=Depends(session)):
-        p=position_for(db,user,id);return [{'id':x.id,'revision':x.revision,'actorId':x.actor_id,'createdAt':x.created_at,'result':x.result} for x in db.scalars(select(Evaluation).where(Evaluation.position_id==p.id).order_by(Evaluation.created_at.desc()))]
+        p=position_for(db,user,id);return [{'id':x.id,'revision':x.revision,'actorId':x.actor_id,'createdAt':x.created_at,'result':{**x.result,'committee':committee_summary(db,p,x.revision)}} for x in db.scalars(select(Evaluation).where(Evaluation.position_id==p.id).order_by(Evaluation.created_at.desc()))]
     @app.post('/api/v1/positions/{id}/decisions')
     def decide(id:str,body:ApprovalRequest,user=Depends(current),db=Depends(session)):
         p=position_for(db,user,id,True);check_revision(p,body.revision)
         if p.state!='in_review' or p.approval_stage>=len(p.workflow):raise HTTPException(409,'No pending approval stage')
-        expected=p.workflow[p.approval_stage]['role'];require(user,expected)
+        if p.workflow[0].get('role') not in {'department_manager','hrbp'}:raise HTTPException(409,'Legacy request must be withdrawn, revised and resubmitted through Department Manager / HRBP review; signed stage identities are preserved')
+        expected=p.workflow[p.approval_stage]['role'];require(user,*(['department_manager','hrbp'] if expected in {'department_manager','hrbp'} else [expected]))
         if p.created_by==user.id:raise HTTPException(403,'The requester cannot approve their own request')
+        revision=db.scalar(select(PositionVersion).where(PositionVersion.position_id==p.id,PositionVersion.revision==p.revision))
+        if revision and revision.actor_id==user.id:raise HTTPException(403,'The revision author cannot approve their own request')
+        if db.scalar(select(Approval).where(Approval.position_id==p.id,Approval.revision==p.revision,Approval.actor_id==user.id,Approval.decision=='approve')):raise HTTPException(403,'One person cannot approve two stages of the same position revision')
+        if body.decision in {'return','reject'} and len(body.comment.strip())<10:raise HTTPException(422,'Provide a substantive rejection or return reason of at least 10 characters')
         evidence=copy.deepcopy(body.evidence)
         if body.decision=='approve':
+            if expected in {'department_manager','hrbp'}:
+                if user.department_id!=p.department_id:raise HTTPException(403,'Department Manager / HRBP must own the requesting department')
+                if any(evidence.get(key) is not True for key in ['businessValidated','budgetOwnerConfirmed','headcountConfirmed']):raise HTTPException(422,'Department Manager / HRBP must confirm the business need, budget ownership and requested headcount')
             if expected=='od_specialist':
                 if evidence.get('scopeReviewed') is not True or evidence.get('mappingReviewed') is not True:raise HTTPException(422,'OD must review scope and occupation mapping')
                 if evidence.get('businessValidated') is not True or evidence.get('roleNotPerson') is not True or not isinstance(evidence.get('businessReviewer'),str) or not 1<=len(evidence['businessReviewer'].strip())<=160:raise HTTPException(422,'Record department consultation and confirm the description defines the role')
@@ -390,8 +456,15 @@ def create_app(db_url=None,jwt_secret=None,catalog=None):
                 if rule.get('minimumEducationLevel') and (not str(p.content.get('educationLevel','')).isdigit() or int(p.content['educationLevel'])<int(rule['minimumEducationLevel'])):raise HTTPException(422,'Education level fails the organization policy captured at submission')
                 if rule.get('licenseRequired') and evidence.get('licenseVerifiedByOD') is not True:raise HTTPException(422,'OD-verified licensing evidence is required by the organization policy')
             if expected=='total_rewards':
-                evaluation=db.scalar(select(Evaluation).where(Evaluation.position_id==p.id,Evaluation.revision==p.revision).order_by(Evaluation.created_at.desc()).limit(1))
+                reuse=p.policy_snapshot.get('evaluationReuse')
+                evaluation=db.get(Evaluation,reuse['evaluationId']) if reuse else db.scalar(select(Evaluation).where(Evaluation.position_id==p.id,Evaluation.revision==p.revision).order_by(Evaluation.created_at.desc()).limit(1))
                 if not evaluation:raise HTTPException(422,'Record an evaluation for this revision first')
+                if not reuse:
+                    committee=committee_summary(db,p)
+                    if committee['count']<2:raise HTTPException(422,'At least two distinct authenticated Total Rewards evaluators must assess this position revision')
+                    if any(d['pointsDifference'] or d['factorDifferences'] or d['gradeDifference'] for d in committee['differences']) and len(str(evidence.get('committeeDifferenceReason','')).strip())<40:raise HTTPException(422,'Record how the committee reconciled evaluator differences, with a reason of at least 40 characters')
+                    evidence['committee']=committee
+                else:evidence['evaluationReuse']=reuse
                 if evaluation.result.get('illustrative') and not organization(db,user).settings.get('demoMode',False):raise HTTPException(422,'Illustrative framework cannot approve an institutional grade; configure the organization framework')
                 if evidence.get('payFrameworkReviewed') is not True:raise HTTPException(422,'Confirm the pay framework review')
                 evidence['evaluationId']=evaluation.id
@@ -404,10 +477,23 @@ def create_app(db_url=None,jwt_secret=None,catalog=None):
         elif body.decision=='reject':p.state='rejected'
         else:
             p.approval_stage+=1
+            p.workflow=start_stage(p.workflow,p.approval_stage,now())
             if p.approval_stage==len(p.workflow):
                 p.state='active';p.active_revision=p.revision
                 db.add(OutboxEvent(org_id=user.org_id,event_type='position.activated',payload={'positionId':p.id,'revision':p.revision,'internalCode':p.internal_code}))
-        p.updated_at=now();audit(db,user,'position.'+body.decision,{'revision':p.revision,'stage':row.stage,'role':user.role,'comment':body.comment,'evidence':evidence},p);db.commit();return present(p)
+        p.updated_at=now();audit(db,user,'position.'+body.decision,{'revision':p.revision,'stage':row.stage,'role':user.role,'comment':body.comment,'evidence':evidence},p);db.commit();return present(p,db)
+    @app.get('/api/v1/governance/escalations')
+    def overdue_approvals(user=Depends(current),db=Depends(session)):
+        require(user,'admin','chro');items=[]
+        for p in db.scalars(scoped_positions(user).where(Position.state=='in_review')):
+            stage=pending_stage(p)
+            if stage and stage['overdue']:items.append({'positionId':p.id,'revision':p.revision,'title':p.title,**stage})
+        return {'items':items,'scanIntervalSeconds':60,'automatic':True}
+    @app.post('/api/v1/governance/escalations')
+    def scan_overdue_approvals(user=Depends(current),db=Depends(session)):
+        require(user,'admin','chro');items=escalate_overdue(db,user.org_id)
+        if items:audit(db,user,'workflow.escalated',{'items':items});db.commit()
+        return {'items':items,'count':len(items)}
     @app.get('/api/v1/positions/{id}/audit')
     def history(id:str,user=Depends(current),db=Depends(session)):
         p=position_for(db,user,id);return [{'id':e.id,'actorId':e.actor_id,'action':e.action,'detail':e.detail,'createdAt':e.created_at,'previousHash':e.previous_hash,'digest':e.digest} for e in db.scalars(select(AuditEvent).where(AuditEvent.position_id==p.id).order_by(AuditEvent.created_at))]
@@ -510,7 +596,7 @@ def create_app(db_url=None,jwt_secret=None,catalog=None):
         audit(db,user,'organization.diagnosed',{'rows':result['totalRows'],'release':result['release'],'rawFileRetained':False});db.commit();return result
     @app.get('/api/v1/analytics')
     def analytics(user=Depends(current),db=Depends(session)):
-        require(user,'od_specialist','total_rewards','finance','chro','admin');rows=list(db.scalars(scoped_positions(user)));states={s:sum(p.state==s for p in rows) for s in ['draft','in_review','changes_requested','rejected','active']};active=[p for p in rows if p.active_revision is not None];cost=0;headcount=0;missing_cost=0;growth={}
+        require(user,'department_manager','hrbp','od_specialist','total_rewards','finance','chro','admin');rows=list(db.scalars(scoped_positions(user)));states={s:sum(p.state==s for p in rows) for s in ['draft','in_review','changes_requested','rejected','active']};active=[p for p in rows if p.active_revision is not None];cost=0;headcount=0;missing_cost=0;growth={}
         for p in active:
             v=db.scalar(select(PositionVersion).where(PositionVersion.position_id==p.id,PositionVersion.revision==p.active_revision));amount=v.content.get('annualCost');cost+=amount if isinstance(amount,(int,float)) else 0;missing_cost+=int(not isinstance(amount,(int,float)));headcount+=v.content.get('headcount',1)
         for p in rows:month=p.created_at[:7];growth[month]=growth.get(month,0)+1

@@ -11,7 +11,7 @@ def test_bulk_xlsx_zero_and_formula_cells_remain_literal():
     from openpyxl import Workbook
     w=Workbook();s=w.active;s.append(['title','department','occupationCode','directReports','budgetAmount','authority']);s.append(['مدير نظم','IT','251104',0,0,'يوصي']);out=io.BytesIO();w.save(out)
     rows=read_rows(out.getvalue(),'positions.xlsx');assert rows[0]['directReports']=='0';r=bulk_diagnosis(rows,Catalog());assert r['titleScopeReviewRows']==1
-    rows[0]['budgetAmount']='NaN';r=bulk_diagnosis(rows,Catalog());assert r['scopeAssessableRows']==0;assert 'invalid_scope_numbers' in r['rows'][0]['flags']
+    rows[0]['budgetAmount']='NaN';r=bulk_diagnosis(rows,Catalog());assert r['scopeAssessableRows']==0;assert 'invalid_scope' in r['rows'][0]['flags']
 
 def test_bulk_xlsx_formula_is_literal_and_cannot_be_used_as_numeric_scope():
     from openpyxl import Workbook
@@ -24,7 +24,7 @@ def test_bulk_xlsx_formula_is_literal_and_cannot_be_used_as_numeric_scope():
     assert rows[0]['budgetAmount']=='=1+1'
     result=bulk_diagnosis(rows,Catalog())
     assert result['scopeAssessableRows']==0
-    assert 'invalid_scope_numbers' in result['rows'][0]['flags']
+    assert 'invalid_scope' in result['rows'][0]['flags']
 
 def test_bulk_csv_accepts_10000_rows_and_rejects_the_next_row():
     header=b'title,occupationCode\n';row=b'Synthetic position,251204\n'

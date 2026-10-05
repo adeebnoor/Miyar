@@ -20,6 +20,12 @@
   ['stakeholders',1,'أصحاب المصلحة داخليًا وخارجيًا','Internal and external stakeholders',true,'textarea'],
   ['qualifications',1,'المؤهلات والمعرفة الفنية','Qualifications and technical knowledge',true,'textarea'],
   ['experience',1,'الخبرات المطلوبة','Required experience',true],
+  ['experienceYears',1,'الحد الأدنى لسنوات الخبرة','Minimum experience years',false,'number'],
+  ['experienceType',1,'نوع الخبرة: تخصصية، قيادية، أم كلاهما','Experience type: functional, leadership or both',false],
+  ['employmentType',0,'نوع التوظيف','Employment type',false],
+  ['location',0,'موقع العمل','Work location',false],
+  ['workMode',0,'نمط العمل','Work mode',false],
+  ['parentPositionId',0,'معرّف المنصب الأب في السجل','Parent position ID in the register',false],
   ['skills',1,'المهارات والكفاءات الفنية','Technical skills and competencies',true,'textarea'],
   ['behaviors',1,'الكفاءات السلوكية','Behavioral competencies',true,'textarea'],
   ['certifications',1,'الشهادات المقترحة — تتطلب تحققًا نظاميًا','Proposed certifications — require regulatory verification',false,'textarea'],
@@ -59,8 +65,9 @@
  function packageRecord(input,result,locale='ar'){
   const complete=completeness(input);const role=result?.kind==='match'?result.role:null;
   return {schema:'miyar-position-package/1.1',createdAt:new Date().toISOString(),locale,mode:'browser-demo',positionApproval:'pending',inputCompleteness:complete,
-   position:{requestType:input.requestType,title:input.title,department:input.department,reportsTo:input.manager,effectiveDate:input.effectiveDate||null},
+   position:{requestType:input.requestType,title:input.title,department:input.department,reportsTo:input.manager,parentPositionId:input.parentPositionId||null,employmentType:input.employmentType||null,location:input.location||null,workMode:input.workMode||null,effectiveDate:input.effectiveDate||null},
    jobDescription:{status:input.reviewStale?'needs-review':input.businessReviewed&&String(input.businessReviewer||'').trim()&&validDate(input.businessReviewDate)&&!complete.missing.length?'business-review-recorded':'draft',purpose:input.purpose,businessJustification:input.businessNeed,alternatives:input.alternatives,successMeasures:input.successMeasures,constraints:input.constraints,responsibilities:String(input.responsibilities||'').split(/\n+/).map(s=>s.trim()).filter(Boolean),authority:input.authority,impact:input.impact,team:input.team,budget:input.budget,stakeholders:input.stakeholders,qualifications:input.qualifications,experience:input.experience,technicalCompetencies:input.skills,behavioralCompetencies:input.behaviors,proposedCertifications:input.certifications,reviewer:input.businessReviewer||null,reviewDate:input.businessReviewDate||null},
+   experienceRequirement:{minimumYears:String(input.experienceYears||'').trim()===''?null:Number(input.experienceYears),type:input.experienceType||null,description:input.experience||null},
    evaluation:evaluation(input),
    occupationMapping:role?{status:'sample-suggestion-pending-verification',titleAr:role.title,titleEn:role.titleEn,saudiCode:role.code,educationCode:role.educationCode,source:'Authored five-role task sample; occupation codes: supplied 2019 PDF; education codes: supplied 2020 PDF',occupationRelease:role.occupationRelease,educationRelease:role.educationRelease}:{status:'unmapped',saudiCode:null,educationCode:null},
    regulatoryReview:{saudization:{status:sourceStatus(input.saudization,input.saudizationSource,input.saudizationDate),requirement:input.saudization||null,source:input.saudizationSource||null,checkedAt:input.saudizationDate||null},certification:{status:sourceStatus(input.license,input.licenseSource,input.licenseDate),requirement:input.license||null,source:input.licenseSource||null,checkedAt:input.licenseDate||null}},
@@ -68,4 +75,3 @@
  }
  const api={fields,blank,sample,completeness,evaluation,packageRecord,change,validDate};root.MiyarPosition=api;if(typeof module!=='undefined'&&module.exports)module.exports=api;
 })(typeof window!=='undefined'?window:globalThis);
-

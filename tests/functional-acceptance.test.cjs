@@ -11,9 +11,12 @@ async function app(tab){
  for(let i=0;i<60&&!w.document.querySelector('#ent-content')?.textContent.trim();i++)await settle();
  return {w,dom,errors,d:w.document};
 }
+async function selectGradePosition(a){const w=a.w;w.localStorage.setItem('miyar-enterprise-local-v1',JSON.stringify([{id:'LOCAL-EVAL',internalCode:'LOCAL-EVAL',revision:1,title:'Software engineer',content:{title:'Software engineer',field:'Software development',responsibilities:'Analyze user requirements; develop and test software; document defects'},state:'draft'}]));w.MiyarEnterprise.open('grading');await settle();const select=w.document.getElementById('ent-grade-position');select.value='0';select.dispatchEvent(new w.Event('change'));await settle();}
+function committeeRatings(a,level){for(const s of a.d.querySelectorAll('[data-second-factor]'))s.value=String(level);a.d.querySelector('[data-evaluator="0"]').value='Reviewer one';a.d.querySelector('[data-evaluator="1"]').value='Reviewer two';}
+
 test('a corrected job evaluation clears the prior error and recalculation hint',async()=>{
  const a=await app('grading');try{
-  a.d.getElementById('ent-calculate').click();await settle();assert.equal(a.d.getElementById('ent-message').getAttribute('role'),'alert');
+  a.d.getElementById('ent-calculate').click();await settle();assert.equal(a.d.getElementById('ent-message').getAttribute('role'),'alert');await selectGradePosition(a);
   for(const x of a.d.querySelectorAll('[data-factor]')){x.value='2';x.dispatchEvent(new a.w.Event('input',{bubbles:true}));}
   for(const x of a.d.querySelectorAll('[data-factor-evidence]')){x.value='Independent responsibilities and authority evidence';x.dispatchEvent(new a.w.Event('input',{bubbles:true}));}
   a.d.getElementById('ent-calculate').click();await settle();assert.match(a.d.getElementById('ent-grade-result').textContent,/148/);assert.equal(a.d.getElementById('ent-grade-hint').textContent,'');assert.equal(a.d.getElementById('ent-message').getAttribute('role'),'status');assert.match(a.d.getElementById('ent-message').textContent,/calculated/);assert.deepEqual(a.errors,[]);

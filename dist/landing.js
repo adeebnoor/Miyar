@@ -12,6 +12,7 @@ function mount(host,{t,lang,icon,switchLanguage,example}){
   ['shield',t('الاعتماد','Approval'),t('مرّر الإصدار نفسه عبر المراجعات واحفظ أثر القرار.','Move the same revision through reviews and retain the decision trail.')]
  ];
  const stages=[
+  [t('مدير الإدارة أو شريك الموارد البشرية','Department Manager or HRBP'),t('هل الحاجة والعدد مؤيدان من الإدارة؟','Does the department endorse the need and headcount?'),t('يثبت احتياج الأعمال وتأييد مالك الميزانية والعدد قبل مراجعة التطوير التنظيمي.','Confirms the business need, budget owner endorsement and headcount before organization development review.')],
   [t('التطوير التنظيمي','Organization development'),t('هل الدور مطلوب ومصمم بصورة سليمة؟','Is the role needed and well designed?'),t('يتحقق من المبرر والبدائل وموقع الدور في الهيكل ونطاق الإشراف وربطه بالمرجع المهني.','Checks the business case, alternatives, position in the structure, span of control and occupation reference.')],
   [t('التعويضات والمزايا','Total Rewards'),t('ما قيمة الدور ودرجته؟','How should the role be evaluated?'),t('يوثّق أدلة التقييم الوظيفي والدرجة ونطاق الراتب المعتمد وموضع العرض داخل النطاق.','Documents job-evaluation evidence, the grade, the approved salary band and offer positioning.')],
   [t('المالية والتخطيط','Finance & Planning'),t('هل العدد والتكلفة منسجمان مع الخطة؟','Do headcount and cost fit the plan?'),t('يطابق العدد والتكلفة السنوية مع الميزانية المعتمدة وخطة القوى العاملة.','Reconciles headcount and annual cost with the approved budget and workforce plan.')],
@@ -26,7 +27,7 @@ function mount(host,{t,lang,icon,switchLanguage,example}){
    <a href="#home/governance" data-lp-scroll="governance">${t('الحوكمة','Governance')}</a>
    <a href="#enterprise/overview">${t('مساحة العمل','Workspace')}</a>
   </nav>
-  <div class="lp-header-actions"><button type="button" id="lp-language" lang="${lang==='ar'?'en':'ar'}" aria-label="${t('Switch to English','التبديل إلى العربية')}">${t('English','العربية')}</button><a class="lp-signin" href="#enterprise/connection">${t('دخول المؤسسة','Organization sign in')}</a></div>
+  <div class="lp-header-actions"><button type="button" id="lp-language" lang="${lang==='ar'?'en':'ar'}" aria-label="${t('Switch to English','Switch to Arabic')}">${t('English','العربية')}</button><a class="lp-signin" href="#enterprise/connection">${t('دخول المؤسسة','Organization sign in')}</a></div>
  </div></header>
  <main id="landing-main" tabindex="-1">
   <section class="lp-hero" aria-labelledby="home-heading"><div class="lp-wrap lp-hero-grid">
@@ -37,7 +38,8 @@ function mount(host,{t,lang,icon,switchLanguage,example}){
     <form id="lp-guided-form" class="lp-guided-start" novalidate>
      <div class="lp-start-label"><span aria-hidden="true">01</span><strong>${t('ابدأ من احتياج العمل','START WITH THE BUSINESS NEED')}</strong><small>${t('دون حساب مؤسسة','NO ORGANIZATION ACCOUNT NEEDED')}</small></div>
      <label for="lp-guided-objective">${t('صف الهدف أو المشكلة','Describe the goal or problem')}</label>
-     <textarea id="lp-guided-objective" name="objective" rows="3" minlength="12" maxlength="12000" placeholder="${t('مثال: رفع اعتمادية المعدات وتقليل التوقف عبر الصيانة الوقائية وتحسين إجراءات التشغيل','Example: Improve equipment reliability and reduce downtime through preventive maintenance and better operating procedures')}"></textarea>
+     <textarea id="lp-guided-objective" name="objective" rows="3" minlength="12" maxlength="12000" aria-describedby="lp-objective-why" placeholder="${t('مثال: رفع اعتمادية المعدات وتقليل التوقف عبر الصيانة الوقائية وتحسين إجراءات التشغيل','Example: Improve equipment reliability and reduce downtime through preventive maintenance and better operating procedures')}"></textarea>
+     <small id="lp-objective-why">${t('نحتاج وصف العمل والنتيجة لنقترح الدور المناسب ونعبئ مسودة قابلة للتعديل. أضف ما سيُنجَز ولمن؛ تظهر التفاصيل التالية حسب احتياجك.','The work and intended outcome help us suggest a suitable role and fill an editable draft. Include what will be done and for whom; further details appear as needed.')}</small>
      <div class="lp-guided-examples" aria-label="${t('أمثلة سريعة','Quick examples')}">
       <span>${t('جرّب مثالًا:','Try an example:')}</span>
       <button type="button" data-guided-example="${t('رفع اعتمادية المعدات وتقليل التوقف عبر الصيانة الوقائية وتحسين إجراءات التشغيل','Improve equipment reliability and reduce downtime through preventive maintenance and better operating procedures')}">${t('اعتمادية المعدات','Equipment reliability')}</button>

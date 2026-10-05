@@ -30,6 +30,7 @@ const responseFor=(page,feature,api=API)=>page.waitForResponse(r=>isPost(r.reque
 async function enterRole(page,lang,measures){
  await page.locator('[data-field="title"]').fill(lang==='ar'?'منصب تجريبي':'Synthetic role');
  await page.locator('[data-field="successMeasures"]').fill(measures);
+ await page.locator('#ent-show-position-fields').click();
 }
 async function exportedDraft(page){const event=page.waitForEvent('download');await page.locator('#ent-local-json').click();const downloaded=await event;return JSON.parse(fs.readFileSync(await downloaded.path(),'utf8')).content;}
 
@@ -76,9 +77,12 @@ for(const lang of ['ar','en']){
   const done=responseFor(page,'kpis');await page.locator('#ent-ai-kpis').click();const response=await done;expect(response.status()).toBe(200);const body=await response.json();
   expect(response.request().postDataJSON()).toMatchObject({lang,consentExternalProcessing:true});expect(body.status).toBe('human-review-required');expect(body.organizationAccess).toBe(false);expect(body.inputStored).toBe(false);expect(body.kpis).toHaveLength(3);
   for(const row of body.kpis){expect(Object.keys(row).sort()).toEqual(['deliverable','frequency','metric','outcome','target']);expect(Object.values(row).every(x=>typeof x==='string'&&x.length>0)).toBe(true);}
-  await expect(page.locator('[data-matrix-key="kpis"]')).toHaveCount(15);await expect(page.locator('[data-matrix-key="kpis"][data-matrix-row="0"][data-matrix-field="outcome"]')).toHaveValue(lang==='ar'?'مخرج تجريبي 1':'Synthetic outcome 1');
+  await expect(page.locator('[data-matrix-key="kpis"]')).toHaveCount(21);await expect(page.locator('[data-matrix-key="kpis"][data-matrix-row="0"][data-matrix-field="outcome"]')).toHaveValue(lang==='ar'?'مخرج تجريبي 1':'Synthetic outcome 1');
+  const baseline=page.locator('[data-matrix-key="kpis"][data-matrix-row="0"][data-matrix-field="baseline"]'),duration=page.locator('[data-matrix-key="kpis"][data-matrix-row="0"][data-matrix-field="duration"]');
+  await expect(baseline).toBeEditable();await expect(baseline).toHaveValue('');await expect(duration).toBeEditable();await expect(duration).toHaveValue('');
+  await baseline.fill('90% measured from the source register');await duration.fill('Within six months');
   await page.locator('[data-matrix-key="kpis"][data-matrix-row="0"][data-matrix-field="target"]').fill('97% approved by test author');
-  const draft=await exportedDraft(page);expect(draft.kpis).toHaveLength(3);expect(draft.kpis[0].target).toBe('97% approved by test author');
+  const draft=await exportedDraft(page);expect(draft.kpis).toHaveLength(3);expect(draft.kpis[0].target).toBe('97% approved by test author');expect(draft.kpis[0].baseline).toBe('90% measured from the source register');expect(draft.kpis[0].duration).toBe('Within six months');
  });
 
  test('declining external processing sends neither semantic nor KPI POST: '+lang,async({page})=>{

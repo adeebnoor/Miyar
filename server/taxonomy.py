@@ -3,6 +3,7 @@ from collections import Counter,defaultdict
 from pathlib import Path
 import numpy as np
 from .domain import normalized,digest
+from .semantic_scope import read_role_catalog,normalize_phrase
 from .semantic_provider import capability as semantic_capability, GeminiOccupationEmbeddings, BATCH_SIZE, failure_details
 
 ROOT=Path(__file__).resolve().parent.parent
@@ -18,13 +19,39 @@ class Catalog:
         if occupation_payload:self.profiles={}
         for k,p in self.profiles.items():
             if k in self.roles:self.roles[k]['titleEn']=p['titleEn']
+        authored=read_role_catalog();self.occupation_aliases=authored.get('occupationAliases',{});self.title_word_forms=authored.get('titleWordForms',{});self.title_index=defaultdict(list)
+        for record in self.roles.values():
+            for label in [record['titleAr'],record.get('titleEn',''),*record.get('aliases',[])]:
+                if label:self.title_index[normalize_phrase(label)].append((record['code'],'source-title',record.get('titleEn','')))
+        verified=set()
+        for role in authored['roles']:
+            record=self.roles.get(role['ssco'])
+            if not record or normalize_phrase(record['titleAr'])!=normalize_phrase(role['referenceTitleAr']) or record.get('sourcePage')!=role['sourcePage']:continue
+            verified.add(role['ssco'])
+            for label in [role['titleAr'],role['titleEn'],role['referenceTitleAr']]:
+                self.title_index[normalize_phrase(label)].append((role['ssco'],'proposed-catalog-translation',role['titleEn']))
+        for label,code in self.occupation_aliases.items():
+            if code in self.roles and (not occupation_payload or code in verified):self.title_index[normalize_phrase(label)].append((code,'proposed-search-translation',label))
         self.role_skills={k:p['skills'] for k,p in self.profiles.items()};self.model=None;self.matrix=None;self.model_lock=threading.Lock()
         self.skill_matrix=None;self.semantic_index_status='pending';self.semantic_indexed_documents=0;self.semantic_failure=None
+    def match_occupation(self,title):
+        q=normalize_phrase(title);singular=re.sub(r'\b(engineers|teachers|nurses|accountants|drivers|cleaners)\b',lambda m:m.group()[:-1],q);matches=[];seen=set()
+        masculine=' '.join(self.title_word_forms.get(word,word) for word in q.split());terms=list(dict.fromkeys([q,singular,masculine]))
+        for term in terms:
+            for code,basis,title_en in self.title_index.get(term,[]):
+                if code in seen:continue
+                record=self.roles[code];seen.add(code);matches.append({'code':code,'titleAr':record['titleAr'],'titleEn':title_en,'sourcePage':record['sourcePage'],'basis':basis,'translationStatus':'proposed-search-translation' if title_en else 'official-source-title'})
+        if re.fullmatch(r'\d{6}',q) and q in self.roles and q not in seen:
+            record=self.roles[q];matches.insert(0,{'code':q,'titleAr':record['titleAr'],'titleEn':record.get('titleEn',''),'sourcePage':record['sourcePage'],'basis':'occupation-code','translationStatus':'official-source-title'})
+        return {'status':'matched' if len(matches)==1 else 'ambiguous' if matches else 'unknown','matches':matches}
+    def match_title_code(self,title,code):
+        lookup=self.match_occupation(title);expected=[r['code'] for r in lookup['matches']];match=next((r for r in lookup['matches'] if r['code']==str(code)),None)
+        return {'status':'matched' if match else 'inconsistent' if expected else 'unknown','match':match,'expectedCodes':expected,'matches':lookup['matches']}
     def search(self,text='',parent=None,limit=50):
-        q=normalized(text);parts=q.split();rows=self.nodes.values() if parent is not None else self.roles.values()
-        found=[r for r in rows if (parent is None or r.get('parent')==parent) and all(t in normalized(r['titleAr']+' '+r['code']+' '+r.get('titleEn','')+' '+' '.join(r.get('aliases',[]))) for t in parts)]
-        found.sort(key=lambda r:(normalized(r['titleAr'])!=q and r['code']!=q,r['code']))
-        return {'total':len(found),'items':[{**r,'sourceWarning':r['code'] in self.flagged} for r in found[:limit]],'release':self.occupations['id']}
+        q=normalize_phrase(text);lookup=self.match_occupation(text);exact={r['code'] for r in lookup['matches']};queries=[normalize_phrase(r['titleAr']) for r in lookup['matches']] or [q];rows=self.nodes.values() if parent is not None else self.roles.values()
+        found=[r for r in rows if (parent is None or r.get('parent')==parent) and (r['code'] in exact or any(all(t in normalize_phrase(r['titleAr']+' '+r['code']+' '+r.get('titleEn','')+' '+' '.join(r.get('aliases',[]))) for t in query.split()) for query in queries))]
+        found.sort(key=lambda r:(r['code'] not in exact and normalize_phrase(r['titleAr'])!=q and r['code']!=q,r['code']))
+        return {'total':len(found),'items':[{**r,'sourceWarning':r['code'] in self.flagged,'translationStatus':'proposed-search-translation' if any(x['code']==r['code'] and x['translationStatus']=='proposed-search-translation' for x in lookup['matches']) else 'official-source-title'} for r in found[:limit]],'release':self.occupations['id']}
     def extract_skills(self,text):
         normalized_text=' '+normalized(text)+' ';found=[]
         for skill in self.skills:
@@ -187,7 +214,10 @@ class Catalog:
 def read_rows(raw,filename):
     if len(raw)>10_000_000:raise ValueError('Upload limit: 10 MB')
     if filename.lower().endswith('.csv'):
-        text=raw.decode('utf-8-sig');reader=csv.DictReader(io.StringIO(text),strict=True);rows=[]
+        text=raw.decode('utf-8-sig');sample=text[:8192]
+        try:delimiter=csv.Sniffer().sniff(sample,delimiters=',;\t').delimiter
+        except csv.Error:delimiter=','
+        reader=csv.DictReader(io.StringIO(text),delimiter=delimiter,strict=True);rows=[]
         if not reader.fieldnames or len(reader.fieldnames)!=len(set(reader.fieldnames)):raise ValueError('Missing or duplicate column names')
         for i,row in enumerate(reader):
             if i>=10000:raise ValueError('Row limit: 10,000')
@@ -204,41 +234,98 @@ def read_rows(raw,filename):
             rows.append(dict(zip(headers,row)))
         workbook.close()
     else:raise ValueError('Use UTF-8 CSV or XLSX')
-    aliases={'المسمى':'title','المسمى الوظيفي':'title','الإدارة':'department','الرمز المهني':'occupationCode','المسؤوليات':'responsibilities','المرؤوسون':'directReports','الميزانية':'budgetAmount','الصلاحيات':'authority','العدد':'headcount'}
-    allowed={'title','department','occupationCode','responsibilities','directReports','budgetAmount','authority','headcount','internalCode'}
+    aliases={'المسمى':'title','المسمى الوظيفي':'title','الإدارة':'department','الرمز المهني':'occupationCode','المسؤوليات':'responsibilities','المرؤوسون':'directReports','الميزانية':'budgetAmount','الصلاحيات':'authority','العدد':'headcount','معرف المنصب':'positionId','المنصب الأب':'parentPositionId','الدرجة':'grade'}
+    allowed={'title','department','occupationCode','responsibilities','directReports','budgetAmount','authority','headcount','internalCode','positionId','parentPositionId','grade'}
+    canonical={k.lower():k for k in allowed}
+    def header(k):
+        value=aliases.get(str(k).strip(),str(k).strip());return canonical.get(value.lower(),value)
     headers=reader.fieldnames if filename.lower().endswith('.csv') else headers
-    canonical_headers=[aliases.get(str(k).strip(),str(k).strip()) for k in headers]
+    canonical_headers=[header(k) for k in headers]
     if len(canonical_headers)!=len(set(canonical_headers)):raise ValueError('Duplicate column names after language normalization')
     clean=[]
-    for row in rows:
-        item={aliases.get(str(k).strip(),str(k).strip()):str('' if v is None else v).strip() for k,v in row.items() if k is not None}
+    for row_index,row in enumerate(rows,2):
+        item={header(k):str('' if v is None else v).strip() for k,v in row.items() if k is not None}
         if not any(item.values()):continue
-        if not item.get('title'):raise ValueError('Every non-empty row needs a title / المسمى')
         if any(len(v)>10000 for v in item.values()):raise ValueError('Cell length exceeds 10,000 characters')
-        clean.append({k:v for k,v in item.items() if k in allowed})
+        clean.append({**{k:v for k,v in item.items() if k in allowed},'__row':row_index})
     if not clean:raise ValueError('No position rows found')
     return clean
 
 def bulk_diagnosis(rows,catalog):
-    output=[];groups=defaultdict(list);matched=valid=assessable=inflated=0
-    for index,row in enumerate(rows,2):
-        code=normalized(row.get('occupationCode','')).replace(' ','');record=catalog.roles.get(code);title=normalized(row['title']);exact=record is not None and title==normalized(record['titleAr'])
-        source_ok=record is not None and code not in catalog.flagged
-        valid+=int(source_ok);matched+=int(exact and source_ok);flags=[]
-        if not code:flags.append('missing_occupation_code')
-        elif not record:flags.append('code_not_in_selected_release')
-        elif code in catalog.flagged:flags.append('source_hierarchy_issue')
-        elif not exact:flags.append('title_code_pair_needs_review')
-        scope=all(row.get(k,'')!='' for k in ['directReports','budgetAmount','authority'])
-        if scope:
-            try:
-                numbers=[float(row['directReports']),float(row['budgetAmount'])]
-                if any(not math.isfinite(n) or n<0 for n in numbers):raise ValueError('Invalid scope')
-                assessable+=1
-                senior=bool(re.search(r'\b(director|head|chief|مدير|رئيس)\b',title));limited=float(row['directReports'])==0 and float(row['budgetAmount'])==0 and any(t in normalized(row['authority']) for t in ['recommend','يقترح','توصيات','يوصي'])
-                if senior and limited:flags.append('title_scope_review');inflated+=int(senior and limited)
-            except (ValueError,OverflowError):flags.append('invalid_scope_numbers')
-        groups[(title,normalized(row.get('department','')))].append(index)
-        output.append({'row':index,'title':row['title'],'department':row.get('department',''),'occupationCode':code or None,'sourceTitle':record['titleAr'] if record else None,'sourcePage':record['sourcePage'] if record else None,'titleCodeAligned':exact and source_ok,'flags':flags})
+    if not rows or len(rows)>10000:raise ValueError('Use 1–10,000 rows')
+    def number(value):
+        import unicodedata
+        text=unicodedata.normalize('NFKC',str(value or '')).translate(str.maketrans('٠١٢٣٤٥٦٧٨٩۰۱۲۳۴۵۶۷۸۹','01234567890123456789')).replace('−','-').replace(',','').replace('٬','').strip()
+        try:return float(text) if text else 0.0
+        except (ValueError,OverflowError):return float('nan')
+    def rank(value):
+        match=re.match(r'^(?:G|grade\s*|الدرجة\s*)?0*(\d+)(?:\b|$)',str(value or ''),re.I)
+        return int(match.group(1)) if match else None
+    budgets=sorted(number(r.get('budgetAmount')) for r in rows if math.isfinite(number(r.get('budgetAmount'))) and number(r.get('budgetAmount'))>0)
+    median_budget=(budgets[(len(budgets)-1)//2]+budgets[len(budgets)//2])/2 if budgets else None
+    output=[];groups=defaultdict(list);errors=[];matched=valid=assessable=0
+    for offset,row in enumerate(rows,2):
+        index=row.get('__row',offset);code=normalized(row.get('occupationCode','')).replace(' ','');record=catalog.roles.get(code);title=str(row.get('title','')).strip();flags=[];status='unknown'
+        source_ok=record is not None and code not in catalog.flagged;valid+=int(source_ok)
+        if not title:flags.append('missing_title');errors.append({'row':index,'field':'title','code':'missing_title'})
+        elif not code:flags.append('missing_code')
+        elif not record:flags.append('unknown_code')
+        elif code in catalog.flagged:flags.append('source_issue')
+        else:
+            pair=catalog.match_title_code(title,code);status=pair['status']
+            if status=='matched':matched+=1
+            else:flags.append('title_code_inconsistent' if status=='inconsistent' else 'title_code_unknown')
+        supplied=lambda key:row.get(key) is not None and str(row.get(key)).strip()!=''
+        reports=number(row['directReports']) if supplied('directReports') else None;budget=number(row['budgetAmount']) if supplied('budgetAmount') else None
+        if reports is not None and (not math.isfinite(reports) or reports<0 or reports!=int(reports)):flags.append('invalid_direct_reports')
+        if budget is not None and (not math.isfinite(budget) or budget<0):flags.append('invalid_budget')
+        if any(f in flags for f in ['invalid_direct_reports','invalid_budget']):flags.append('invalid_scope')
+        if all(supplied(k) for k in ['directReports','budgetAmount','authority']) and 'invalid_scope' not in flags:
+            assessable+=1
+            if re.search(r'(?:^| )(?:مدير|رئيس|director|head|chief)(?: |$)',normalized(title)) and reports==0 and budget==0 and re.search(r'recommend|يقترح|توصيات|يوصي',normalized(row['authority'])):flags.append('title_scope_review')
+        if re.fullmatch(r'(?:all|unlimited|absolute|كافة|كافه|كل|مطلقه|مطلقة|جميع)(?: الصلاحيات| authority| authorities)?',normalized(row.get('authority',''))):flags.append('absolute_authority')
+        if budget is not None and math.isfinite(budget) and median_budget and budget>median_budget*10:flags.append('budget_outlier')
+        if reports is not None and reports>15:flags.append('wide_span')
+        if title:groups[(normalized(title),normalized(row.get('department','')))].append(index)
+        output.append({'row':index,'title':title,'department':row.get('department',''),'positionId':str(row.get('positionId','')).strip(),'parentPositionId':str(row.get('parentPositionId','')).strip(),'grade':str(row.get('grade','')).strip(),'directReports':reports if reports is None or math.isfinite(reports) else None,'budgetAmount':budget if budget is None or math.isfinite(budget) else None,'occupationCode':code,'sourceTitle':record['titleAr'] if record else '','sourceTitleEn':record.get('titleEn','') if record else '','sourcePage':record['sourcePage'] if record else None,'titleCodeAligned':status=='matched','titleCodeStatus':status,'layer':None,'flags':flags})
+    by_id={};ids=defaultdict(list)
+    for row in output:
+        if row['positionId']:ids[row['positionId']].append(row);by_id.setdefault(row['positionId'],row)
+    for group in ids.values():
+        if len(group)>1:
+            for row in group:row['flags'].append('duplicate_position_id')
+    memo={}
+    def depth(start):
+        if id(start) in memo:return memo[id(start)]
+        path=[];seen={};current=start;base=None
+        while current is not None:
+            identity=id(current)
+            if identity in memo:base=memo[identity];break
+            if identity in seen:
+                for entry in path[seen[identity]:]:
+                    if 'hierarchy_cycle' not in entry['flags']:entry['flags'].append('hierarchy_cycle')
+                break
+            if not current['positionId'] or 'duplicate_position_id' in current['flags']:break
+            seen[identity]=len(path);path.append(current)
+            if not current['parentPositionId']:base=0;break
+            parent=by_id.get(current['parentPositionId'])
+            if parent is None:
+                if 'missing_parent' not in current['flags']:current['flags'].append('missing_parent')
+                break
+            current=parent
+        for entry in reversed(path):
+            base=None if base is None else base+1;memo[id(entry)]=base
+        memo.setdefault(id(start),None)
+        return memo[id(start)]
+    hierarchy_provided=any(r['positionId'] or r['parentPositionId'] or r['grade'] for r in output)
+    for row in output:
+        if hierarchy_provided and not row['positionId']:row['flags'].append('missing_position_id')
+        if row['parentPositionId'] and row['parentPositionId'] not in by_id:row['flags'].append('missing_parent')
+        row['layer']=depth(row);parent=by_id.get(row['parentPositionId']);grade=rank(row['grade']);parent_grade=rank(parent['grade']) if parent else None
+        if parent and grade is not None and parent_grade is not None and grade>=parent_grade:row['flags'].append('grade_inversion')
+        if row['grade'] and grade is None:row['flags'].append('unknown_grade')
+    spans=sorted(row['directReports'] for row in output if row['directReports'] is not None and row['directReports']>0 and row['directReports']==int(row['directReports']))
+    span={'managers':len(spans),'averageSpan':round(sum(spans)/len(spans),1),'medianSpan':(spans[(len(spans)-1)//2]+spans[len(spans)//2])/2,'singleReportManagers':sum(n==1 for n in spans),'narrowManagers':sum(n<=3 for n in spans),'wideManagers':sum(n>=15 for n in spans)} if spans else None
+    hierarchy={'layers':max((r['layer'] or 0 for r in output),default=0),'roots':sum(bool(r['positionId']) and not r['parentPositionId'] for r in output),'missingParents':[r['row'] for r in output if 'missing_parent' in r['flags']],'cycleRows':[r['row'] for r in output if 'hierarchy_cycle' in r['flags']],'gradeInversions':[{'row':r['row'],'positionId':r['positionId'],'parentPositionId':r['parentPositionId'],'grade':r['grade'],'parentGrade':by_id[r['parentPositionId']]['grade']} for r in output if 'grade_inversion' in r['flags']]}
     duplicates=[{'title':key[0],'department':key[1],'rows':values} for key,values in groups.items() if len(values)>1]
-    return {'release':catalog.occupations['id'],'totalRows':len(rows),'codesFoundWithoutSourceIssue':valid,'exactTitleCodePairs':matched,'titleCodeAlignmentPercent':round(100*matched/len(rows),1),'duplicateGroups':duplicates,'scopeAssessableRows':assessable,'titleScopeReviewRows':inflated,'rows':output,'notice':'Alignment measures exact title/code pairs in the selected edition, not legal compliance or task fit. Repeated titles may represent legitimate additional headcount; title-scope flags are advisory, not proof of inflation. Employee identity columns are discarded.'}
+    return {'release':catalog.occupations['id'],'totalRows':len(rows),'validRows':sum(bool(r['title']) for r in output),'rowErrors':errors,'codesFoundWithoutSourceIssue':valid,'exactTitleCodePairs':matched,'titleCodeAlignmentPercent':round(100*matched/len(rows),1),'duplicateGroups':duplicates,'scopeAssessableRows':assessable,'titleScopeReviewRows':sum(any(f in r['flags'] for f in ['title_scope_review','absolute_authority','budget_outlier','wide_span','invalid_scope']) for r in output),'spanOfControl':span,'hierarchy':hierarchy,'rows':output,'notice':'The report measures reference terminology and reporting links. Task fit and authority require specialist review; employee identity columns are discarded.'}

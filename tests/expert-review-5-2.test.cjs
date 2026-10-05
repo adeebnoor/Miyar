@@ -14,13 +14,16 @@ async function app(route,locale='en',before){
  await settle();await settle();return {w,dom,errors,d:w.document,$:id=>w.document.getElementById(id)};
 }
 
+async function selectGradePosition(a){const w=a.w;w.localStorage.setItem('miyar-enterprise-local-v1',JSON.stringify([{id:'LOCAL-EVAL',internalCode:'LOCAL-EVAL',revision:1,title:'Software engineer',content:{title:'Software engineer',field:'Software development',responsibilities:'Analyze user requirements; develop and test software; document defects'},state:'draft'}]));w.MiyarEnterprise.open('grading');await settle();const select=w.document.getElementById('ent-grade-position');select.value='0';select.dispatchEvent(new w.Event('change'));await settle();}
+function committeeRatings(a,level){for(const s of a.d.querySelectorAll('[data-second-factor]'))s.value=String(level);a.d.querySelector('[data-evaluator="0"]').value='Reviewer one';a.d.querySelector('[data-evaluator="1"]').value='Reviewer two';}
+
 test('workforce bridge reconciles the gap as growth plus replacement minus committed pipeline',()=>{
  for(const input of [M.example,{...M.example,retirementsFte:1,committedHires:1,internalSupply:.5},{...M.example,targetWorkload:80}]){
   const p=M.plan(input),b=p.bridge;
   assert.ok(Math.abs(b.gapFte-(b.growthFte+b.replacementFte-b.pipelineFte))<.02,'gap = growth + replacement - pipeline');
   assert.ok(Math.abs(b.forecastSupplyFte-(b.currentFte-b.attritionExitsFte-b.knownExitsFte+b.pipelineFte))<.02,'supply bridge closes');
  }
- const base=M.plan(M.example);assert.equal(base.bridge.knownExitsFte,0);assert.equal(base.scenarios.base.final.gapFte,0.8);
+ const base=M.plan(M.example);assert.equal(base.bridge.knownExitsFte,0);assert.equal(base.scenarios.base.final.gapFte,0.83);
 });
 
 test('known retirements reduce supply and are validated against current FTE',()=>{
@@ -37,7 +40,7 @@ test('gap options are Buy, Build, Borrow, Bind and Bot alternatives with compute
  assert.equal(p.options[0].headcount,p.scenarios.base.final.gapHeadcount);
  const borrow=p.options.find(o=>o.id==='borrow');assert.ok(borrow.coreFte<=p.scenarios.base.final.rawGapFte);assert.ok(borrow.flexFte>0);
  const by=d=>p.sensitivity.find(x=>x.driver===d).gapDeltaFte;
- assert.ok(by('demand')>0);assert.ok(by('productivity')<0);assert.ok(by('attrition')<0);assert.equal(by('pipeline'),-1);
+ assert.ok(by('demand')>0);assert.ok(by('productivity')<0);assert.ok(by('attrition')<0);assert.equal(by('pipeline'),-0.95);
  assert.deepEqual(M.plan({...M.example,targetWorkload:80}).options,[]);
  assert.equal(M.plan({...M.example,attritionPercent:0}).sensitivity.some(x=>x.driver==='attrition'),false);
  assert.equal(p.actions[0].type,'hire');
@@ -58,7 +61,7 @@ test('compensation diagnostics check range spread, midpoint symmetry, compa-rati
  assert.equal(C.evaluate({...C.example,bandMin:20000,bandMax:40000}).bandDiagnostics.spreadAssessment,'wide');
  assert.equal(C.evaluate({...C.example,bandMin:29000,bandMid:30000,bandMax:31000}).bandDiagnostics.spreadAssessment,'narrow');
  const skewed=C.evaluate({...C.example,bandMid:33000});assert.equal(skewed.bandDiagnostics.midpointCentred,false);assert.equal(skewed.bandDiagnostics.midpointOffsetPercent,10);
- const zones=[[21000,'well-below','below-minimum'],[27000,'below','Q2'],[30000,'at','Q3'],[34000,'above','Q4'],[39000,'well-above','above-maximum']];
+ const zones=[[21000,'well-below','below-minimum'],[27000,'below','Q1'],[30000,'at','Q2'],[34000,'above','Q4'],[39000,'well-above','above-maximum']];
  for(const [salary,zone,quartile] of zones){const r=C.evaluate({...C.example,currentSalary:salary}).result;assert.equal(r.compaZone,zone,String(salary));assert.equal(r.currentQuartile,quartile,String(salary));}
  assert.match(base.calculationNotice,/not market percentiles/);
 });
@@ -117,22 +120,22 @@ test('compensation does not invent an institution grade when no role is known',a
 
 test('job evaluation resolves points to the approved institution grade and shows the factor breakdown',async()=>{
  const a=await app('#enterprise/grading');try{
-  const I=a.w.MiyarInstitutionProfile;I.saveLocal(I.profileExample(),true);
+  await selectGradePosition(a);const I=a.w.MiyarInstitutionProfile;I.saveLocal(I.profileExample(),true);
   const events=[];a.w.addEventListener('miyar:grade-calculated',e=>events.push(e.detail.grade));
   for(const s of a.d.querySelectorAll('[data-factor]'))s.value='5';for(const e of a.d.querySelectorAll('[data-factor-evidence]'))e.value='Leads a programme with cross-functional decisions';
   a.$('ent-calculate').click();await settle();
   const out=a.$('ent-grade-result');assert.match(out.querySelector('.ent-grade-output').textContent,/741/);assert.equal(out.querySelectorAll('.ent-grade-breakdown tbody tr').length,8);
-  assert.match(out.querySelector('.ent-institution-grade').textContent,/Approved structure grade: G11 · Manager/);assert.deepEqual(events,['G11 · Manager']);
+  assert.match(out.querySelector('.ent-institution-grade').textContent,/Approved structure grade: G11 · Manager/);assert.deepEqual(events,[]);committeeRatings(a,5);a.$('ent-bind-grade').click();await settle();a.$('ent-grade-to-compensation').click();await settle();assert.deepEqual(events,['G11 · Manager']);
   assert.deepEqual(a.errors,[]);
  }finally{a.dom.window.close();}
 });
 
 test('job evaluation keeps the illustrative band when no institution grade structure exists',async()=>{
  const a=await app('#enterprise/grading');try{
-  const events=[];a.w.addEventListener('miyar:grade-calculated',e=>events.push(e.detail.grade));
-  for(const s of a.d.querySelectorAll('[data-factor]'))s.value='2';for(const e of a.d.querySelectorAll('[data-factor-evidence]'))e.value='Evidence';
+  await selectGradePosition(a);const events=[];a.w.addEventListener('miyar:grade-calculated',e=>events.push(e.detail.grade));
+  for(const s of a.d.querySelectorAll('[data-factor]'))s.value='2';for(const e of a.d.querySelectorAll('[data-factor-evidence]'))e.value='Develop and test software under documented technical review authority';
   a.$('ent-calculate').click();await settle();
-  assert.match(a.$('ent-grade-result').querySelector('.ent-institution-grade').textContent,/No institution grade structure/);assert.deepEqual(events,['G04']);
+  assert.match(a.$('ent-grade-result').querySelector('.ent-institution-grade').textContent,/No institution grade structure/);assert.deepEqual(events,[]);committeeRatings(a,2);a.$('ent-bind-grade').click();await settle();a.$('ent-grade-to-compensation').click();await settle();assert.deepEqual(events,['G04']);
  }finally{a.dom.window.close();}
 });
 
@@ -151,13 +154,13 @@ test('out-of-sample strategic review replaces the in-progress message once the d
   const objective=a.$('objective');objective.value='تصميم حلول الذكاء الاصطناعي التوليدي، وبناء تطبيقات النماذج اللغوية وحوكمتها وتقييم مخرجاتها.';objective.dispatchEvent(new a.w.Event('input',{bubbles:true}));
   a.$('role-form').dispatchEvent(new a.w.Event('submit',{bubbles:true,cancelable:true}));
   for(let i=0;i<40&&!a.d.querySelector('.demo-v5-directory');i++)await settle();
-  const reason=a.d.querySelector('.demo-v5-output > p');assert.ok(reason);assert.doesNotMatch(reason.textContent,/^Checking the field/);assert.match(reason.textContent,/Checked the quick sample|Related references were found/);
+  const reason=a.d.querySelector('.demo-v5-output > p');assert.ok(reason);assert.doesNotMatch(reason.textContent,/^Checking the field/);assert.match(reason.textContent,/Checked the quick sample|Related references were found|The title was linked/);
  }finally{a.dom.window.close();}
 });
 
 test('homepage approval stages describe distinct reviewer evidence and one primary hero action',async()=>{
  const a=await app('#home');try{
-  const stages=[...a.d.querySelectorAll('.lp-workflow li p')].map(x=>x.textContent);assert.equal(stages.length,4);assert.equal(new Set(stages).size,4);assert.match(stages[3],/delegation of authority/);
+  const stages=[...a.d.querySelectorAll('.lp-workflow li p')].map(x=>x.textContent);assert.equal(stages.length,5);assert.equal(new Set(stages).size,5);assert.match(stages[0],/budget owner endorsement/);assert.match(stages[4],/delegation of authority/);
   assert.equal(a.d.querySelectorAll('.lp-hero .lp-guided-actions .lp-primary').length,1);
  }finally{a.dom.window.close();}
 });

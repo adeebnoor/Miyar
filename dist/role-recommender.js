@@ -14,6 +14,55 @@ function includesTerm(n,q){
 const has=(text,term)=>includesTerm(' '+normalize(text)+' ',normalize(term));
 const anchors=(text,terms)=>{const n=' '+normalize(text)+' ';return [...new Set(terms.map(normalize))].filter(q=>q&&includesTerm(n,q));};
 const score=(text,terms)=>anchors(text,terms).reduce((n,x)=>n+Math.min(50,x.length),0);
+// One title/translation matcher is used by the directory, recommendation and
+// structure audit. English labels are authored search aids; source titles remain Arabic.
+let occupationAliases={},indexedRoles=null,indexedAliases=null;
+function occupationalTerms(title){const n=normalize(title),singular=n.replace(/\b(engineers|teachers|nurses|accountants|drivers|cleaners)\b/g,w=>w.slice(0,-1));const masculine=n.split(' ').map(w=>catalog.titleWordForms?.[w]||w).join(' ');return [...new Set([n,singular,masculine])];}
+const occupationIndexCache=new WeakMap();
+const catalogTitleIndex=new Map();
+function refreshCatalogIndex(){if(indexedRoles===catalog.roles&&indexedAliases===catalog.occupationAliases)return;indexedRoles=catalog.roles;indexedAliases=catalog.occupationAliases;occupationAliases=Object.fromEntries(Object.entries(catalog.occupationAliases||{}).map(([key,code])=>[normalize(key),code]));catalogTitleIndex.clear();for(const role of catalog.roles)for(const label of [role.titleAr,role.titleEn,role.referenceTitleAr]){const n=normalize(label);catalogTitleIndex.set(n,[...(catalogTitleIndex.get(n)||[]),role]);}}
+function occupationIndex(nodes){if(occupationIndexCache.has(nodes))return occupationIndexCache.get(nodes);const available=new Map(),titles=new Map();for(const node of nodes)if(node.level==='occupation'){available.set(String(node.code),node);for(const label of [node.titleAr,node.titleEn])if(label){const n=normalize(label);titles.set(n,[...(titles.get(n)||[]),node]);}}const index={available,titles};occupationIndexCache.set(nodes,index);return index;}
+function matchOccupation(title,nodes=[]){
+ refreshCatalogIndex();const terms=occupationalTerms(title),{available,titles}=occupationIndex(nodes),matches=[];
+ const add=(code,titleEn,basis)=>{const node=available.get(String(code));if(node&&!matches.some(x=>x.code===String(code)))matches.push({code:String(code),titleAr:node.titleAr,titleEn:titleEn||'',sourcePage:node.sourcePage,basis,translationStatus:titleEn?'proposed-search-translation':'official-source-title'});};
+ for(const n of terms){if(/^\d{6}$/.test(n))add(n,'','occupation-code');for(const node of titles.get(n)||[])add(node.code,node.titleEn,'source-title');for(const role of catalogTitleIndex.get(n)||[])add(role.ssco,role.titleEn,'proposed-catalog-translation');if(occupationAliases[n])add(occupationAliases[n],title,'proposed-search-translation');}
+ return {status:matches.length===1?'matched':matches.length?'ambiguous':'unknown',matches};
+}
+function matchTitleCode(title,code,nodes=[]){const lookup=matchOccupation(title,nodes),expectedCodes=lookup.matches.map(x=>x.code),match=lookup.matches.find(x=>x.code===String(code));return {status:match?'matched':expectedCodes.length?'inconsistent':'unknown',match:match||null,expectedCodes,matches:lookup.matches};}
+function directorySearch(nodes,q,parent){
+ const n=normalize(q),exact=matchOccupation(q,nodes).matches,codes=new Set(exact.map(x=>x.code));
+ const translated=catalog.roles.filter(r=>occupationalTerms(q).some(t=>normalize(r.titleEn)===t)).map(r=>normalize(r.referenceTitleAr));
+ const mapped=occupationAliases[n],target=nodes.find(r=>String(r.code)===mapped),queries=translated.length?translated:target?[normalize(target.titleAr)]:[n];
+ const rows=nodes.filter(r=>(parent===undefined?r.level==='occupation':r.parent===parent)&&(codes.has(String(r.code))||queries.some(query=>query.split(' ').filter(Boolean).every(t=>normalize([r.code,r.titleAr,r.titleEn||'',...(r.aliases||[])].join(' ')).includes(t)))));
+ return rows.sort((a,b)=>Number(codes.has(String(b.code)))-Number(codes.has(String(a.code)))||String(a.code).localeCompare(String(b.code)));
+}
+function objectiveReview(input={}){
+ refreshCatalogIndex();const work=String(input.responsibilities||input.objective||input.strategyObjective||'').trim(),n=normalize(work);
+ const concreteCare=/(?:administer|record|check|monitor) (?:medication|medications|vital signs)|اعطاء الادوية|قياس العلامات الحيوية|توثيق الرعاية/.test(n);
+ const retentionOutcome=/turnover|retention|patient safety|دوران|الاحتفاظ|احتفاظ|سلامة المرضي|سلامة المرضى/.test(n)||/\bretain\s+(?:(?:key|our|the|qualified|skilled)\s+){0,2}(?:employees?|staff|nurses?|talent|customers?|clients?)\b/.test(n);
+ if(!concreteCare&&/\b(?:reduce|lower|improve|increase|retain)\b|خفض|تقليل|تحسين|رفع|احتفاظ/.test(n)&&retentionOutcome){
+  const field=normalize(input.domain||input.department||''),medical=/\b(?:nurses?|nursing|patients?|icu|hospital|clinical|healthcare)\b|تمريض|ممرض|مرضي|مرضى|مستشفي|مستشفى|رعاية صحية/.test(n+' '+field),customer=!medical&&/\b(?:customers?|clients?|accounts?)\b|عملاء|عميل/.test(n);
+  const role=(family,intent)=>catalog.roles.find(r=>r.family===family&&r.intent===intent&&r.level==='specialist');
+  let candidates,context;
+  if(medical){context='health';candidates=[catalog.roles.find(r=>r.family==='health'&&r.level==='supervisor'),role('hc','employeeRelations'),role('quality','general')];}
+  else if(customer){context='customer';candidates=[role('customerService','general'),role('sales','general'),role('operations','general')];}
+  else{context='people';const workforce=/workforce|manpower|قوي عاملة|قوى عاملة|تخطيط القوى/.test(n),talent=/talent|مواهب/.test(n);candidates=[role('hc','employeeRelations'),role('hc',workforce?'workforce':'od'),role('hc',talent?'talent':'engagement')];}
+  candidates=candidates.filter(Boolean);
+  const ownershipAr=medical?'إشراف تمريضي، علاقات موظفين، أو جودة وسلامة مرضى':customer?'خدمة العملاء، المبيعات، أو تحسين العمليات':'علاقات الموظفين، تصميم العمل، وتخطيط القوى العاملة أو تطوير المواهب حسب النطاق';
+  const ownershipEn=medical?'nursing supervision, employee relations, or patient quality and safety':customer?'customer service, sales, or process improvement':'employee relations, work design, workforce planning or talent development within the stated scope';
+  return {kind:'work-design',context,candidates,messageAr:'هذا هدف احتفاظ أو جودة، وليس دليلاً على الحاجة إلى وظيفة جديدة. راجع عبء العمل وتصميم العمليات أولاً، ثم حدد مسؤوليات المالك: '+ownershipAr+'.',messageEn:'This is a retention or quality outcome, not evidence that a new position is needed. Review workload and process design first, then specify ownership: '+ownershipEn+'.',alternativesAr:[medical?'إعادة تصميم العمل والوردية':'إعادة تصميم العمل وتوزيع المسؤوليات','تحسين العمليات والتدريب','تحديد مسؤوليات المالك قبل إنشاء منصب'],alternativesEn:[medical?'Redesign work and shifts':'Redesign work and distribute responsibilities','Improve processes and training','Define owner duties before creating a position']};
+ }
+ const match=n.match(/^(recruit|hire|train|manage|توظيف|استقطاب|تعيين|تدريب|ادارة)\s+(?:a\s+|an\s+|the\s+)?(.+)$/);
+ if(!match||/[;؛\n]/.test(work)||input.directReports>0)return null;
+ const object=match[2].split(/\s+(?:to|and|for|بهدف|من اجل|و(?:تطوير|تحسين|قيادة))\s+/)[0];
+ const objectRole=(/^(?:chief executive|ceo|رئيس تنفيذي)/.test(object)?catalog.roles.find(r=>r.family==='generalManagement'&&r.level==='executive'):null)||catalog.roles.filter(r=>['specialist','assistant','executive','director'].includes(r.level)).find(r=>occupationalTerms(object).some(t=>[r.titleEn,r.titleAr].some(x=>normalize(x)===t)))||(/^(?:nurses?|registered nurses?|software engineers?|accountants?|drivers?|cleaners?|chief executive|ceo|ممرض[اينونت]*|مهندس[اينون]* برمجيات|محاسب[اينون]*|سائق[اينون]*|عمال نظافة|رئيس تنفيذي)$/.test(object)?catalog.roles.find(r=>String(r.ssco)===occupationAliases[normalize(object)]):null);
+ if(!objectRole)return null;
+ const recruitment=/recruit|hire|توظيف|استقطاب|تعيين/.test(match[1]),training=/train|تدريب/.test(match[1]);
+ const actor=recruitment?catalog.roles.find(r=>r.family==='hc'&&r.intent==='recruitment'&&r.level==='specialist'):training?catalog.roles.find(r=>r.family==='hc'&&r.intent==='learning'&&r.level==='specialist'):objectRole.family==='health'?catalog.roles.find(r=>r.family==='health'&&r.level==='supervisor'):catalog.roles.find(r=>r.family===objectRole.family&&r.level==='manager');
+ const candidates=[...(objectRole.level==='executive'?[objectRole,actor]:[actor,objectRole])].filter(Boolean);
+ return {kind:'actor-object',candidates,messageAr:'هل تقصد وظيفة الشخص الذي يقوم بالتوظيف أو التدريب أو الإدارة، أم وظيفة الأشخاص المستهدفين؟ اختر المقصود ثم أضف مسؤولياته الفعلية.',messageEn:'Do you mean the role doing the recruiting, training or managing, or the occupation of the people affected? Select the intended role and add its actual duties.'};
+}
+function clarification(review,input,detection){return {status:'needs-confirmation',clarificationKind:review.kind,clarificationContext:review.context||null,candidate:null,finalTitle:null,candidates:review.candidates,detection:detection||null,levelAnalysis:analyzeLevel(input),checks:[{id:'goal-type',status:'warn',ar:review.messageAr,en:review.messageEn}],anchors:[],message:input.locale==='en'?review.messageEn:review.messageAr,messageAr:review.messageAr,messageEn:review.messageEn,alternatives:input.locale==='en'?review.alternativesEn:review.alternativesAr};}
 function explicitLevel(text){
  const n=normalize(text);
  if(/^(?:executive assistant|personal assistant|assistant to|مساعد مدير|مساعد رئيس|سكرتير)/.test(n))return'assistant';
@@ -122,11 +171,12 @@ function level(input={}){return analyzeLevel(input).level;}
 const sharedWords=new Set(['pipeline','engineer','engineers','security','system','systems','data','team','project','meeting','meetings','objective','objectives','اجتماع','اجتماعات','هدف','أهداف','نظام','بيانات','فريق','cost','costs','budget','forecast','report','reports','variance','تكلفة','تكاليف','ميزانية','موازنة','انحرافات','تقرير','تقارير'].map(normalize));
 const domainTermCache=new Map();
 function domainTerms(f){if(!domainTermCache.has(f.id))domainTermCache.set(f.id,[...new Set([...f.terms,...catalog.roles.filter(r=>r.family===f.id).flatMap(r=>r.taskKeywords)].map(normalize))].filter(x=>!sharedWords.has(x)&&!(f.id==='investment'&&['استحواذ','اندماج'].includes(x))));return domainTermCache.get(f.id);}
-const dutyVerbForms={يختبر:'اختبار',يوثق:'توثيق',يسوي:'تسوية',يراجع:'مراجعة',يطور:'تطوير',ينسق:'تنسيق',يحدث:'تحديث',يحلل:'تحليل',يدرب:'تدريب',يخطط:'تخطيط',يقيم:'تقييم',يعد:'اعداد',يصمم:'تصميم'};
+const dutyVerbForms={يعلم:'تعليم',يدرّس:'تدريس',يدرس:'تدريس',ينظف:'تنظيف',يقود:'قيادة',يكنس:'كنس',يوصل:'توصيل',يختبر:'اختبار',يوثق:'توثيق',يسوي:'تسوية',يراجع:'مراجعة',يطور:'تطوير',ينسق:'تنسيق',يحدث:'تحديث',يحلل:'تحليل',يدرب:'تدريب',يخطط:'تخطيط',يقيم:'تقييم',يعد:'اعداد',يصمم:'تصميم'};
 function canonicalDuty(text){return normalize(text).split(' ').map(word=>dutyVerbForms[word]||(word.startsWith('و')&&dutyVerbForms[word.slice(1)])||word).join(' ');}
 const dutyScoreCache=new Map();
 function dutyScore(text,f){
  const scope=canonicalDuty(text),key=f.id+'\0'+scope;if(dutyScoreCache.has(key))return dutyScoreCache.get(key);
+ if(f.id==='generalManagement'&&/calendar|diary|travel|مواعيد|مفكرة|سفر/.test(scope)&&!/(?:lead|manage) (?:the )?company|قيادة شركة|قيادة الشركة/.test(scope))return {value:0,specific:[]};
  if(f.id==='securitySafety'&&/cyber|firewall|siem|vulnerability|\bsoc\b|penetration|database|digital access|security events|identity and access|\biam\b|\bedr\b|endpoint|جدار حماية|جدران حماية|ثغرات|information security|امن معلومات|امن سيبراني|سيبراني|امن بيانات|قواعد بيانات|صلاحيات رقمية/.test(scope)&&!/(?:guard|patrol|workplace|occupational|visitor|حارس|حراس|حراسة|جولات امنية|سلامة مهنية|معدات وقاية|اخطار مهنية)/.test(scope))return {value:0,specific:[]};
  const terms=domainTerms(f),specific=anchors(scope,terms);let value=score(scope,terms);
  // Shared finance nouns are usable only inside an expressly financial action.
@@ -149,7 +199,10 @@ function detect(input={}){
  if(culinary&&!(fieldHit?.fieldScore&&['finance','supplyChain'].includes(fieldHit.family.id)&&fieldHit.specialtyClauses.length>=2))return null;
  let selected=fieldHit?.fieldScore?fieldHit:textHit?.textScore?textHit:titleHit?.titleScore?titleHit:null;
  if(!selected)return null;
+ if(text.trim()&&!ranked.some(x=>x.textScore>0)&&(hasResponsibilities||!titleHit?.titleScore)&&!new RegExp('(?:'+englishAction+'|'+arabicAction+'|'+arabicTask+')','i').test(text))return null;
  if(hasResponsibilities&&!fieldHit?.fieldScore&&!ranked.some(x=>x.textScore>0)&&!new RegExp('(?:'+englishAction+'|'+arabicAction+'|'+arabicTask+')','i').test(text))return null;
+ const invoiceEntry=/(?:enter|entry) (?:supplier )?invoices|ادخال فواتير/.test(normalize(text));
+ if(invoiceEntry&&!/(?:vendor sourcing|source vendors|prepare rfps|تقييم الموردين|طرح طلبات العروض)/.test(normalize(text))&&(!fieldHit?.fieldScore||fieldHit.family.id==='finance'))selected=ranked.find(x=>x.family.id==='finance');
  if(selected.family.id==='operations'&&textHit?.family.id==='maintenance')selected=textHit;
  const isPayroll=['payroll','salary processing','رواتب','مسير الرواتب'].some(x=>has(text,x));
  const government=catalog.roles.filter(r=>r.family==='admin'&&r.intent==='governmentRelations').flatMap(r=>r.taskKeywords).some(x=>has(text,x))&&['hc','admin'].includes(selected.family.id);
@@ -177,17 +230,20 @@ function scopeError(detection,locale){const ar=locale==='ar';let message;
 }
 function validateScope(input={},locale='en'){const detection=detect(input);if(!detection||detection.severeConflict)throw scopeError(detection,locale);return detection;}
 function recommend(input={},nodes=null,education=null){
- const detection=detect(input);if(!detection)return null;if(detection.severeConflict)throw scopeError(detection,input.locale||'en');
+ const review=objectiveReview(input),detection=detect(input);if(review)return clarification(review,input,detection);if(!detection)return null;if(detection.severeConflict)throw scopeError(detection,input.locale||'en');
  const {family,text}=detection,roles=catalog.roles.filter(r=>r.family===family.id);
  const levelAnalysis=analyzeLevel(input);let requested=levelAnalysis.level;
  if(levelAnalysis.leadershipConflict)return {status:'blocked',candidate:null,finalTitle:null,detection,levelAnalysis,directReports:levelAnalysis.directReports,checks:[{id:levelAnalysis.levelExceedsEvidence?'levelExceedsEvidence':'leadership',status:'fail',ar:'المستوى المطلوب أعلى مما تدل عليه المهام أو يتعارض معها. أضف مسؤوليات القيادة والاعتماد، أو غيّر المستوى.',en:'Requested level conflicts with duty evidence. Add owned leadership and approval responsibilities or change the level.'}],message:levelAnalysis.levelExceedsEvidence?'المستوى المطلوب ('+(input.seniority||input.requestedLevel||input.title||input.jobTitle)+') أعلى مما تدل عليه المهام. أضف مسؤوليات القيادة والاعتماد، أو غيّر المستوى.':'أدلة القيادة تتعارض مع المستوى المدخل',anchors:[]};
- const ranked=roles.filter(r=>['specialist','assistant','technician'].includes(r.level)).map(r=>({role:r,score:score(text,r.taskKeywords.filter(x=>!sharedWords.has(normalize(x))))})).sort((a,b)=>b.score-a.score);
+ const ranked=roles.filter(r=>['specialist','assistant','technician'].includes(r.level)).map(r=>({role:r,score:score(canonicalDuty(text),r.taskKeywords.filter(x=>!sharedWords.has(normalize(x))))})).sort((a,b)=>b.score-a.score);
  let intent=ranked[0]?.score?ranked[0].role.intent:'general';
+ if(family.id==='hc'&&['attendance','timekeeping','الحضور والانصراف'].some(x=>has(text,x))&&!['entry','enter','archive','employee records','إدخال','أرشفة','تحديث ملفات'].some(x=>has(text,x)))intent='attendance';
+ if(family.id==='education'){if(/(?:secondary|high school|ثانوي|ثانوية)/.test(normalize(text))&&/mathematics|maths|math|رياضيات/.test(normalize(text)))intent='secondaryMath';else if(/mathematics|maths|math|رياضيات/.test(normalize(text)))intent='primaryMath';else if(/kindergarten|رياض اطفال|روضة/.test(normalize(text)))intent='kindergarten';}
  if(family.id==='finance'&&['payroll cost','تكلفة الرواتب','تكاليف الرواتب'].some(x=>has(text,x)))intent='cost';
  // Preserve the expert's mixed HC portfolio only for genuinely multi-workstream scope.
  if(family.id==='hc'&&['hc projects','human capital projects','مشاريع راس المال البشري'].some(x=>has(text,x))&&['procurement','rfp','مشتريات','opex','ميزانية'].some(x=>has(text,x))){intent='portfolio';}
  const noManagement=managementExcluded(input,detection.interpretation);
  let chosenLevel=noManagement?'specialist':requested;
+ if(['officeSupport','transport'].includes(family.id)&&!levelAnalysis.requestedLevel&&!levelAnalysis.evidence.people.length)chosenLevel='assistant';
  const engineeringEvidence=['design','designs','engineering design','engineering calculations','professional license','professional licence','تصميم','التصاميم','حساب هندسي','حسابات هندسية','ترخيص مهني','تصميم هندسي'].some(x=>has(text,x)||has(input.title||'',x));
  // Executing repairs never grants an engineering title. Keep management scope.
  if(['maintenance','engineering'].includes(family.id)&&!['manager','director','executive'].includes(chosenLevel)&&!engineeringEvidence){chosenLevel='technician';intent=family.id==='maintenance'&&['hvac','تكييف','التكييف','air conditioning'].some(x=>has(text,x))?'hvac':'technician';}
@@ -211,19 +267,19 @@ function recommend(input={},nodes=null,education=null){
  const checks=[
   {id:'leadership',status:levelAnalysis.leadershipConflict?'fail':levelAnalysis.levelWarning?'warn':'pass',ar:levelAnalysis.leadershipConflict?'أدلة القيادة تتعارض مع المستوى المدخل؛ أكد المستوى قبل التوليد':'فُحصت أدلة القيادة مع المستوى',en:levelAnalysis.leadershipConflict?'Leadership evidence conflicts with entered level; confirm the level before generation':'Leadership evidence checked against level'},
   {id:'level',status:candidate.level===requested?'pass':'warn',ar:candidate.level===requested?'المسمى يطابق المستوى المطلوب':'تم تقييد المستوى بالقيود أو بالتغطية المتاحة؛ راجع المستوى',en:candidate.level===requested?'Title matches the requested level':'Level constrained by exclusions or catalog coverage; review the level'},
-  {id:'domain',status:detection.conflict?'warn':'pass',ar:detection.conflict?'يوجد اختلاف بين المجال المدخل وإشارات الوصف':'المجال والمسمى متسقان مع المدخلات',en:detection.conflict?'Entered field and task signals differ':'Field and title are consistent with the input'},
+  {id:'domain',status:detection.conflict?'warn':'pass',ar:detection.conflict?'يوجد اختلاف بين المجال المدخل وإشارات الوصف':'تطابق مصطلحات المجال والمهام؛ لا يثبت أن إنشاء المنصب يحل الاحتياج',en:detection.conflict?'Entered field and task signals differ':'Field/task terminology match; this does not establish that a new position solves the need'},
   {id:'constraints',status:exclusion||forbidden?'fail':constraintText?'warn':'pass',ar:exclusion||forbidden?'تعارض مع قيد أو مسمى ممنوع':constraintText?'فُحصت القيود المعروفة؛ يلزم التحقق البشري من كامل النص':'لا توجد قيود إضافية مدخلة',en:exclusion||forbidden?'Conflict with an exclusion or forbidden title':constraintText?'Known exclusions checked; full free-text constraints need human review':'No additional constraints supplied'},
   {id:'ssco',status:nodes?(source?'pass':'fail'):'warn',ar:source?'الرمز موجود في نسخة SSCO المرفقة، وربطه بالدور مقترح':nodes?'الرمز غير موجود في الدليل':'لم يُحمّل دليل SSCO للتحقق بعد',en:source?'Code exists in supplied SSCO; role mapping is proposed':nodes?'Code is missing from the directory':'SSCO directory has not been loaded for validation'},
   {id:'education',status:educationCodes.length?'warn':'warn',ar:educationCodes.length?'رموز تعليم مقترحة من الدليل؛ لا تعني اشتراطًا رسميًا':'لا يوجد ربط تعليمي متحقق؛ حدده مع المختص',en:educationCodes.length?'Proposed education codes; not an official qualification requirement':'No verified education mapping; specify it with a reviewer'}
  ];
  if(candidate.licenseReviewRequired)checks.push({id:'license',status:'warn',ar:candidate.licenseNoteAr,en:candidate.licenseNoteEn});
- if(candidate.mappingStatus==='adjacent-reference-for-review')checks.push({id:'mapping-scope',status:'warn',ar:candidate.mappingNoteAr,en:candidate.mappingNoteEn});
+ if(['adjacent-reference-for-review','emerging-occupation-nearest-reference'].includes(candidate.mappingStatus))checks.push({id:'mapping-scope',status:'warn',ar:candidate.mappingNoteAr,en:candidate.mappingNoteEn});
  if(detection.workstreams.length>1)checks.push({id:'mixed-scope',status:'warn',ar:'الوصف يشمل أكثر من وظيفة؛ راجع الدور الرئيسي أو افصل نطاقات العمل قبل الاعتماد',en:'Multiple functions appear in the description; confirm the primary role or split the work scopes before approval'});
  const found=anchors(text,[...family.terms,...candidate.taskKeywords]);
  const rawScore=score(text,[...family.terms,...candidate.taskKeywords]);
  return {candidate:{...candidate,educationCodes},source,detection,requestedLevel:requested,levelAnalysis,directReports:levelAnalysis.directReports,checks,anchors:found,score:{keyword:rawScore,embedding:null,calibratedConfidence:null},finalTitle:checks.some(x=>x.status==='fail')?null:{ar:candidate.titleAr,en:candidate.titleEn},status:checks.some(x=>x.status==='fail')?'blocked':'proposed-for-review'};
 }
 function familyDefinition(input){const d=detect(input);if(!d)return null;const f=d.family,roles=catalog.roles.filter(r=>r.family===f.id);return {...f,departmentAr:f.ar,departmentEn:f.en,ssco:[...new Set(roles.map(r=>r.referenceTitleAr))],education:[],qualificationAr:'مؤهل مرتبط بالمجال؛ يحدد وفق المهام وسياسة الجهة',qualificationEn:'Relevant qualification, subject to tasks and organization policy',technicalAr:['تحليل الاحتياج','توثيق الأدلة','متابعة النتائج'],technicalEn:['Needs analysis','Evidence documentation','Outcome monitoring'],careerAr:['أخصائي أول','مدير'],careerEn:['Senior Specialist','Manager']};}
-root.MiyarRoleRecommender={catalog,normalize,has,anchors,score,interpret,explicitLevel,parseCount,analyzeLevel,level,detect,validateScope,recommend,familyDefinition};
+root.MiyarRoleRecommender={catalog,normalize,has,anchors,score,matchOccupation,matchTitleCode,directorySearch,objectiveReview,interpret,explicitLevel,parseCount,analyzeLevel,level,detect,validateScope,recommend,familyDefinition};
 if(typeof module!=='undefined'&&module.exports)module.exports=root.MiyarRoleRecommender;
 })(typeof window!=='undefined'?window:globalThis);

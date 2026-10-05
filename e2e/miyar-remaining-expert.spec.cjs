@@ -3,7 +3,7 @@ const BASE='http://127.0.0.1:4173/';
 async function open(page,route,lang='en'){
   await page.addInitScript(value=>localStorage.setItem('miyar-language',value),lang);
   await page.route('https://miyar-enterprise-api.onrender.com/**',r=>r.fulfill({status:401,json:{detail:'Local review only'}}));
-  await page.goto(BASE+route);
+  await page.goto(BASE+route);if(route==='#enterprise/create'){await page.locator('#miyar-od-advanced').waitFor();await page.locator('#miyar-od-advanced > summary').click();}
 }
 test('Arabic leadership count reaches the actual position form, and conflicting regeneration clears the previous package',async({page})=>{
   await open(page,'#enterprise/create','ar');
@@ -55,6 +55,7 @@ test('sensitive typed roster is rejected, cleared and never stored, while pseudo
 });
 test('quick recommendation stops on a severe field conflict without showing a usable title',async({page})=>{
   await open(page,'#demo');
+  await page.locator('#demo-context-fields > summary').click();
   await page.locator('#domain').fill('Finance');
   await page.locator('#objective').fill('Administer medication; monitor vital signs; document nursing care plans.');
   await page.locator('#role-form button[type=submit]').click();

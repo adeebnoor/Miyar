@@ -8,11 +8,11 @@ function sync(){
  const en=document.documentElement.lang==='en';
  let strategy=nav.querySelector('[data-strategy-nav]');
  if(!strategy){strategy=document.createElement('a');strategy.href='#demo';strategy.className='nav-link strategic-engine-link';strategy.dataset.view='demo';strategy.dataset.strategyNav='true';nav.prepend(strategy);}
- const strategyLabel=en?'Strategic workforce engine':'المحرك الاستراتيجي للقوى العاملة';
+ const strategyLabel=en?'Find the right role':'ابحث عن الدور المناسب';
  if(strategy.querySelector('span')?.textContent!==strategyLabel)strategy.innerHTML=targetIcon+'<span>'+strategyLabel+'</span>';
  let od=nav.querySelector('[data-od-nav]');
  if(!od){od=document.createElement('a');od.href='#enterprise/create';od.className='nav-link od-engine-sidebar-link';od.dataset.odNav='true';strategy.insertAdjacentElement('afterend',od);}
- const odLabel=en?'OD engine':'محرك التطوير التنظيمي',odSub=en?'Phase 1 · JD & evaluation':'المرحلة 1 · الوصف والتقييم';
+ const odLabel=en?'New position request':'طلب منصب جديد',odSub=en?'Description and evaluation':'الوصف والتقييم';
  od.innerHTML=odIcon+'<span>'+odLabel+'<small>'+odSub+'</small></span>';
  const demo=document.getElementById('view-demo'),strategyActive=Boolean(demo&&!demo.hidden),odActive=location.hash==='#enterprise/create';
  strategy.classList.toggle('active',strategyActive);if(strategyActive)strategy.setAttribute('aria-current','page');else strategy.removeAttribute('aria-current');

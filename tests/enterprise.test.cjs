@@ -289,24 +289,25 @@ test('signing in retains the working draft and dashboard counts come from scoped
 test('performance suggestions, license alerts, matrices and new PDF control survive local revisions',async()=>{
  for(const locale of ['ar','en']){const a=await ui(locale);try{
   a.tab('create');a.$('sample').click();assert.ok(a.$('pdf-draft'));assert.match(a.$('license-notice').textContent,/Saudi Council|الهيئة السعودية/);
-  a.$('generate-kpis').click();assert.equal(a.w.document.querySelectorAll('[data-matrix-key="kpis"]').length,15);
+  a.$('generate-kpis').click();assert.equal(a.w.document.querySelectorAll('[data-matrix-key="kpis"]').length,21);
   a.$('generate-raci').click();assert.equal(a.w.document.querySelectorAll('[data-matrix-key="raci"]').length,15);
   const target=a.w.document.querySelector('[data-matrix-key="kpis"][data-matrix-field="target"]');target.value='98% approved draft target';target.dispatchEvent(new a.w.Event('input'));
+  for(const [field,value]of [['baseline','90% measured baseline'],['duration','Within six months']]){const input=a.w.document.querySelector('[data-matrix-key="kpis"][data-matrix-field="'+field+'"]');assert.ok(input,field);input.value=value;input.dispatchEvent(new a.w.Event('input'));}
   a.$('use-license').click();assert.equal(a.w.document.querySelector('[data-field="licenseSource"]').value,'https://www.uqn.gov.sa/details?p=24294');assert.equal(a.w.document.querySelector('[data-field="licenseDate"]').value,'');
   a.$('save').click();await new Promise(r=>setImmediate(r));let saved=JSON.parse(a.w.localStorage.getItem(C.KEY))[0];assert.equal(saved.content.kpis[0].target,'98% approved draft target');assert.equal(saved.content.raci.length,3);
-  const imported=C.importDraft(saved);assert.equal(imported.kpis.length,3);
-  a.$('preview-draft').click();assert.match(a.w.document.querySelector('dialog').textContent,/98% approved draft target/);assert.equal(a.w.document.querySelectorAll('.signature-box').length,4);a.$('close-report').click();
+  const imported=C.importDraft(saved);assert.equal(imported.kpis.length,3);assert.equal(saved.content.kpis[0].baseline,'90% measured baseline');assert.equal(imported.kpis[0].duration,'Within six months');
+  a.$('preview-draft').click();assert.match(a.w.document.querySelector('dialog').textContent,/98% approved draft target/);assert.match(a.w.document.querySelector('dialog').textContent,/90% measured baseline/);assert.match(a.w.document.querySelector('dialog').textContent,/Within six months/);assert.equal(a.w.document.querySelectorAll('.signature-box').length,5);a.$('close-report').click();
   const input=a.w.document.querySelector('[data-field="successMeasures"]');input.value='Changed success outcomes';input.dispatchEvent(new a.w.Event('input'));assert.ok(a.$('performance-warning').textContent.length>20);
   assert.deepEqual(a.errors,[]);
  }finally{a.dom.window.close();}}
 });
-test('salary proposal is linked to computed grade and invalidated by changed evidence',async()=>{
- const a=await ui('en');try{a.tab('create');a.$('sample').click();a.tab('grading');
- for(const e of a.w.document.querySelectorAll('[data-factor]'))e.value='2';for(const e of a.w.document.querySelectorAll('[data-factor-evidence]'))e.value='Measured scope evidence';
+test('salary proposal is explicitly linked to one saved position and its revision',async()=>{
+ const a=await ui('en');try{a.w.localStorage.setItem('miyar-position-evaluations-v1',JSON.stringify([{positionId:'LOCAL-PRIOR',revision:9,linked:{salaryGrade:'G12',evaluatedPositionId:'LOCAL-PRIOR',evaluatedPositionRevision:9,evaluationSummary:'Prior unrelated executive assessment'}}]));a.tab('create');a.$('sample').click();a.$('save').click();await new Promise(r=>setImmediate(r));a.tab('grading');await new Promise(r=>setImmediate(r));const select=a.$('grade-position');select.value='0';select.dispatchEvent(new a.w.Event('change'));await new Promise(r=>setImmediate(r));
+ for(const e of a.w.document.querySelectorAll('[data-factor]'))e.value='2';for(const e of a.w.document.querySelectorAll('[data-factor-evidence]'))e.value='Develop and test software under documented technical review authority';
  for(const [key,v] of Object.entries({salaryMin:'10000',salaryMax:'14000',salarySource:'Draft internal band proposal'}))a.w.document.querySelector('[data-pay="'+key+'"]').value=v;
- a.$('calculate').click();await new Promise(r=>setImmediate(r));assert.match(a.$('salary-result').textContent,/G04.*10,000.*14,000.*SAR/);
- a.tab('create');a.$('save').click();await new Promise(r=>setImmediate(r));let saved=JSON.parse(a.w.localStorage.getItem(C.KEY))[0];assert.equal(saved.content.salaryGrade,'G04');assert.equal(saved.content.salaryMin,10000);assert.match(saved.content.evaluationSummary,/148 points/);
- a.tab('grading');const input=a.w.document.querySelector('[data-pay="salaryMax"]');input.value='9000';input.dispatchEvent(new a.w.Event('input'));a.$('calculate').click();await new Promise(r=>setImmediate(r));assert.match(a.$('message').textContent,/minimum and maximum/);assert.equal(a.$('grade-result').textContent,'');assert.deepEqual(a.errors,[]);
+ a.$('calculate').click();await new Promise(r=>setImmediate(r));assert.match(a.$('salary-result').textContent,/G04.*10,000.*14,000.*SAR/);let saved=JSON.parse(a.w.localStorage.getItem(C.KEY))[0];assert.equal(saved.content.salaryGrade,'G04','The sample contains an explicit proposed grade');for(const key of ['evaluatedPositionId','evaluatedPositionRevision','evaluationSummary','evaluationCommitteeJSON'])assert.equal(saved.content[key],undefined,'Preview must not bind '+key);assert.equal(a.w.MiyarEnterpriseGrade.contextFor(saved),null,'An unrelated prior G12 evaluation must not become this position evaluation');
+ a.w.document.querySelector('[data-evaluator="0"]').value='Reviewer one';a.w.document.querySelector('[data-evaluator="1"]').value='Reviewer two';for(const e of a.w.document.querySelectorAll('[data-second-factor]'))e.value='2';a.$('bind-grade').click();await new Promise(r=>setImmediate(r));const context=a.w.MiyarEnterpriseGrade.contextFor(saved);assert.equal(context.salaryGrade,'G04');assert.equal(context.salaryMin,10000);assert.match(context.evaluationSummary,/148 points/);assert.equal(context.evaluatedPositionId,saved.id);assert.equal(context.evaluatedPositionRevision,1);
+ const input=a.w.document.querySelector('[data-pay="salaryMax"]');input.value='9000';input.dispatchEvent(new a.w.Event('input'));a.$('calculate').click();await new Promise(r=>setImmediate(r));assert.match(a.$('grade-feedback').textContent,/minimum and maximum/);assert.equal(a.$('grade-result').textContent,'');assert.deepEqual(a.errors,[]);
  }finally{a.dom.window.close();}
 });
 test('license mapping checks known SSCO records, including Arabic digits, and avoids unknown-code claims',()=>{

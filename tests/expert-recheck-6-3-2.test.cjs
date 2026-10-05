@@ -17,7 +17,7 @@ const inputs=[
  ['Finance','Chief Financial Officer: lead the finance function of 60 staff; approve financial statements','','director',60],
  ['Human Resources','Prepare payroll for 400 employees; reconcile GOSI contributions','','specialist',null],
  ['Internal Audit','Lead 5 internal audits per year; test controls; document audit evidence','','specialist',null],
- ['Information Technology','Build dashboards in Power BI; write SQL queries; automate data pipelines','','specialist',null,null,'BI / Data Analyst'],
+ ['Information Technology','Build dashboards in Power BI; write SQL queries; automate data pipelines','','specialist',null,null,'Business Intelligence Analyst'],
  ['Facilities','Repair HVAC units under the supervision of a licensed engineer; replace filters; log work orders','','technician',null,null,'HVAC Maintenance Technician'],
  ['Information Technology','Configure firewalls; monitor security alerts in the SIEM; run vulnerability scans','','specialist',null,null,'Information Security Specialist'],
  ['Human Resources','Manage the recruitment pipeline; screen candidates; schedule interviews with hiring managers','','specialist',null,null,'Recruitment Specialist'],
