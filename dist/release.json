@@ -1,8 +1,9 @@
 {
-  "version": "7.0.0",
-  "buildId": "62ddb6f4c7b19a61",
+  "version": "7.0.1",
+  "buildId": "da52b00c2cf1aa05",
   "releasedAt": "2026-10-05",
   "changes": [
+    "7.0.1: One position label on evaluation, planning and compensation; guided tour follows the visible position-design path; contrast fixes",
     "V7-01 / V7-11: Persist position revision and grade, select positions in Compensation and restore evaluation inputs",
     "V7-02 / V7-04 / V7-15: Broader translation, inventory, mobile-app and driver concepts; clarify business outcomes before matching",
     "V7-03: Block request opening with incomplete KPI cells; retain draft saving and adjacent errors",

@@ -12,10 +12,10 @@
 
 ## Institutional approval pilot (administrator setup required)
 
-Before testing the four-stage approval flow, an administrator must configure:
+Before testing the five-stage approval flow (budget owner → OD → Total Rewards → Finance → Final Authority), an administrator must configure:
 
 - organization departments and reporting scope;
-- user accounts for Line Manager, OD, Total Rewards, Finance and Final Authority/CHRO;
+- user accounts for Department Manager (budget owner), OD, Total Rewards, Finance and Final Authority/CHRO;
 - the one-time organization structure and grade architecture;
 - a non-illustrative organization-approved evaluation framework;
 - organization salary-band sources where compensation is tested.
@@ -33,7 +33,7 @@ Use the built-in Human Capital example in the OD Engine. Confirm that procuremen
 - occupation/education references are reviewable rather than presented as regulatory approval;
 - manager occupation codes are not attached to specialist roles;
 - salary values outside the organization band produce a review warning;
-- the same revision moves through OD → Total Rewards → Finance → Final Authority.
+- the same revision moves through budget owner → OD → Total Rewards → Finance → Final Authority.
 
 ## Hosting note
 
