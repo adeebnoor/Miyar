@@ -94,7 +94,7 @@ function mount(host,{t,lang,icon,switchLanguage,example}){
   <section class="lp-proof lp-wrap" aria-label="${t('قدرات متاحة في معيار','Available Miyar capabilities')}">
    <div><strong dir="ltr">5,041</strong><span><b>${t('مهنة في المرجع المؤسسي','occupations in the enterprise reference')}</b><small>${t('التصنيف السعودي للمهن · إصدار 2019 المرفق بالمشروع','Supplied Saudi occupation classification · 2019 edition')}</small></span></div>
    <div><strong dir="ltr">599</strong><span><b>${t('تخصصاً تعليمياً','education specializations')}</b><small>${t('تسعة مستويات · إصدار 2020 المرفق بالمشروع','Nine levels · supplied 2020 edition')}</small></span></div>
-   <div><strong dir="ltr">04</strong><span><b>${t('مراحل اعتماد مؤسسي','institutional approval stages')}</b><small>${t('صلاحيات وإصدارات وأثر قرار','Permissions, revisions and decision trail')}</small></span></div>
+   <div><strong dir="ltr">05</strong><span><b>${t('مراحل اعتماد مؤسسي','institutional approval stages')}</b><small>${t('صلاحيات وإصدارات وأثر قرار','Permissions, revisions and decision trail')}</small></span></div>
   </section>
 
   <section id="lp-capabilities" class="lp-section lp-wrap" aria-labelledby="lp-capabilities-title">
