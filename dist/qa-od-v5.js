@@ -9,9 +9,9 @@ const baseGenerate=E.generate.bind(E);
 const norm=E.normalize||function(v){return String(v||'').normalize('NFKC').toLowerCase().replace(/[\u064b-\u065f\u0670ـ]/g,'').replace(/[أإآٱ]/g,'ا').replace(/ى/g,'ي').replace(/[^\p{L}\p{N}\s]/gu,' ').replace(/\s+/g,' ').trim();};
 function professionalReview(p,input,locale){
  const ar=locale==='ar',text=norm(input.responsibilities||''),family=p.family.id;
- const supervisor=/supervis(?:e|es|ing|ion|or).*(?:team|nurs|staff|shift)|(?:team|shift) supervisor|اشراف.*(?:فريق|وردية|ممرض)|يشرف.*(?:فريق|وردية|ممرض)|مشرف.*(?:فريق|تمريض|وردية)/.test(text+' '+norm(input.requestedLevel||''));
+ const supervisor=(!p.content.levelEvidence||family==='health')&&/supervis(?:e|es|ing|ion|or).*(?:team|nurs|staff|shift)|(?:team|shift) supervisor|اشراف.*(?:فريق|وردية|ممرض)|يشرف.*(?:فريق|وردية|ممرض)|مشرف.*(?:فريق|تمريض|وردية)/.test(text+' '+norm(input.requestedLevel||''));
  const row=(outcome,metric)=>({outcome,metric,target:ar?'يُحدد من خط الأساس وسياسة الجهة؛ بانتظار اعتماد المختص':'Set from baseline and organization policy; specialist approval pending',frequency:ar?'شهريًا — دورية مقترحة للمراجعة':'Monthly — proposed cadence for review',deliverable:ar?'سجل قياس موثق يحدد البسط والمقام والاستثناءات':'Documented measurement log defining numerator, denominator and exclusions'});
- if(family==='hc'&&/payroll|رواتب|مسير/.test(text)){
+ if(family==='hc'&&/payroll|رواتب|مسير/.test(text)&&!['director','executive'].includes(p.gradeRecommendation.level)){
   p.content.title=ar?(supervisor?'مشرف الرواتب':/مدير|رئيس/.test(norm(input.requestedLevel))?'مدير الرواتب':'أخصائي رواتب'):(supervisor?'Payroll Supervisor':/manager|director/.test(norm(input.requestedLevel))?'Payroll Manager':'Payroll Specialist');p.content.marketTitle=p.content.title;
   p.content.kpis=ar?[row('دقة الرواتب من أول معالجة','بنود رواتب الموظفين الصحيحة دون إعادة معالجة ÷ جميع بنود الرواتب المعالجة × 100'),row('الصرف في الموعد المعتمد','مدفوعات الرواتب المنفذة في الموعد ÷ المدفوعات المستحقة × 100'),row('مطابقة اشتراكات التأمينات','سجلات الاشتراك المطابقة بين المسير وفاتورة التأمينات ÷ السجلات المطلوب مطابقتها × 100')]:[row('First-pass payroll accuracy','Correct employee payroll records without rework / all processed payroll records × 100'),row('On-time payroll payment','Payroll payments made by approved due date / payments due × 100'),row('GOSI reconciliation accuracy','Contribution records reconciled between payroll and GOSI invoice / contribution records due for reconciliation × 100')];
   p.content.qualifications=ar?'معرفة مهنية موثقة بعمليات الرواتب والمحاسبة أو الموارد البشرية؛ المؤهل ومستواه يحددهما تحليل العمل وسياسة الجهة.':'Demonstrated payroll, accounting or HR knowledge; qualification and level follow job analysis and organization policy.';
@@ -22,7 +22,7 @@ function professionalReview(p,input,locale){
   p.content.kpis=ar?[row('معدل أخطاء إعطاء الدواء الموثقة','أخطاء إعطاء الدواء المسجلة ÷ مرات إعطاء الدواء × 1000؛ تُراجع مع اكتمال الإبلاغ ولا يُعاقب الإبلاغ'),row('اكتمال تقييم كفاءة طاقم الوردية','الممرضون المستكملون لتقييم الكفاءة المستحق ÷ الممرضين المستحق لهم التقييم × 100'),row('اكتمال التوثيق التمريضي','السجلات المستوفية لعناصر التدقيق ÷ السجلات التمريضية المدققة × 100')]:[row('Reported medication administration error rate','Reported administration errors / medication administrations × 1000; review alongside reporting completeness, without penalizing reporting'),row('Due nursing competency assessments completed','Nurses completing due competency assessment / nurses due for assessment × 100'),row('Nursing documentation completeness','Records meeting documentation audit requirements / nursing records audited × 100')];
   p.notices.unshift(ar?'قالب تمريض محدود للمراجعة التخصصية فقط؛ ليس بروتوكولًا سريريًا أو إثباتًا لصلاحية مهنية.':'Limited nursing template for specialist review only; not a clinical protocol or confirmation of professional eligibility.');
  }
- if(supervisor){p.content.seniority=ar?'إشراف مباشر — الدرجة تحتاج تقييمًا':'Direct supervision — grade requires evaluation';p.gradeRecommendation={level:'supervisor',rationale:ar?'الإشراف مذكور في المسؤوليات؛ عدد المرؤوسين والصلاحيات يراجعان من الهيكل.':'Supervision is explicitly stated; verify direct-report count and authority against the organization structure.',status:'pre-evaluation'};p.content.team=ar?'إشراف مباشر مستدل من المهام المدخلة؛ عدد المرؤوسين غير معروف ويحتاج تأكيدًا.':'Direct supervision evidenced by entered duties; direct-report count is unknown and needs confirmation.';}
+ if(supervisor&&p.gradeRecommendation.level!=='director'&&p.gradeRecommendation.level!=='executive'){p.content.seniority=ar?'إشراف مباشر — الدرجة تحتاج تقييمًا':'Direct supervision — grade requires evaluation';p.gradeRecommendation={level:'supervisor',rationale:ar?'الإشراف مذكور في المسؤوليات؛ عدد المرؤوسين والصلاحيات يراجعان من الهيكل.':'Supervision is explicitly stated; verify direct-report count and authority against the organization structure.',status:'pre-evaluation'};p.content.team=ar?'إشراف مباشر مستدل من المهام المدخلة؛ عدد المرؤوسين غير معروف ويحتاج تأكيدًا.':'Direct supervision evidenced by entered duties; direct-report count is unknown and needs confirmation.';}
  const leading=supervisor||/manager|director|رئيس|مدير/.test(String(p.content.seniority).toLowerCase());
  p.content.purpose=ar?(leading?'الإشراف على تنفيذ نطاق الدور':'تنفيذ نطاق الدور التخصصي')+' لدعم الهدف الاستراتيجي: '+String(input.strategyObjective||''):(leading?'Oversee delivery of the role scope':'Deliver the professional role scope')+' in support of the strategic objective: '+String(input.strategyObjective||'');
  p.content.successMeasures=p.content.kpis.map(x=>x.outcome).join('\n');
@@ -32,12 +32,20 @@ function professionalReview(p,input,locale){
  return p;
 }
 E.generate=function(input={},locale='en'){
- const p=baseGenerate(input,locale),R=root.MiyarRoleRecommender,recommendation=R?.recommend({objective:[input.strategyObjective,input.responsibilities].filter(Boolean).join(' '),domain:input.department,seniority:input.requestedLevel,constraints:input.constraints});
+ const R=root.MiyarRoleRecommender;
+ R?.validateScope(input,locale);
+ const recommendation=R?.recommend({objective:input.strategyObjective,responsibilities:input.responsibilities,domain:input.department,seniority:input.requestedLevel,title:input.title,directReports:input.directReports,constraints:input.constraints});
+ if(!recommendation)throw Error(locale==='ar'?'لا تتوفر تغطية كافية للمسمى والمستوى المطلوبين؛ يلزم تأكيد النطاق من المختص.':'The requested title and level do not have sufficient supported coverage; a specialist must confirm the scope.');
+ if(recommendation?.status==='blocked')throw Error(locale==='ar'?'لا يمكن توليد الوصف قبل تصحيح تعارض المجال أو المستوى أو القيود.':'Correct the domain, level or constraint conflict before generating the job description.');
+ const p=baseGenerate({...input,requestedLevel:recommendation.candidate.level},locale);
  if(recommendation){
-  const r=recommendation.candidate,f=recommendation.detection.family,ar=locale==='ar',title=ar?r.titleAr:r.titleEn,manager=r.level!=='specialist';
-  p.family={id:f.id,label:ar?f.ar:f.en};p.content.jobFamily=p.family.label;p.content.title=title;p.content.marketTitle=title;if(r.intent!=='portfolio')p.content.seniority=ar?(manager?'مستوى مدير':'مستوى مهني'):(manager?'Manager level':'Professional level');
+  const r=recommendation.candidate,f=recommendation.detection.family,ar=locale==='ar',title=ar?r.titleAr:r.titleEn,manager=['manager','director','executive'].includes(r.level);
+  p.family={id:f.id,label:ar?f.ar:f.en};p.content.jobFamily=p.family.label;p.content.title=title;p.content.marketTitle=title;if(r.intent!=='portfolio'){const labels={technician:['مستوى فني','Technician level'],supervisor:['مستوى مشرف','Supervisor level'],assistant:['مستوى مساعد','Assistant level'],specialist:['مستوى مهني','Professional level'],manager:['مستوى مدير','Manager level'],director:['مستوى مدير إدارة / رئيس','Director / Head level'],executive:['مستوى تنفيذي','Executive level']};p.content.seniority=(labels[r.level]||labels.specialist)[ar?0:1];}
   p.content.purpose=ar?'تنفيذ '+title+' لدعم الهدف: '+String(input.strategyObjective||''):'Deliver the '+title+' scope in support of: '+String(input.strategyObjective||'');
-  p.gradeRecommendation={level:r.level,rationale:ar?'احتُرم المستوى المدخل؛ الدرجة تحتاج التقييم المؤسسي المعتمد.':'Entered seniority is respected; grade requires approved organizational evaluation.',status:'pre-evaluation'};
+  const analysis=recommendation.levelAnalysis||R.analyzeLevel(input);
+  p.content.levelEvidence=analysis.evidence;
+  if(analysis.directReports!==null&&analysis.directReports!==undefined){p.content.directReports=analysis.directReports;p.content.team=ar?'عدد المرؤوسين المستدل من المدخل: '+analysis.directReports+'؛ راجع العدد والصلاحيات مع الهيكل المعتمد.':'Direct reports evidenced by the input: '+analysis.directReports+'; confirm count and authority against the approved structure.';}
+  p.gradeRecommendation={level:r.level,rationale:ar?analysis.rationaleAr:analysis.rationaleEn,status:'pre-evaluation',directReports:analysis.directReports,evidence:analysis.evidence};
   if(r.intent!=='portfolio'){
    const skills=(ar?r.skillsAr:r.skillsEn),fallback=ar?[f.ar+' — مهارات تخصصية تحتاج تحديدًا','تحليل الأدلة','توثيق النتائج']:[f.en+' — detailed skills need specification','Evidence analysis','Outcome documentation'];
    p.content.skills=(skills.length?skills:fallback).join('\n');
@@ -55,9 +63,10 @@ E.generate=function(input={},locale='en'){
   }
   if(recommendation.detection.workstreams.length>1)p.notices.unshift(ar?'نطاق متعدد الوظائف: راجع المهمة الرئيسية والمهام المساندة أو افصلها إلى أدوار قبل الاعتماد.':'Multi-function scope: confirm primary and supporting work, or split it into roles before approval.');
   p.content.odGenerationBasis=ar?'اقتراح قواعد شفافة من الهدف والمسؤوليات مع فحص المجال والمستوى والقيود؛ بانتظار اعتماد المختص.':'Transparent rule-based proposal from the objective and responsibilities, with domain, level and constraint checks; expert approval pending.';
-  p.referenceQueries={ssco:[r.referenceTitleAr],education:r.educationCodes,educationLevel:'6'};
+  p.referenceQueries={ssco:[r.referenceTitleAr],education:r.educationCodes,educationLevel:['assistant','technician'].includes(r.level)?'':'6'};
+  if(r.licenseReviewRequired)p.notices.unshift(ar?r.licenseNoteAr:r.licenseNoteEn);
   p.validation=recommendation.checks;p.content.roleValidation=recommendation.checks;p.content.finalProposedTitle=recommendation.finalTitle?title:'';
-  if(recommendation.detection.conflict)p.notices.unshift(ar?'تعارض مجال: تم تفضيل الإدارة المدخلة؛ راجع وصف العمل.':'Domain conflict: entered department takes priority; review the work description.');
+  if(recommendation.detection.conflict)p.notices.unshift(ar?'نطاق مختلط: معالجة الرواتب في المالية؛ راجع توزيع مسؤولياتها بين الإدارتين.':'Mixed function scope: payroll is processed in Finance; confirm the departmental accountability.');
   if((r.intent==='general'&&!r.domainProfileVersion)||!r.skillsAr.length)p.notices.unshift(ar?'قالب عام داخل المجال؛ يجب تخصيص المهارات والمؤشرات مع مختص.':'Generic template within this family; specialize skills and KPIs with a domain reviewer.');
   return professionalReview(p,input,locale);
  }

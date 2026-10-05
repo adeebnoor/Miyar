@@ -1,4 +1,4 @@
-# Expert report response — Miyar 6.3.0
+# Expert report response — Miyar 6.3.1
 
 Source: user's `Miyar_HR_Evaluation.docx`, dated 5 October 2026. Scope: correct professional decision logic and make evidence/limitations reviewable. This release remains an expert-evaluation / restricted-pilot proposal; it does not assert commercial readiness.
 
@@ -19,7 +19,41 @@ Source: user's `Miyar_HR_Evaluation.docx`, dated 5 October 2026. Scope: correct 
 
 `regression-cases.json` contains40 authored / report-paraphrase scenarios. The CSV in the website is an annotation pack with empty expert-reference columns. **Neither is the requested independent golden set.** Obtain30–50 real anonymized job cases, sourced JD/grade/salary references, independent reviewer evidence, and a frozen dataset before measuring outcomes. Agree grade/salary tolerances and pass threshold with the expert *before* evaluation. Include critical-error veto and report per-family coverage and holdout results. Do not tune on the holdout.
 
-`node scripts/check-professional-readiness.cjs` currently reports commercialReady=false. `--require-commercial` exits nonzero until the evidence manifest is complete. This checks recorded evidence, not reviewer identity or the truth of self-attestation. It is a deliberate commercial-launch gate, not a claim that more unit tests prove professional validity.
+`node scripts/check-professional-readiness.cjs` currently reports commercialReady=false. `--require-commercial` exits nonzero until the recorded evidence passes the gate. Version 6.3.1 adds a frozen reference checksum manifest, predeclared holdout IDs and separate holdout results. It rejects nonfinite or negative reference salaries, incomplete outcomes, changed frozen references, missing output/assessment checksums, failed holdout thresholds and any critical error. **This validates recorded evidence only:** it does not read referenced files, authenticate reviewer identity, verify real-job provenance or establish legal/contractual residency. An independent person must inspect the artifacts and verify their actual byte checksums. Software test fixtures cannot substitute for this review.
+
+## Closing the independent job-reference blocker
+
+No independent organization dataset or expert sign-off has been supplied. The following is the collection process; it is not a completed validation.
+
+1. Ask the participating organization to nominate an independent HR/job-evaluation reviewer and authorize a private pack of **30–50 existing real jobs across at least six job families**. Use case aliases, such as `CASE-001`, and remove employee names, national IDs, emails and other identifying text. Retain an auditable private mapping to source job records with the organization. Do not put real job/salary documents in the public repository.
+2. Before showing Miyar's outputs, the reviewer records each case's approved JD, grade and salary reference with source, currency and period. Populate `referenceSalary.amount` with a finite nonnegative number; zero requires the reviewer's documented explanation. `referenceGrade` is an explicit string, e.g. the organization's grade label. Include `sourceReference`, `reviewedBy` and a nonempty `family` for every case. Add every referenced job/pay artifact to `freezeEvidence.files` as `{ "reference": "private artifact reference", "sha256": "actual 64-character SHA-256" }`.
+3. Agree the JD/scope acceptance method, grade tolerance, salary tolerance, common minimum acceptance fraction, critical-error veto and framework calibration with the reviewer **before** evaluation. Record `acceptancePolicy.approvedBy`, `approvedAt` (ISO timestamp with timezone), `approvedBeforeEvaluation: true`, `gradeTolerance`, `salaryTolerance` and `minimumAcceptedFraction`. Give the agreement its own signed review artifact. The original illustrative grading framework still needs explicit `frameworkCalibration.approved: true` and `frameworkCalibration.evidence`.
+4. Select holdout cases before testing and record their unique aliases in `holdout.caseIds`, with `declaredBeforeEvaluation: true`. Keep a proper nonempty subset of the reference pool withheld from tuning; stratify across the six or more families where possible. A practical starting proposal for 30 cases is 12 holdout cases with two per family; the expert must approve the split. Freeze the reference pack and holdout list, record `freezeEvidence.frozenAt`, and preserve the independent approval artifact's reference and actual checksum as `approvalEvidenceReference` / `approvalEvidenceSha256`.
+5. Generate the immutable canonical reference snapshot using the helper below, set `professionalDataset.sha256` and `freezeEvidence.manifestSha256` to its SHA-256, and retain its private artifact reference as `freezeEvidence.manifestReference`. The snapshot covers the references, salary values, families, policy, declared holdout IDs, file checksum list and freeze timestamp. It excludes evaluation outcomes. The reviewer should retain the snapshot/approval independently; recomputing a checksum after results are seen is not a valid freeze.
+6. Record `evaluation.startedAt` strictly after the freeze and the evaluation run's `evidenceReference`. Evaluate every case. For each, record boolean `jdAccepted`, `gradeAccepted`, `salaryAccepted`, `scopeSafetyAccepted` and `criticalFailure`. For every predeclared holdout ID, record an actual `holdout.results` entry with `caseId`, `evaluatedAt`, those same outcome booleans, `outputReference` / `outputSha256` and `assessmentEvidenceReference` / `assessmentEvidenceSha256`. Preserve the system output and independent expert assessment as separate artifacts; their outcomes must agree with the corresponding case record. Unrun cases and missing evidence block launch.
+7. Inspect aggregate and holdout acceptance separately, review family-specific errors, and apply the critical-error veto. If tuning is needed, close that failed evaluation and collect/freeze a new untouched holdout before rerunning. Do not relabel failed cases, alter source references or reuse exposed holdout cases to claim a pass.
+
+The helpers provide reproducible bytes and their hash; they do not fetch or verify private source files:
+
+```js
+const { freezeManifestFor, serializeManifest, sha256Manifest } = require('./scripts/check-professional-readiness.cjs');
+const snapshot = freezeManifestFor(readinessRecord);
+const exactBytes = serializeManifest(snapshot); // UTF-8, no trailing newline
+const digest = sha256Manifest(snapshot);
+// Preserve exactBytes as the private freeze manifest; record digest in both fields.
+```
+
+The baseline `launch-readiness.json` deliberately has empty evidence, an empty holdout, pending real-job status and `frameworkCalibration.approved: false`. Leave those fields pending until the evidence exists. Positive fixtures in `tests/commercial-gate-6-3-1.test.cjs` are synthetic unit tests and must never be copied into a readiness record.
+
+## Closing the Saudi deployment blocker
+
+No production migration, paid account, contract or restore test is asserted. The existing Frankfurt evaluation deployment remains until the following evidence and technical work are complete:
+
+1. The deployment owner selects and provisions a paid Saudi-region account/project with capacity for the API and a paid database. Record the provider, exact region, Saudi country, approved capacity and contract reference. Use the existing same-origin deployment and [Saudi migration runbook](../../deploy/saudi/README.md); create a separate Saudi staging environment first.
+2. The owner's residency reviewer checks actual contracts and service settings for the app, primary database, backups and any subprocessors used for the approved data scope. Provision backups in Saudi Arabia and record the real reviewer's evidence. Region labels alone are insufficient evidence.
+3. Migrate a sanitized staging copy, check API/UI operation, roles and access controls, then restore a backup into a separate Saudi test database. Record backup origin, restore target region, timestamp, recovered records and the verification evidence. A backup being enabled does not demonstrate restoration.
+4. Complete the independent dataset/framework acceptance above, record the actual hosting fields in `launch-readiness.json`, and run `node scripts/check-professional-readiness.cjs docs/expert-review/launch-readiness.json --require-commercial`. A passing result indicates recorded evidence completeness only; the deployment owner and reviewers must verify the underlying artifacts.
+5. After the documented review and restore verification, schedule the approved production cutover, preserve a rollback route and run the application smoke checks against the Saudi environment. Record cutover and observed region evidence before changing any public readiness claim.
 
 ## Primary guidance consulted (5 October 2026)
 

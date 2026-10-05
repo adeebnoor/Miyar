@@ -3,9 +3,141 @@
   "checkedOn": "2026-10-05",
   "nextReviewOn": "2027-01-05",
   "ownerRole": "OD reference steward",
-  "currentSnapshots": ["ssco-2019-supplied", "saudi-education-2020-supplied"],
+  "currentSnapshots": [
+    "ssco-2019-supplied",
+    "saudi-education-2020-supplied"
+  ],
   "status": "supplied-snapshots-not-certified-latest",
-  "finding": "Current official methodology pages still refer to SSCO and SASCED-20. A newer replacement dataset has not been independently verified or installed. A page update date is not a new classification edition.",
-  "officialSources": ["https://www.hrsd.gov.sa/en/skills-occupations", "https://www.stats.gov.sa/ar/w/methodology-and-quality-report-for-labor-market-statistics", "https://stats.gov.sa/ar/w/methodology-and-quality-report-for-health-and-safety-at-work-statistics-2025"],
-  "workflow": ["Check official publisher quarterly and when an official release is announced", "Retain source PDF and calculate SHA256", "Extract into a new version ID; never overwrite the supplied snapshot", "Run scripts/review-reference-update.cjs with source bytes and reviewer record", "Review added, removed, renamed and reparented codes and affected positions", "Stage occupation edition through the administrator API; OD activates separately with reason", "Education edition changes require a reviewed application release and historical snapshot retention", "Existing approved positions require a new reviewed revision before migration"]
+  "finding": "Official GASTAT January 2025 SSCO guidance and a 2023 Arabic master workbook were verified. The guide reports 2,122 occupations, whereas the workbook contains 2,048 unique occupation rows. The bundled 2019 directory contains 5,041 occupations and is retained as a historical supplied snapshot pending a reviewed code and scope migration. GASTAT methodology updated in January 2026 explicitly cites Ministry of Education 2020 SASCED-20. No newer complete education release was authenticated. A webpage update or filename is not proof of the latest complete classification edition.",
+  "officialSources": [
+    "https://www.hrsd.gov.sa/en/skills-occupations",
+    "https://www.stats.gov.sa/ar/w/methodology-and-quality-report-for-labor-market-statistics",
+    "https://stats.gov.sa/ar/w/methodology-and-quality-report-for-health-and-safety-at-work-statistics-2025",
+    "https://www.stats.gov.sa/documents/d/guest/the-guiding-manual-for-the-saudi-unified-classification-of-occupations_ar2025-pdf",
+    "https://www.stats.gov.sa/documents/20117/114272/The+Unified+Saudi+Occupational+Classification_+Master+Sheets_+2023-Ar.xlsx/0ca767e4-6b25-c75c-1a60-77de58dc9d91",
+    "https://www.stats.gov.sa/ar/w/methodology-and-quality-report-for-adult-skills-and-learning-publication-statistics-2025",
+    "https://moe.gov.sa/ar/aboutus/aboutministry/RPRLibrary/%D8%AF%D9%84%D9%8A%D9%84%20%D8%A7%D9%84%D9%85%D8%AC%D8%A7%D9%84%20%D8%A7%D9%84%D8%A7%D8%AE%D8%AA%D9%8A%D8%A7%D8%B1%D9%8A%20%D9%86%D8%B8%D8%A7%D9%85%20%D9%85%D8%B3%D8%A7%D8%B1%D8%A7%D8%AA%20%20%D8%A7%D9%84%D9%85%D8%B1%D8%AD%D9%84%D8%A9%20%D8%A7%D9%84%D8%AB%D8%A7%D9%86%D9%88%D9%8A%D8%A9%20-%202.pdf"
+  ],
+  "workflow": [
+    "Check official publisher quarterly and when an official release is announced",
+    "Retain source PDF and calculate SHA256",
+    "Extract into a new version ID; never overwrite the supplied snapshot",
+    "Run scripts/review-reference-update.cjs with source bytes and reviewer record",
+    "Review added, removed, renamed and reparented codes and affected positions",
+    "Stage occupation edition through the administrator API; OD activates separately with reason",
+    "Education edition changes require a reviewed application release and historical snapshot retention",
+    "Existing approved positions require a new reviewed revision before migration"
+  ],
+  "reviewDocument": "docs/reference-current-review-2026-10-05.md",
+  "sourceChecks": [
+    {
+      "kind": "occupation",
+      "sourceUrl": "https://www.stats.gov.sa/documents/d/guest/the-guiding-manual-for-the-saudi-unified-classification-of-occupations_ar2025-pdf",
+      "publisher": "General Authority for Statistics",
+      "checkedOn": "2026-10-05",
+      "documentEdition": "2025-01",
+      "sourceReviewed": true,
+      "bytes": 774913,
+      "sha256": "c87dab525c1808927e6eb4f3a8d55b402018f2cf8eab292904ce2c9d41263065",
+      "sourcePages": 21,
+      "scope": "methodology-guide-not-full-code-table",
+      "finding": "Cover says January 2025; pages 12–13 report 2,122 occupations and 433 units. The guide cannot replace a complete occupation code dataset."
+    },
+    {
+      "kind": "occupation",
+      "sourceUrl": "https://www.stats.gov.sa/documents/20117/114272/The+Unified+Saudi+Occupational+Classification_+Master+Sheets_+2023-Ar.xlsx/0ca767e4-6b25-c75c-1a60-77de58dc9d91",
+      "publisher": "General Authority for Statistics",
+      "checkedOn": "2026-10-05",
+      "documentEdition": "2023",
+      "sourceReviewed": true,
+      "bytes": 901947,
+      "sha256": "fc310aa1da81a465bd0f830ce3fe36f755a1f4019dd0d2f8270723b89990411a",
+      "sourceSheet": "Ar",
+      "headerRow": 7,
+      "occupationDataRows": "8-2055",
+      "finding": "Workbook internal header says 2023 edition; 2,048 six-digit occupation rows, all unique, with 433 referenced units. Requires reconciliation with the January 2025 guide."
+    },
+    {
+      "kind": "education",
+      "sourceUrl": "https://www.stats.gov.sa/ar/w/methodology-and-quality-report-for-adult-skills-and-learning-publication-statistics-2025",
+      "publisher": "General Authority for Statistics",
+      "checkedOn": "2026-10-05",
+      "pageUpdatedOn": "2026-01-07",
+      "verification": "official-search-index-content",
+      "referencedEdition": "2020",
+      "finding": "The official methodology expressly identifies SASCED-20 as issued by Ministry of Education in 2020; this verifies ongoing use of the classification, not byte identity or latest-edition certification for the bundled snapshot."
+    },
+    {
+      "kind": "education",
+      "sourceUrl": "https://moe.gov.sa/ar/aboutus/aboutministry/RPRLibrary/%D8%AF%D9%84%D9%8A%D9%84%20%D8%A7%D9%84%D9%85%D8%AC%D8%A7%D9%84%20%D8%A7%D9%84%D8%A7%D8%AE%D8%AA%D9%8A%D8%A7%D8%B1%D9%8A%20%D9%86%D8%B8%D8%A7%D9%85%20%D9%85%D8%B3%D8%A7%D8%B1%D8%A7%D8%AA%20%20%D8%A7%D9%84%D9%85%D8%B1%D8%AD%D9%84%D8%A9%20%D8%A7%D9%84%D8%AB%D8%A7%D9%86%D9%88%D9%8A%D8%A9%20-%202.pdf",
+      "publisher": "Saudi Ministry of Education",
+      "checkedOn": "2026-10-05",
+      "documentEdition": "2023",
+      "sourcePages": 43,
+      "scope": "secondary-education-optional-field-guidance-not-classification-release",
+      "finding": "Official Ministry 2023 guidance cites the Ministry of Education 2020 classification on page 40. Source PDF bytes and reference were directly verified. It is not a complete education code table and cannot be used as a replacement dataset.",
+      "sourceReviewed": true,
+      "bytes": 1210695,
+      "sha256": "c621a465de2880ce2fc8e0faaaf278416cf8207519b23606cec59e4787e40e99",
+      "referencePage": 40
+    }
+  ],
+  "reviewCandidates": [
+    {
+      "id": "ssco-2023-official-master-review",
+      "kind": "occupation",
+      "baselineId": "ssco-2019-supplied",
+      "sourceUrl": "https://www.stats.gov.sa/documents/20117/114272/The+Unified+Saudi+Occupational+Classification_+Master+Sheets_+2023-Ar.xlsx/0ca767e4-6b25-c75c-1a60-77de58dc9d91",
+      "sourceSha256": "fc310aa1da81a465bd0f830ce3fe36f755a1f4019dd0d2f8270723b89990411a",
+      "sourceBytes": 901947,
+      "edition": "2023",
+      "sourceVerified": true,
+      "completeForCurrentApplicability": false,
+      "reviewedBy": "Codex automated source inspection; independent OD approval pending",
+      "reviewedOn": "2026-10-05",
+      "reason": "Expert issue 8: official workbook is newer than the supplied 2019 snapshot but differs materially in scope and code population. Reconcile against January 2025 guidance before proposing activation.",
+      "schemaAfterExtraction": "miyar-taxonomy/1.0",
+      "observedCounts": {
+        "occupations": 2048,
+        "units": 433,
+        "duplicates": 0
+      },
+      "preliminaryExactTextDiff": {
+        "addedOccupationCodes": 188,
+        "removedOccupationCodes": 3181,
+        "renamedSharedOccupationCodes": 1663,
+        "status": "unreviewed-exact-text-comparison-not-a-migration-crosswalk"
+      },
+      "status": "source-authenticated-migration-review-required",
+      "activationAllowed": false,
+      "requiredBeforeReview": [
+        "Retain official source bytes and verify the recorded SHA256",
+        "Obtain a complete current code table or publisher clarification resolving 2048 versus 2122 occupations",
+        "Extract all hierarchy levels with correct parent relations and spreadsheet row provenance; never invent PDF source pages",
+        "Keep the 2019 snapshot, codes and approved position history intact",
+        "Validate every supported role-catalog code, title and education crosswalk against the candidate",
+        "Prepare a review record and run scripts/review-reference-update.cjs with actual source bytes and affected positions",
+        "Independent OD reviewer resolves removed, renamed and reparented codes before administrator staging; OD activation is separate"
+      ],
+      "pipelineCompatibility": "The current review CLI requires sourcePage for each node. A workbook extraction must be paired with an official code-table PDF supplying page provenance, or the pipeline must first be reviewed to accept sourceSheet/sourceRow. Do not relabel spreadsheet rows as PDF pages."
+    },
+    {
+      "id": "education-official-release-watch-2026-10-05",
+      "kind": "education",
+      "baselineId": "saudi-education-2020-supplied",
+      "edition": null,
+      "sourceUrl": "https://www.stats.gov.sa/ar/w/methodology-and-quality-report-for-adult-skills-and-learning-publication-statistics-2025",
+      "sourceSha256": null,
+      "sourceVerified": false,
+      "status": "newer-complete-release-not-authenticated",
+      "activationAllowed": false,
+      "finding": "Current official methodology still identifies Ministry of Education 2020 SASCED-20. No authenticated newer complete classification dataset was obtained from the Ministry.",
+      "requiredBeforeReview": [
+        "Obtain the complete classification source from Ministry of Education or GASTAT",
+        "Verify internal edition, SHA256, complete level and specialization coverage",
+        "Preserve all 599 supplied specializations and historical mappings until a reviewed release assesses every affected education code",
+        "Run the existing education reference review pipeline with actual source bytes and independent reviewer record"
+      ]
+    }
+  ]
 }

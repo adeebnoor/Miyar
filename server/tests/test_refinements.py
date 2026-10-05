@@ -37,10 +37,10 @@ def test_performance_and_salary_roundtrip_in_official_exports(env):
         r=c.get('/api/v1/positions/'+p['id']+'/export/'+format,headers=auth());assert r.status_code==200,r.text[:300]
 
 def test_salary_band_validation_and_evaluation_binding():
-    f=copy.deepcopy(DEFAULT_FRAMEWORK);f['bands'][2].update(salaryMin=10000,salaryMax=15000)
+    f=copy.deepcopy(DEFAULT_FRAMEWORK);f['bands'][3].update(salaryMin=10000,salaryMax=15000)
     evidence={k:'Specific duties and authority' for k in [factor['id'] for factor in DEFAULT_FRAMEWORK['factors']]}
     r=grade(f,dict.fromkeys(evidence,'2'),evidence)
-    assert r['compensation']['grade']=='G03';assert r['compensation']['salaryMin']==10000
+    assert r['compensation']['grade']=='G04';assert r['compensation']['salaryMin']==10000
     assert r['compensation']['salaryPeriod']=='monthly'
     for invalid in [{'salaryMin':float('nan'),'salaryMax':15000},{'salaryMax':15000},{'salaryMin':10000,'salaryMax':9000},{'salaryMin':True,'salaryMax':15000}]:
         broken=copy.deepcopy(DEFAULT_FRAMEWORK);broken['bands'][1].update(invalid)

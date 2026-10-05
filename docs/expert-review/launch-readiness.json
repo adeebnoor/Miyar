@@ -1,8 +1,52 @@
 {
-  "schema": "miyar-launch-readiness/1.0",
+  "schema": "miyar-launch-readiness/1.1",
   "releasePurpose": "expert-evaluation",
   "commercialReady": false,
-  "hosting": {"provider": null, "region": null, "country": null, "paidCapacity": false, "databasePaid": false, "backupCountry": null, "restoreTestEvidence": null, "residencyReviewedBy": null, "contractReference": null},
-  "professionalDataset": {"status": "pending-independent-expert-input", "sourceType": "authored-test-fixtures-only", "independentReviewer": null, "frozenBeforeEvaluation": false, "sha256": null, "acceptancePolicy": null, "cases": []},
-  "blockers": ["Contracted Saudi hosting and tested restoration are not provisioned", "30–50 real anonymized reference jobs and independent expert-approved outcomes are not supplied", "Illustrative factor weights and grade boundaries require organization calibration"]
+  "hosting": {
+    "provider": null,
+    "region": null,
+    "country": null,
+    "paidCapacity": false,
+    "databasePaid": false,
+    "backupCountry": null,
+    "restoreTestEvidence": null,
+    "residencyReviewedBy": null,
+    "contractReference": null
+  },
+  "professionalDataset": {
+    "status": "pending-independent-expert-input",
+    "sourceType": "authored-test-fixtures-only",
+    "independentReviewer": null,
+    "frozenBeforeEvaluation": false,
+    "sha256": null,
+    "acceptancePolicy": null,
+    "cases": [],
+    "freezeEvidence": {
+      "frozenAt": null,
+      "manifestReference": null,
+      "manifestSha256": null,
+      "approvalEvidenceReference": null,
+      "approvalEvidenceSha256": null,
+      "files": []
+    },
+    "holdout": {
+      "declaredBeforeEvaluation": false,
+      "caseIds": [],
+      "results": []
+    },
+    "evaluation": {
+      "startedAt": null,
+      "evidenceReference": null
+    }
+  },
+  "blockers": [
+    "Contracted Saudi hosting, Saudi backups and tested restoration are not provisioned",
+    "30–50 real anonymized reference jobs across at least six families and independent expert-approved outcomes are not supplied",
+    "Pre-agreed tolerances, a checksummed frozen reference manifest and predeclared holdout results are not supplied",
+    "Illustrative factor weights and grade boundaries require organization calibration"
+  ],
+  "frameworkCalibration": {
+    "approved": false,
+    "evidence": null
+  }
 }

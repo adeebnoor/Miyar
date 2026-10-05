@@ -5,7 +5,7 @@ import json
 import numpy as np
 import pytest
 
-from server.semantic_scope import OccupationScope, read_role_catalog
+from server.semantic_scope import LEVEL_TERMS, OccupationScope, read_role_catalog, requested_level
 from server.taxonomy import Catalog
 
 
@@ -16,12 +16,20 @@ def catalog():
 
 def test_existing_authored_catalog_is_json_and_all_references_match_selected_source(catalog):
     payload = read_role_catalog()
-    assert len(payload['families']) == 20 and len(payload['roles']) == 91
+    family_ids = {family['id'] for family in payload['families']}
+    assert len(family_ids) == len(payload['families'])
+    assert {'hc', 'finance', 'marketing', 'maintenance', 'quality', 'customerService',
+            'it', 'governance', 'procurement', 'supplyChain', 'legal', 'admin', 'sales',
+            'health', 'operations', 'projectDevelopment', 'investment', 'internalAudit',
+            'strategy', 'pmo', 'engineering', 'securitySafety'} <= family_ids
+    assert {role['level'] for role in payload['roles']} == set(LEVEL_TERMS)
+    assert all(role['family'] in family_ids for role in payload['roles'])
     for role in payload['roles']:
         source = catalog.nodes[role['ssco']]
         assert source['level'] == 'occupation'
         assert source['titleAr'] == role['referenceTitleAr']
         assert source['sourcePage'] == role['sourcePage']
+        assert source['parent'] in catalog.nodes
 
 
 @pytest.mark.parametrize('field', ['', 'Unrecognized department', 'investmentish', 'auditorium',
@@ -56,12 +64,82 @@ def test_explicit_specialist_level_excludes_management_references(catalog, senio
     assert scope.metadata(1)['requestedLevel'] == 'specialist'
 
 
-@pytest.mark.parametrize('seniority', ['', 'Unrecognized level', 'Manager', 'Manager and Specialist',
+@pytest.mark.parametrize('seniority', ['', 'Unrecognized level', 'Manager and Specialist',
                                        'non-specialist', 'specialist / team lead', 'أخصائي / مديرة'])
 def test_missing_unknown_or_conflicting_level_does_not_invent_specialist_scope(catalog, seniority):
     scope = OccupationScope('Investment', seniority, catalog.nodes)
     assert set(scope.references) == {'241308', '121110'}
     assert scope.metadata(2)['requestedLevel'] is None
+
+
+
+@pytest.mark.parametrize('field,seniority,level,expected', [
+    ('Finance', 'Assistant', 'assistant', {'331305'}),
+    ('Finance', 'كاتب', 'assistant', {'331305'}),
+    ('Human Resources', 'Coordinator', 'assistant', {'441604'}),
+    ('Human Resources', 'مستوى مساعد / فني', 'assistant', {'441604'}),
+    ('Maintenance', 'Technician', 'technician', {'311509', '311547'}),
+    ('Maintenance', 'فنية', 'technician', {'311509', '311547'}),
+    ('Security and Safety', 'Supervisor', 'supervisor', {'226398'}),
+    ('الأمن والسلامة', 'مشرف', 'supervisor', {'226398'}),
+    ('Security and Safety', 'Team lead', 'supervisor', {'226398'}),
+    ('Investment', 'Manager', 'manager', {'121110'}),
+    ('Investment', 'مديرة', 'manager', {'121110'}),
+    ('Investment', 'Director', 'director', {'121110'}),
+    ('Investment', 'مدير إدارة', 'director', {'121110'}),
+    ('Investment', 'Head', 'director', {'121110'}),
+    ('Human Resources', 'Executive Director', 'executive', {'121201'}),
+    ('Human Resources', 'مدير تنفيذي', 'executive', {'121201'}),
+    ('Human Resources', 'Chief', 'executive', {'121201'}),
+    ('Human Resources', 'Chief Executive Officer', 'executive', {'121201'}),
+])
+def test_explicit_catalog_levels_only_propose_references_at_the_requested_level(catalog, field, seniority, level, expected):
+    scope = OccupationScope(field, seniority, catalog.nodes)
+    assert set(scope.references) == expected
+    assert scope.metadata(len(expected))['requestedLevel'] == level
+    assert requested_level(seniority) == level
+
+
+def test_supported_level_without_an_authored_reference_does_not_fall_back(catalog):
+    scope = OccupationScope('Investment', 'Technician', catalog.nodes)
+    assert scope.references == {}
+    assert scope.metadata(0)['requestedLevel'] == 'technician'
+    assert scope.metadata(0)['status'] == 'insufficient-evidence'
+
+
+@pytest.mark.parametrize('seniority', ['Assistant and Specialist', 'Technician / Manager',
+                                       'Supervisor and Director', 'Chief and Analyst',
+                                       'مساعد ومدير', 'فني / أخصائي'])
+def test_conflicting_explicit_levels_do_not_silently_choose_a_level(catalog, seniority):
+    scope = OccupationScope('Investment', seniority, catalog.nodes)
+    assert scope.metadata(len(scope.references))['requestedLevel'] is None
+    assert set(scope.references) == {'241308', '121110'}
+
+
+@pytest.mark.parametrize('field,seniority,codes', [
+    ('Finance', 'Assistant', {'331305'}),
+    ('Maintenance', 'Technician', {'311509', '311547'}),
+    ('Security and Safety', 'Supervisor', {'226398'}),
+    ('Investment', 'Director', {'121110'}),
+    ('Human Resources', 'Executive', {'121201'}),
+])
+@pytest.mark.parametrize('damage', ['code', 'title', 'page', 'parent', 'flagged'])
+def test_new_level_references_fail_closed_on_changed_or_missing_source(catalog, field, seniority, codes, damage):
+    nodes = copy.deepcopy(catalog.nodes)
+    flagged = set()
+    for code in codes:
+        if damage == 'code':
+            del nodes[code]
+        elif damage == 'title':
+            nodes[code]['titleAr'] = 'Changed source title'
+        elif damage == 'page':
+            nodes[code]['sourcePage'] += 1
+        elif damage == 'parent':
+            nodes.pop(nodes[code]['parent'], None)
+        else:
+            flagged.add(code)
+    scope = OccupationScope(field, seniority, nodes, flagged)
+    assert scope.references == {}
 
 
 def test_hr_workforce_and_skill_aliases_constrain_intent_from_field_only(catalog):

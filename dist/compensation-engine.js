@@ -8,27 +8,30 @@ const spreadReference={narrowBelow:20,wideAbove:75},compaZones=[[.8,'well-below'
 function diagnostics(minimum,midpoint,maximum){const spread=(maximum-minimum)/minimum*100,centre=(minimum+maximum)/2,offset=(midpoint-centre)/centre*100;return {rangeSpreadPercent:round(spread,1),spreadAssessment:spread<20?'narrow':spread>75?'wide':'common',midpointOffsetPercent:round(offset,1),midpointCentred:Math.abs(offset)<=2,reference:{...spreadReference,status:'illustrative-review-triggers-not-a-market-standard'}};}
 function quartile(current,minimum,maximum){if(current===null)return null;if(current<minimum)return 'below-minimum';if(current>maximum)return 'above-maximum';const p=(current-minimum)/(maximum-minimum);return p<.25?'Q1':p<.5?'Q2':p<.75?'Q3':'Q4';}
 const saudiSources=[{id:'gosi-new',url:'https://awareness.gosi.gov.sa/businessJourney.html',checkedOn:'2026-10-05'},{id:'gosi-existing',url:'https://www.gosi.gov.sa/GOSIOnline/FAQ_Employer',checkedOn:'2026-10-05'},{id:'eos',url:'https://www.hrsd.gov.sa/en/knowledge-centre/articles/317-0',checkedOn:'2026-10-05'}];
+// GOSI separates the new system's eligibility date (3 July 2024) from rate
+// changes (1 July). The bounded planning horizon is not an expiry of the law.
+const saudiRatePolicy={checkedOn:'2026-10-05',systemEffectiveDate:'2024-07-03',supportedThrough:'2028-12-31',newPensionStages:[{effectiveFrom:'2024-07-03',rate:9},{effectiveFrom:'2025-07-01',rate:9.5},{effectiveFrom:'2026-07-01',rate:10},{effectiveFrom:'2027-07-01',rate:10.5},{effectiveFrom:'2028-07-01',rate:11}]};
 // Annualization holds the selected month's rates and wages constant; it is not a future-year forecast.
 function saudiCost(salary,period,raw={}){
  if(raw.applicabilityConfirmed!==true)throw Error('Confirm GOSI registration regime and wage components against the employee record');
  const asOf=String(raw.asOf||''),date=new Date(asOf+'T00:00:00Z');
- if(!/^\d{4}-\d{2}-\d{2}$/.test(asOf)||!Number.isFinite(+date)||date.toISOString().slice(0,10)!==asOf||asOf<'2024-07-03'||asOf>'2027-06-30')throw Error('Choose a valid GOSI calculation date from 2024-07-03 through 2027-06-30; later dates need a source review');
+ if(!/^\d{4}-\d{2}-\d{2}$/.test(asOf)||!Number.isFinite(+date)||date.toISOString().slice(0,10)!==asOf||asOf<saudiRatePolicy.systemEffectiveDate||asOf>saudiRatePolicy.supportedThrough)throw Error('Choose a valid GOSI calculation date from '+saudiRatePolicy.systemEffectiveDate+' through '+saudiRatePolicy.supportedThrough+'; later dates need a source review');
  const regime=raw.regime;if(!['saudi-existing','saudi-new','non-saudi'].includes(regime))throw Error('Choose a verified GOSI regime; GCC extension and special cases require specialist calculation');
  if(typeof raw.sanedEligible!=='boolean'&&regime!=='non-saudi')throw Error('Confirm SANED applicability from the employee record');
  const monthlyBasic=period==='monthly'?salary:salary/12,housingMonthly=num(raw.housingMonthly,'Monthly cash housing'),otherMonthly=num(raw.otherMonthly,'Other monthly cash'),contributoryExtra=num(raw.contributoryExtraMonthly,'Additional GOSI contributory monthly pay'),medicalAnnual=num(raw.medicalAnnual,'Annual medical cost'),serviceYears=num(raw.serviceYears,'Completed service years',{max:60});
  // Cash housing only; in-kind housing and commissions require reviewed inclusion in contributoryExtraMonthly.
  const contributoryWage=Math.min(45000,monthlyBasic+housingMonthly+contributoryExtra);
- const pensionRate=regime==='non-saudi'?0:regime==='saudi-existing'?9:asOf>='2026-07-01'?10:asOf>='2025-07-01'?9.5:9;
+ const pensionRate=regime==='non-saudi'?0:regime==='saudi-existing'?9:saudiRatePolicy.newPensionStages.filter(x=>asOf>=x.effectiveFrom).at(-1).rate;
  const sanedRate=regime==='non-saudi'||!raw.sanedEligible?0:.75,occupationalRate=2,rate=pensionRate+sanedRate+occupationalRate;
  const monthlyCash=monthlyBasic+housingMonthly+otherMonthly;
  const enteredEos=num(raw.eosWageMonthly,'EOS monthly wage',{min:.01,blank:true}),eosWage=enteredEos===null?monthlyCash:enteredEos;
  const earnedMonths=y=>Math.min(y,5)*.5+Math.max(0,y-5);
  const eosServiceAccrual=eosWage*(earnedMonths(serviceYears+1)-earnedMonths(serviceYears));
  const gosiAnnual=contributoryWage*rate/100*12,annualGuaranteedCash=monthlyCash*12;
- return {mode:'saudi',asOf,regime,monthlyBasic:round(monthlyBasic),housingMonthly,otherMonthly,contributoryExtraMonthly:contributoryExtra,contributoryWage:round(contributoryWage),ceiling:45000,pensionRate,sanedRate,occupationalRate,employerRatePercent:rate,annualGosi:round(gosiAnnual),medicalAnnual,serviceYears,eosWageMonthly:round(eosWage),annualEosServiceAccrual:round(eosServiceAccrual),annualGuaranteedCash:round(annualGuaranteedCash),annualEmployerCost:round(annualGuaranteedCash+gosiAnnual+medicalAnnual+eosServiceAccrual),sources:saudiSources,notice:'Private-sector planning for confirmed standard registration only. Cash housing plus reviewed contributory additions, capped at SAR 45,000. Annualized at selected-date rates; no employee deductions added. EOS is one further year of service at unchanged wage, not termination entitlement or an IAS 19 actuarial liability. Excludes exceptional coverage and unentered costs.'};
+ return {mode:'saudi',asOf,regime,monthlyBasic:round(monthlyBasic),housingMonthly,otherMonthly,contributoryExtraMonthly:contributoryExtra,contributoryWage:round(contributoryWage),ceiling:45000,pensionRate,sanedRate,occupationalRate,employerRatePercent:rate,annualGosi:round(gosiAnnual),medicalAnnual,serviceYears,eosWageMonthly:round(eosWage),annualEosServiceAccrual:round(eosServiceAccrual),annualGuaranteedCash:round(annualGuaranteedCash),annualEmployerCost:round(annualGuaranteedCash+gosiAnnual+medicalAnnual+eosServiceAccrual),rateReview:{checkedOn:saudiRatePolicy.checkedOn,systemEffectiveDate:saudiRatePolicy.systemEffectiveDate,supportedThrough:saudiRatePolicy.supportedThrough},sources:saudiSources,notice:'Private-sector planning for confirmed standard registration only. Cash housing plus reviewed contributory additions, capped at SAR 45,000. Annualized at selected-date rates, not a blended calendar-year budget; no employee deductions added. Reviewed calculation-date horizon ends '+saudiRatePolicy.supportedThrough+'; this is not a legal expiry. EOS is one further year of service at unchanged wage, not termination entitlement or an IAS 19 actuarial liability. Excludes exceptional coverage and unentered costs.'};
 }
 function evaluate(raw){
- if(String(raw.rosterCsv||'').trim())return evaluateRoster({...raw,rosterCsv:'',incumbents:parseRoster(raw.rosterCsv)});
+ if(String(raw.rosterCsv||'').trim())return evaluateRoster({...raw,rosterCsv:'',incumbents:parseRoster(raw.rosterCsv,raw.rosterIdPolicy)});
  if(Array.isArray(raw.incumbents)&&raw.incumbents.length)return evaluateRoster(raw);
  const currency=String(raw.currency||'SAR').trim().toUpperCase();if(!currencyCodes.has(currency)||['XXX','XTS'].includes(currency))throw Error('Currency must be a recognized currency code');
  const minimum=positive(raw.bandMin,'Band minimum'),midpoint=positive(raw.bandMid,'Band midpoint'),maximum=positive(raw.bandMax,'Band maximum');if(!(minimum<midpoint&&midpoint<maximum))throw Error('Salary band must satisfy minimum < midpoint < maximum');
@@ -56,18 +59,57 @@ function evaluate(raw){
  const payAction=current===null?'new-position':current>maximum?'red-circle':current<minimum?'below-band':optionalProgression>0?'increase':'hold';
  return {schema:'miyar-compensation-scenario/1.0',calculationVersion:'6.3.0',status:'organization-band-scenario-not-market-benchmark',createdAt:new Date().toISOString(),input:{payBasis,role:String(raw.role||'').trim().slice(0,300),grade:String(raw.grade||'').trim().slice(0,100),headcount,bandMin:minimum,bandMid:midpoint,bandMax:maximum,currency,period,bandSource:source.slice(0,1000),targetCompaPercent:round(targetCompa*100,2),targetPenetrationPercent:round(penetration*100,2),currentSalary:current,oncostPercent:round(oncost*100,2),allowancesPercent:enteredAllowances,allowancesApplied:allowances>0,progressionEnabled:progression,progressionApproved:raw.progressionApproved===true,progressionPolicy:policy,progressionEvidence:evidence,unitsConfirmed:raw.unitsConfirmed===true,employerCosts:detailed?{...raw.employerCosts}:null},result:{targetSalary:round(target),recommendedSalary:round(recommended),payAction,bandStatus:current===null?'unknown':current>maximum?'above-maximum':current<minimum?'below-minimum':'within-band',compaRatio:compa===null?null:round(compa,3),compaZone:compa===null?null:compaZones.find(([limit])=>compa<limit)[1],currentQuartile:quartile(current,minimum,maximum),currentRangePenetrationPercent:currentPen===null?null:round(currentPen*100,1),adjustmentPerFte:adjust===null?null:round(adjust),adjustmentPercent:adjust===null?null:round(adjust/current*100,1),minimumAdjustmentPerFte:toMinimum===null?null:round(toMinimum),optionalProgressionPerFte:optionalProgression===null?null:round(optionalProgression),annualMinimumAdjustmentCost:current===null?null:round((minimumCost.annualEmployerCost-currentCost.annualEmployerCost)*headcount),annualOptionalProgressionCost:current===null?null:round((proposedCost.annualEmployerCost-minimumCost.annualEmployerCost)*headcount),annualBasePayroll:round(recommended*periods*headcount),annualGuaranteedCash:round(proposedCost.annualGuaranteedCash*headcount),annualEmployerCost:round(proposedCost.annualEmployerCost*headcount),annualBaseAdjustmentCost:adjust===null?null:round(adjust*periods*headcount),annualAdjustmentCost:current===null?null:round((proposedCost.annualEmployerCost-currentCost.annualEmployerCost)*headcount)},employerBreakdown:{...proposedCost,perPerson:true},review:{warnings,unitsConfirmed:raw.unitsConfirmed===true,scope:headcount>1?'homogeneous-cohort-assumption':'individual'},bandDiagnostics:diagnostics(minimum,midpoint,maximum),referencePoints:{minimum,midpoint,maximum,p25:round(minimum+.25*(maximum-minimum)),p50:round(minimum+.5*(maximum-minimum)),p75:round(minimum+.75*(maximum-minimum)),q1:round(minimum+.25*(maximum-minimum)),q3:round(minimum+.75*(maximum-minimum))},calculationNotice:'Within-band pay is held unless individual progression is explicitly justified under an approved policy. Below-band correction is an organization-policy proposal, not an assertion of statutory minimum pay. No automatic reductions. New-position midpoint is a budgeting assumption, not an approved offer. Compa-ratio is position, not performance. Range quartiles are not market percentiles.',notice:'Uses only the organization-provided salary band. This is not a live market benchmark, pay-equity conclusion or compensation approval.'};
 }
+// Pattern screening is a minimization guard, not full name recognition or a
+// claim of anonymization. Never reflect the rejected value in an error.
+function privacyText(value){return String(value??'').normalize('NFKC').replace(/[\u200B-\u200F\u202A-\u202E\u2060-\u2069\uFEFF]/g,'').replace(/[\u0660-\u0669\u06F0-\u06F9]/g,c=>String(c.charCodeAt(0)-(c<='\u0669'?0x660:0x6f0)));}
+const givenNames=new Set(('mohammed muhammad mohammad mohammed ahmed ahmad mahmoud abdullah abdallah abdulrahman abdulaziz ibrahim faisal fares faris khalid khaled salman sultan omar omer yousef yusuf amir sami samer majed naif meshal turki nasser salem hassan hussein ali adeeb fatima fatimah aisha aishah maryam mariam noura nora sara sarah reem huda maha hind john jane james mary robert david michael william joseph charles elizabeth jennifer linda patricia محمد احمد أحمد محمود عبدالله عبدالرحمن عبدالعزيز ابراهيم إبراهيم فيصل فارس خالد سلمان سلطان عمر يوسف امير أمير سامي سامر ماجد نايف مشعل تركي ناصر سالم حسين علي أديب اديب فاطمة عائشة مريم نورة سارة ريم هدى مها هند').split(' '));
+function privacyPattern(value,{identifier=false}={}){
+ const text=privacyText(value);
+ if(/[12]\d{9}/.test(text)||/(?:^|\D)[12]\d{2}[ -]\d{3}[ -]\d{4}(?:\D|$)/.test(text))return 'national-id-or-iqama';
+ // Separate mobile groups are common; do not join every number in narrative
+ // evidence, which would turn dates, scores or durations into false ID hits.
+ if(/(?:0[ \t().-]*5|966[ \t().-]*5)(?:[ \t().-]*\d){8}/.test(text))return 'mobile';
+ if(/[^\s<>@]+@[^\s<>@]+\.[\p{L}\d-]{2,}/u.test(text))return 'email';
+ if(identifier&&/^[\p{L}\p{M}]+(?:[_ -][\p{L}\p{M}]+)+$/u.test(text.trim()))return 'name-like-identifier';
+ const words=text.replace(/[\u064B-\u065F\u0670]/g,'').match(/[\p{L}]+/gu)||[];
+ if(words.some(word=>givenNames.has(word.toLowerCase())))return identifier?'name-like-identifier':'personal-name';
+ return null;
+}
+function privacyError(row,pattern,csv=false){const error=Error('Roster'+(csv?' CSV':'')+' row '+row+': '+pattern+' pattern is not allowed; use pseudonymous IDs and de-identified evidence');error.code='ROSTER_PRIVACY';error.row=row;error.pattern=pattern;return error;}
+function screenRosterValue(value,row,{identifier=false,csv=false}={}){
+ if(typeof value==='string'||identifier){const pattern=privacyPattern(value,{identifier});if(pattern)throw privacyError(row,pattern,csv);}
+ else if(value&&typeof value==='object')for(const [key,entry] of Object.entries(value)){const keyPattern=privacyPattern(key);if(keyPattern)throw privacyError(row,keyPattern,csv);screenRosterValue(entry,row,{csv});}
+}
+function idPolicy(raw){
+ if(raw===null||raw===undefined)return null;
+ if(typeof raw!=='object'||Array.isArray(raw)||!/^([A-Za-z]{1,12})[-_]?$/.test(String(raw.prefix||''))||!Number.isInteger(raw.digits)||raw.digits<1||raw.digits>12||Object.keys(raw).some(k=>!['prefix','digits'].includes(k)))throw Error('Organization pseudonym policy needs a letters-only prefix, optional dash/underscore, and 1–12 digits');
+ return {prefix:String(raw.prefix),digits:raw.digits};
+}
+const employerCostColumns=['mode','applicabilityConfirmed','regime','asOf','sanedEligible','housingMonthly','otherMonthly','contributoryExtraMonthly','medicalAnnual','serviceYears','eosWageMonthly'];
+const cleanCosts=value=>value&&typeof value==='object'?Object.fromEntries(employerCostColumns.filter(k=>Object.prototype.hasOwnProperty.call(value,k)).map(k=>[k,value[k]])):null;
+function validatedId(value,row,policy,csv=false){
+ screenRosterValue(value,row,{identifier:true,csv});const id=privacyText(value).trim();
+ if(!/^[A-Za-z0-9_-]{1,40}$/.test(id))throw Error('Roster'+(csv?' CSV':'')+' row '+row+': use pseudonymous IDs with letters, digits, dash or underscore');
+ if(policy&&(id.slice(0,policy.prefix.length)!==policy.prefix||!new RegExp('^\\d{'+policy.digits+'}$').test(id.slice(policy.prefix.length))))throw Error('Roster'+(csv?' CSV':'')+' row '+row+': ID does not match the configured organization pseudonym format');
+ return id;
+}
 function evaluateRoster(raw){
  if(raw.incumbents.length>500)throw Error('Roster limit is 500 people');
- const ids=new Set(),incumbents=raw.incumbents.map(row=>{
-  const id=String(row.id||'').trim();if(!/^[A-Za-z0-9_-]{1,40}$/.test(id)||ids.has(id))throw Error('Use unique pseudonymous roster IDs (letters, digits, dash or underscore)');ids.add(id);
+ const policy=idPolicy(raw.rosterIdPolicy),ids=new Set(),cleanRows=[],globalCosts=cleanCosts(raw.employerCosts);
+ for(const key of ['role','grade','bandSource','progressionPolicy','progressionEvidence','employerCosts'])screenRosterValue(raw[key],1);
+ const incumbents=raw.incumbents.map((row,index)=>{
+  const rowNumber=index+1;screenRosterValue(row,rowNumber);const id=validatedId(row.id||'',rowNumber,policy),idKey=id.toUpperCase();if(ids.has(idKey))throw Error('Roster row '+rowNumber+': use unique pseudonymous roster IDs');ids.add(idKey);
+  if(Object.keys(row).some(k=>!['id','currentSalary','progressionEligible','progressionEvidence','employerCosts'].includes(k)))throw Error('Roster row '+rowNumber+': unsupported roster column; use the roster template');
+  if(row.employerCosts&&Object.keys(row.employerCosts).some(k=>!employerCostColumns.includes(k)))throw Error('Roster row '+rowNumber+': unsupported employer-cost column');
   if(row.currentSalary===null||row.currentSalary===undefined||String(row.currentSalary).trim()==='')throw Error('Each incumbent needs an actual salary; blank is not zero');
-  const employerCosts=raw.employerCosts?.mode==='saudi'?{...raw.employerCosts,...row.employerCosts}:null;
+  const employerCosts=globalCosts?.mode==='saudi'?{...globalCosts,...cleanCosts(row.employerCosts)}:null;
   const v=evaluate({...raw,incumbents:undefined,headcount:1,currentSalary:row.currentSalary,progressionEnabled:raw.progressionEnabled===true&&row.progressionEligible===true,progressionEvidence:row.progressionEvidence||'',employerCosts});
+  const cleanRow={id,currentSalary:v.input.currentSalary,progressionEligible:row.progressionEligible===true,progressionEvidence:v.input.progressionEvidence};if(row.employerCosts)cleanRow.employerCosts=cleanCosts(row.employerCosts);cleanRows.push(cleanRow);
   return {id,input:v.input,result:v.result,employerBreakdown:v.employerBreakdown};
  });
  const first=evaluate({...raw,incumbents:undefined,headcount:1,currentSalary:incumbents[0].input.currentSalary,progressionEnabled:false,employerCosts:incumbents[0].input.employerCosts});
  const sums=['annualMinimumAdjustmentCost','annualOptionalProgressionCost','annualBasePayroll','annualGuaranteedCash','annualEmployerCost','annualBaseAdjustmentCost','annualAdjustmentCost'];
- first.input={...first.input,headcount:incumbents.length,currentSalary:null,progressionEnabled:raw.progressionEnabled===true,incumbents:raw.incumbents,progressionEvidence:'',employerCosts:raw.employerCosts||null};
+ first.input={...first.input,headcount:incumbents.length,currentSalary:null,progressionEnabled:raw.progressionEnabled===true,incumbents:cleanRows,progressionEvidence:'',employerCosts:globalCosts,rosterIdPolicy:policy};
  for(const k of sums)first.result[k]=round(incumbents.reduce((sum,x)=>sum+x.result[k],0));
  for(const k of ['recommendedSalary','compaRatio','compaZone','currentQuartile','currentRangePenetrationPercent','adjustmentPerFte','adjustmentPercent','minimumAdjustmentPerFte','optionalProgressionPerFte'])first.result[k]=null;
  first.result.payAction='roster-review';first.result.bandStatus='individual-results';first.incumbents=incumbents;first.employerBreakdown=null;first.review.scope='actual-incumbent-roster';
@@ -75,13 +117,14 @@ function evaluateRoster(raw){
 }
 // Strict, small CSV contract: fixed columns avoid silently dropping employee attributes.
 const rosterColumns=['id','currentSalary','progressionEligible','progressionEvidence','regime','housingMonthly','otherMonthly','contributoryExtraMonthly','medicalAnnual','serviceYears','sanedEligible','eosWageMonthly'];
-function parseRoster(text){
+function parseRoster(text,rawPolicy){
  if(String(text).length>250000)throw Error('Roster CSV exceeds 250 KB');
+ const policy=idPolicy(rawPolicy);
  const lines=String(text).replace(/^\uFEFF/,'').trim().split(/\r?\n/),headers=lines.shift().split(',').map(x=>x.trim());
  if(!headers.includes('id')||!headers.includes('currentSalary')||headers.some(x=>!rosterColumns.includes(x))||new Set(headers).size!==headers.length)throw Error('Use the roster CSV template headers; names, email and national IDs are not needed');
  if(lines.length<1||lines.length>500)throw Error('Roster needs 1–500 rows');
- return lines.map((line,index)=>{const cells=line.match(/(?:^|,)("(?:[^"]|"")*"|[^,]*)/g)?.map(x=>x.replace(/^,/, '').replace(/^"|"$/g,'').replace(/""/g,'"').trim())||[];if(cells.length!==headers.length)throw Error('Invalid roster CSV row '+(index+2));const v=Object.fromEntries(headers.map((h,i)=>[h,cells[i]])),bool=k=>{if(!['','true','false'].includes(v[k]??''))throw Error('Use true or false in '+k+' at row '+(index+2));return v[k]==='true';};const row={id:v.id,currentSalary:v.currentSalary,progressionEligible:bool('progressionEligible'),progressionEvidence:v.progressionEvidence||''};if(v.regime)row.employerCosts={regime:v.regime,housingMonthly:v.housingMonthly,otherMonthly:v.otherMonthly,contributoryExtraMonthly:v.contributoryExtraMonthly,medicalAnnual:v.medicalAnnual,serviceYears:v.serviceYears,sanedEligible:bool('sanedEligible'),eosWageMonthly:v.eosWageMonthly};return row;});
+ return lines.map((line,index)=>{const rowNumber=index+2,cells=line.match(/(?:^|,)("(?:[^"]|"")*"|[^,]*)/g)?.map(x=>x.replace(/^,/, '').replace(/^"|"$/g,'').replace(/""/g,'"').trim())||[];if(cells.length!==headers.length)throw Error('Invalid roster CSV row '+rowNumber);const v=Object.fromEntries(headers.map((h,i)=>[h,cells[i]]));for(const h of headers)screenRosterValue(v[h],rowNumber,{identifier:h==='id',csv:true});v.id=validatedId(v.id,rowNumber,policy,true);const bool=k=>{if(!['','true','false'].includes(v[k]??''))throw Error('Use true or false in '+k+' at row '+rowNumber);return v[k]==='true';};const row={id:v.id,currentSalary:v.currentSalary,progressionEligible:bool('progressionEligible'),progressionEvidence:v.progressionEvidence||''};if(v.regime)row.employerCosts={regime:v.regime,housingMonthly:v.housingMonthly,otherMonthly:v.otherMonthly,contributoryExtraMonthly:v.contributoryExtraMonthly,medicalAnnual:v.medicalAnnual,serviceYears:v.serviceYears,sanedEligible:bool('sanedEligible'),eosWageMonthly:v.eosWageMonthly};return row;});
 }
 const example={role:'Human Capital Projects & Operations Manager',grade:'G11 · Manager',headcount:1,currency:'SAR',period:'monthly',bandSource:'Illustrative organization band — replace with the approved Total Rewards source before use',bandMin:24000,bandMid:30000,bandMax:36000,targetCompaPercent:100,currentSalary:'',oncostPercent:15,allowancesPercent:'',progressionEnabled:false};
- root.MiyarCompensation={evaluate,example,spreadReference,saudiCost,parseRoster,rosterColumns};if(typeof module!=='undefined')module.exports=root.MiyarCompensation;
+ root.MiyarCompensation={evaluate,example,spreadReference,saudiCost,parseRoster,rosterColumns,saudiRatePolicy,privacyPattern};if(typeof module!=='undefined')module.exports=root.MiyarCompensation;
 })(typeof window!=='undefined'?window:globalThis);

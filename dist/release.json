@@ -1,8 +1,15 @@
 {
-  "version": "6.3.0",
-  "buildId": "63a279804acf395a",
+  "version": "6.3.1",
+  "buildId": "1632b7f5a66d753a",
   "releasedAt": "2026-10-05",
   "changes": [
+    "General leadership inference, Arabic direct-report extraction and consistent titles across Quick Trial and OD",
+    "Block severe department-task conflicts and insufficient specialty evidence; preserve legitimate payroll overlap",
+    "Assistant, technician, data science and security-safety coverage with licensing review",
+    "Reject personal identifiers and name patterns in all roster text before calculation or storage",
+    "Officially dated Saudi pension phases through July 2028 and explicit scenario horizon",
+    "Geometric illustrative factor anchors and widening upper grades; deterministic browser-server rounding",
+    "Official reference candidates and blocked unreviewed migration; frozen independent holdout commercial gate",
     "Expert review remediation: policy-based pay, actual incumbent roster, dated Saudi cost breakdown, whole-hire budgets and pipeline review",
     "Eight-factor illustrative framework with twelve grades; professional validation and Saudi hosting remain launch gates",
     "Scope checks and shared OD behavior in standalone and browser engines",

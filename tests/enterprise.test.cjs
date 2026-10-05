@@ -304,8 +304,8 @@ test('salary proposal is linked to computed grade and invalidated by changed evi
  const a=await ui('en');try{a.tab('create');a.$('sample').click();a.tab('grading');
  for(const e of a.w.document.querySelectorAll('[data-factor]'))e.value='2';for(const e of a.w.document.querySelectorAll('[data-factor-evidence]'))e.value='Measured scope evidence';
  for(const [key,v] of Object.entries({salaryMin:'10000',salaryMax:'14000',salarySource:'Draft internal band proposal'}))a.w.document.querySelector('[data-pay="'+key+'"]').value=v;
- a.$('calculate').click();await new Promise(r=>setImmediate(r));assert.match(a.$('salary-result').textContent,/G03.*10,000.*14,000.*SAR/);
- a.tab('create');a.$('save').click();await new Promise(r=>setImmediate(r));let saved=JSON.parse(a.w.localStorage.getItem(C.KEY))[0];assert.equal(saved.content.salaryGrade,'G03');assert.equal(saved.content.salaryMin,10000);assert.match(saved.content.evaluationSummary,/200 points/);
+ a.$('calculate').click();await new Promise(r=>setImmediate(r));assert.match(a.$('salary-result').textContent,/G04.*10,000.*14,000.*SAR/);
+ a.tab('create');a.$('save').click();await new Promise(r=>setImmediate(r));let saved=JSON.parse(a.w.localStorage.getItem(C.KEY))[0];assert.equal(saved.content.salaryGrade,'G04');assert.equal(saved.content.salaryMin,10000);assert.match(saved.content.evaluationSummary,/148 points/);
  a.tab('grading');const input=a.w.document.querySelector('[data-pay="salaryMax"]');input.value='9000';input.dispatchEvent(new a.w.Event('input'));a.$('calculate').click();await new Promise(r=>setImmediate(r));assert.match(a.$('message').textContent,/minimum and maximum/);assert.equal(a.$('grade-result').textContent,'');assert.deepEqual(a.errors,[]);
  }finally{a.dom.window.close();}
 });

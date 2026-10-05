@@ -1,8 +1,8 @@
 {
-  "id": "miyar-example-v2",
+  "id": "miyar-example-v3",
   "name": "Illustrative analytical job evaluation — 8 factors / 12 grades",
   "method": "custom",
-  "version": 2,
+  "version": 3,
   "illustrative": true,
   "currency": "SAR",
   "calibrationStatus": "independent-expert-and-organization-validation-required",
@@ -21,25 +21,25 @@
         },
         {
           "id": "2",
-          "points": 20,
+          "points": 14.83,
           "labelAr": "معرفة إجراءات متعددة وتطبيقها باستقلال محدود",
           "labelEn": "Several procedures applied with limited independence"
         },
         {
           "id": "3",
-          "points": 40,
+          "points": 31.89,
           "labelAr": "معرفة تخصصية لحل مسائل معتادة والتحقق من النتائج",
           "labelEn": "Specialist knowledge to resolve recurring issues and verify results"
         },
         {
           "id": "4",
-          "points": 60,
+          "points": 51.5,
           "labelAr": "تكامل تخصصات وتوجيه الممارسة المهنية",
           "labelEn": "Integrates disciplines and guides professional practice"
         },
         {
           "id": "5",
-          "points": 80,
+          "points": 74.06,
           "labelAr": "خبرة عميقة تصمم منهجيات وسياسات متعددة الإدارات",
           "labelEn": "Deep expertise designs methods and policy across departments"
         },
@@ -65,25 +65,25 @@
         },
         {
           "id": "2",
-          "points": 20,
+          "points": 14.83,
           "labelAr": "تشخيص فروقات مألوفة من بدائل معروفة",
           "labelEn": "Diagnoses familiar deviations using known alternatives"
         },
         {
           "id": "3",
-          "points": 40,
+          "points": 31.89,
           "labelAr": "تحليل عدة متغيرات واختيار حل مناسب",
           "labelEn": "Analyses several variables and selects a fitting solution"
         },
         {
           "id": "4",
-          "points": 60,
+          "points": 51.5,
           "labelAr": "حل مشكلات جديدة ذات معلومات غير مكتملة",
           "labelEn": "Resolves novel problems with incomplete information"
         },
         {
           "id": "5",
-          "points": 80,
+          "points": 74.06,
           "labelAr": "تصميم حلول لمشكلات مترابطة ذات آثار متعددة",
           "labelEn": "Designs solutions for interconnected problems with several consequences"
         },
@@ -109,25 +109,25 @@
         },
         {
           "id": "2",
-          "points": 20,
+          "points": 14.83,
           "labelAr": "مساءلة عن مجموعة مخرجات داخل عملية",
           "labelEn": "Accountable for a set of outputs within a process"
         },
         {
           "id": "3",
-          "points": 40,
+          "points": 31.89,
           "labelAr": "مساءلة عن نتيجة عملية أو خدمة متكاملة",
           "labelEn": "Accountable for a complete process or service outcome"
         },
         {
           "id": "4",
-          "points": 60,
+          "points": 51.5,
           "labelAr": "مساءلة عن نتائج إدارة أو برنامج متعدد الفرق",
           "labelEn": "Accountable for department or multi-team programme results"
         },
         {
           "id": "5",
-          "points": 80,
+          "points": 74.06,
           "labelAr": "مساءلة عن نتائج عدة إدارات أو محفظة رئيسية",
           "labelEn": "Accountable for several departments or a major portfolio"
         },
@@ -153,25 +153,25 @@
         },
         {
           "id": "2",
-          "points": 20,
+          "points": 14.83,
           "labelAr": "تنظيم العمل اليومي ضمن إجراءات مع مراجعة دورية",
           "labelEn": "Organizes daily work within procedures and periodic review"
         },
         {
           "id": "3",
-          "points": 40,
+          "points": 31.89,
           "labelAr": "قرارات مهنية مستقلة ضمن سياسة واضحة",
           "labelEn": "Independent professional decisions within clear policy"
         },
         {
           "id": "4",
-          "points": 60,
+          "points": 51.5,
           "labelAr": "تحديد نهج العمل وتفسير السياسات ضمن تفويض",
           "labelEn": "Sets work approach and interprets policy within delegation"
         },
         {
           "id": "5",
-          "points": 80,
+          "points": 74.06,
           "labelAr": "تطوير السياسات وتخصيص الموارد ضمن حوكمة محددة",
           "labelEn": "Develops policy and allocates resources within governance"
         },
@@ -197,25 +197,25 @@
         },
         {
           "id": "2",
-          "points": 20,
+          "points": 14.83,
           "labelAr": "إرشاد زملاء دون صلاحية تقييم أو قرارات أفراد",
           "labelEn": "Coaches peers without appraisal or people-decision authority"
         },
         {
           "id": "3",
-          "points": 40,
+          "points": 31.89,
           "labelAr": "إشراف مباشر على فريق مع مسؤولية توزيع ومراجعة العمل",
           "labelEn": "Direct team supervision with work allocation and review"
         },
         {
           "id": "4",
-          "points": 60,
+          "points": 51.5,
           "labelAr": "إدارة فرق عبر مشرفين وصلاحيات أفراد موثقة",
           "labelEn": "Manages teams through supervisors with documented people authority"
         },
         {
           "id": "5",
-          "points": 80,
+          "points": 74.06,
           "labelAr": "قيادة عدة فرق إدارية وتخطيط قدرات طويلة الأجل",
           "labelEn": "Leads several management teams and long-term capability planning"
         },
@@ -241,25 +241,25 @@
         },
         {
           "id": "2",
-          "points": 20,
+          "points": 14.83,
           "labelAr": "شرح إجراءات وتوضيح متطلبات عمل معتادة",
           "labelEn": "Explains procedures and routine work requirements"
         },
         {
           "id": "3",
-          "points": 40,
+          "points": 31.89,
           "labelAr": "عرض تحليل وإقناع أصحاب علاقة ضمن مصالح متقاربة",
           "labelEn": "Presents analysis and persuades stakeholders with aligned interests"
         },
         {
           "id": "4",
-          "points": 60,
+          "points": 51.5,
           "labelAr": "تفاوض وحل تعارض مصالح بين جهات متعددة",
           "labelEn": "Negotiates and resolves conflicting interests across groups"
         },
         {
           "id": "5",
-          "points": 80,
+          "points": 74.06,
           "labelAr": "تأثير في قرارات رئيسية مع أطراف داخلية وخارجية",
           "labelEn": "Influences major decisions with internal and external parties"
         },
@@ -285,25 +285,25 @@
         },
         {
           "id": "2",
-          "points": 20,
+          "points": 14.83,
           "labelAr": "متابعة سجلات أو عهد دون اعتماد إنفاق",
           "labelEn": "Maintains records or custody without spend approval"
         },
         {
           "id": "3",
-          "points": 40,
+          "points": 31.89,
           "labelAr": "إعداد وتحليل ميزانية وتوصيات دون اعتماد نهائي",
           "labelEn": "Prepares budgets and recommendations without final approval"
         },
         {
           "id": "4",
-          "points": 60,
+          "points": 51.5,
           "labelAr": "اعتماد موارد أو إنفاق ضمن تفويض موثق",
           "labelEn": "Approves resources or spending under documented delegation"
         },
         {
           "id": "5",
-          "points": 80,
+          "points": 74.06,
           "labelAr": "مساءلة عن ميزانيات متعددة وقرارات تخصيص رئيسية",
           "labelEn": "Accountable for multiple budgets and major resource allocation"
         },
@@ -329,25 +329,25 @@
         },
         {
           "id": "2",
-          "points": 20,
+          "points": 14.83,
           "labelAr": "تركيز متكرر أو حركة بدنية خفيفة لازمة للعمل",
           "labelEn": "Recurring concentration or light physical movement inherent to work"
         },
         {
           "id": "3",
-          "points": 40,
+          "points": 31.89,
           "labelAr": "متطلبات تركيز أو جهد بدني أو عاطفي مستمر ملحوظ",
           "labelEn": "Sustained notable cognitive, physical or emotional demands"
         },
         {
           "id": "4",
-          "points": 60,
+          "points": 51.5,
           "labelAr": "تعرض منتظم لظروف متعبة مع وسائل حماية موثقة",
           "labelEn": "Regular demanding conditions with documented protections"
         },
         {
           "id": "5",
-          "points": 80,
+          "points": 74.06,
           "labelAr": "جهد شديد متكرر أو ظروف صعبة ملازمة رغم الضوابط",
           "labelEn": "Recurring intense effort or difficult conditions despite controls"
         },
@@ -364,63 +364,72 @@
     {
       "id": "G01",
       "min": 0,
-      "max": 82
+      "max": 34
     },
     {
       "id": "G02",
-      "min": 83,
-      "max": 165
+      "min": 35,
+      "max": 73
     },
     {
       "id": "G03",
-      "min": 166,
-      "max": 249
+      "min": 74,
+      "max": 119
     },
     {
       "id": "G04",
-      "min": 250,
-      "max": 332
+      "min": 120,
+      "max": 171
     },
     {
       "id": "G05",
-      "min": 333,
-      "max": 416
+      "min": 172,
+      "max": 232
     },
     {
       "id": "G06",
-      "min": 417,
-      "max": 499
+      "min": 233,
+      "max": 301
     },
     {
       "id": "G07",
-      "min": 500,
-      "max": 582
+      "min": 302,
+      "max": 381
     },
     {
       "id": "G08",
-      "min": 583,
-      "max": 666
+      "min": 382,
+      "max": 473
     },
     {
       "id": "G09",
-      "min": 667,
-      "max": 749
+      "min": 474,
+      "max": 578
     },
     {
       "id": "G10",
-      "min": 750,
-      "max": 833
+      "min": 579,
+      "max": 700
     },
     {
       "id": "G11",
-      "min": 834,
-      "max": 916
+      "min": 701,
+      "max": 839
     },
     {
       "id": "G12",
-      "min": 917,
+      "min": 840,
       "max": 1000
     }
   ],
-  "notice": "Original illustrative framework, not Hay/Korn Ferry, Mercer IPE or a validated pay structure. Evaluate job requirements, not incumbent performance or credentials. All weights, anchors and grade boundaries require independent expert calibration and organization approval before pay use. Normal work is the zero-point baseline; zero does not mean no job value."
+  "notice": "Original illustrative framework, not Hay/Korn Ferry, Mercer IPE or a validated pay structure. Evaluate job requirements, not incumbent performance or credentials. All weights, anchors and grade boundaries require independent expert calibration and organization approval before pay use. Normal work is the zero-point baseline; zero does not mean no job value. Successive point increments grow approximately 15% above the zero baseline, and higher grade ranges widen. This is illustrative spacing, not an empirically calibrated grade or pay structure. Existing approved organization frameworks are not automatically replaced.",
+  "scale": {
+    "type": "zero-based-normalized-geometric-increments",
+    "incrementRatio": 1.15,
+    "formula": "points(k) = round(100 * (1.15^(k-1) - 1) / (1.15^5 - 1), 2), for level k = 1..6",
+    "levelPointRoundingDecimals": 2,
+    "weightedScoreRounding": "nearest-integer-half-up",
+    "gradeRangeMethod": "12 geometrically widening integer ranges proportional to 1.15^gradeIndex over the 1001-point integer domain 0–1000",
+    "notice": "The zero anchor is retained. Successive point increments, rather than ratios to zero, grow approximately 15%. These are illustrative spacing choices and require independent calibration."
+  }
 }

@@ -1,0 +1,59 @@
+name: Publish tested Miyar to GitHub Pages
+
+# Complete all test checks before waiting for Render's checksPass deployment.
+# Privileged workflow_run jobs must never build a fork or pull-request commit.
+on:
+  workflow_run:
+    workflows: [Test and deploy Miyar to GitHub Pages]
+    types: [completed]
+    branches: [main]
+
+permissions: {}
+
+concurrency:
+  group: publish-pages-main
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    if: >-
+      github.event.workflow_run.conclusion == 'success' &&
+      github.event.workflow_run.head_branch == 'main' &&
+      github.event.workflow_run.head_repository.full_name == github.repository &&
+      (github.event.workflow_run.event == 'push' || github.event.workflow_run.event == 'workflow_dispatch')
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Checkout the exact successful tested commit
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.workflow_run.head_sha }}
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - name: Build production assets
+        run: |
+          npm ci --ignore-scripts --no-audit --no-fund
+          npm run build
+      - name: Require the matching API release before publishing UI
+        run: python3 scripts/check-live-release.py
+      - name: Verify live public export and protected service responses
+        run: python3 scripts/check-live-services.py
+      - name: Configure Pages
+        uses: actions/configure-pages@v5
+      - name: Upload website
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist
+      - name: Deploy website
+        id: deployment
+        uses: actions/deploy-pages@v5

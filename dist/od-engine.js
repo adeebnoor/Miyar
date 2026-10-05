@@ -36,13 +36,10 @@ function detectSignals(text){const n=normalize(text);const any=terms=>terms.some
  director:any(['director','head of','chief','general manager','مدير عام','رئيس','نائب الرئيس'])
 };}
 function recommendLevel(input,signals,responsibilityCount){
- const explicit=normalize(input.requestedLevel||'');
- if(explicit)return {id:'specified',en:input.requestedLevel,ar:input.requestedLevel,rationaleEn:'Level retained from the business input and must be confirmed by job evaluation.',rationaleAr:'تم الاحتفاظ بالمستوى المدخل من الأعمال ويجب تأكيده بالتقييم الوظيفي.'};
- if(signals.director)return {id:'director',en:'Director / Head level',ar:'مستوى مدير إدارة / رئيس',rationaleEn:'The scope includes organization-level leadership language. Final level requires the approved job-evaluation framework.',rationaleAr:'النطاق يتضمن مؤشرات قيادة على مستوى الإدارة. المستوى النهائي يتطلب إطار التقييم الوظيفي المعتمد.'};
- const managerial=[signals.project,signals.procurement,signals.budget,signals.reporting,signals.improvement,signals.strategy,signals.manager].filter(Boolean).length;
- if(managerial>=4||signals.manager&&responsibilityCount>=4)return {id:'manager',en:'Manager level',ar:'مستوى مدير',rationaleEn:'The role coordinates several HC/business workstreams, resources, reporting and delivery accountability. Confirm through the approved grading framework.',rationaleAr:'الدور ينسق عدة مسارات عمل وموارد وتقارير ومسؤولية عن التنفيذ. يجب تأكيده عبر هيكل الدرجات المعتمد.'};
- if(responsibilityCount>=4)return {id:'senior',en:'Senior professional level',ar:'مستوى مهني أول',rationaleEn:'The breadth suggests independent professional ownership without enough evidence to assert a management grade.',rationaleAr:'اتساع المهام يشير إلى ملكية مهنية مستقلة دون دليل كافٍ لإثبات درجة إدارية.'};
- return {id:'professional',en:'Professional level',ar:'مستوى مهني',rationaleEn:'The current scope supports a professional role; grade remains subject to formal evaluation.',rationaleAr:'النطاق الحالي يدعم دورًا مهنيًا؛ وتبقى الدرجة خاضعة للتقييم الرسمي.'};
+ const analysis=root.MiyarRoleRecommender.analyzeLevel(input);
+ const names={technician:['مستوى فني','Technician level'],supervisor:['مستوى مشرف','Supervisor level'],assistant:['مستوى مساعد','Assistant level'],specialist:['مستوى مهني','Professional level'],manager:['مستوى مدير','Manager level'],director:['مستوى مدير إدارة / رئيس','Director / Head level'],executive:['مستوى تنفيذي','Executive level']};
+ const labels=names[analysis.level]||names.specialist;
+ return {id:analysis.level,ar:labels[0],en:labels[1],rationaleAr:analysis.rationaleAr,rationaleEn:analysis.rationaleEn,analysis};
 }
 function proposedTitle(family,level,signals,locale){
  const ar=locale==='ar';
@@ -93,6 +90,7 @@ function validateScope(input,locale){
  const meaningful=sentences(work).filter(x=>!vague.test(normalize(x)));
  if(n.length<30||words.size<5||!meaningful.length)throw Error(ar?'المهام غير واضحة: اذكر العمل الفعلي والمخرج والمسؤولية وحدود الصلاحية؛ لن ننشئ وصفًا عامًا.':'Unclear duties: describe actual work, outputs, accountability and authority; a generic job will not be generated.');
  if(/\b(veterinar\w*|surgeon|physician|pilot|astronaut|geologist|civil engineer(?:ing)?|chemical engineer(?:ing)?)\b|طبيب|جراح|بيطري|طيار|جيولوج|هندس[ةي].*مدني|مهندس.*مدني|مهندس كيميائي/.test(n))throw Error(ar?'هذا التخصص خارج نطاق قوالب OD المتاحة. يلزم وصف ومؤهلات ومؤشرات يراجعها مختص المجال قبل التوليد.':'This specialization is outside the supported OD templates. A domain specialist must provide and review duties, qualifications and measures.');
+ root.MiyarRoleRecommender?.validateScope(input,locale);
  const family=detectFamily({...input,context:''});
  const nursing=/nurs|تمريض|ممرض/.test(n+' '+normalize(input.department));
  if(family.id==='generic'&&!nursing)throw Error(ar?'تعذر تحديد عائلة وظيفية مدعومة من المهام. حدد المجال ومخرجات الدور؛ لا يُستخدم قالب بديل عشوائي.':'No supported job family was identified from the duties. Specify the domain and outputs; no fallback job is generated.');

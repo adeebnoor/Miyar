@@ -68,7 +68,7 @@ def test_illustrative_and_proprietary_grade_gates(env):
     app,c,auth,create=env
     f=copy.deepcopy(DEFAULT_FRAMEWORK);f.update(method='korn-ferry-licensed',licenseConfirmed=True,licenseReference='test')
     assert c.post('/api/v1/settings/framework',headers=auth('admin'),json={'framework':f,'reason':'Validate method provenance'}).status_code==422
-    assert grade(DEFAULT_FRAMEWORK,dict.fromkeys([factor['id'] for factor in DEFAULT_FRAMEWORK['factors']],'2'),dict.fromkeys([factor['id'] for factor in DEFAULT_FRAMEWORK['factors']],'Evidence'))['points']==200
+    assert grade(DEFAULT_FRAMEWORK,dict.fromkeys([factor['id'] for factor in DEFAULT_FRAMEWORK['factors']],'2'),dict.fromkeys([factor['id'] for factor in DEFAULT_FRAMEWORK['factors']],'Evidence'))['points']==round(sum(factor['weight'] * factor['levels'][1]['points'] / 10 for factor in DEFAULT_FRAMEWORK['factors']))
     f=copy.deepcopy(DEFAULT_FRAMEWORK);f['bands'][1]['min']=300
     with pytest.raises(ValueError):validate_framework(f)
 

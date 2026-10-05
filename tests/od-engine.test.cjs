@@ -19,11 +19,11 @@ test('HC expert case becomes a reviewable Manager-level OD package without prete
 });
 
 test('OD engine keeps uncertainty visible instead of inventing management or regulatory facts',()=>{
- const p=engine.generate({strategyObjective:'Improve internal service delivery',responsibilities:'Coordinate service requests\nPrepare monthly performance reports\nDocument process issues'},'en');
+ const p=engine.generate({strategyObjective:'Improve HR service delivery',department:'Human Resources',responsibilities:'Maintain employee records\nProcess approved leave requests\nDocument HR service issues'},'en');
  assert.notEqual(p.gradeRecommendation.status,'approved');
- assert.match(p.gradeRecommendation.rationale,/formal evaluation|approved job-evaluation framework/i);
+ assert.match(p.gradeRecommendation.rationale,/formal evaluation|approved (?:job-evaluation framework|evaluation)/i);
  assert.equal(p.content.occupationCode,undefined);assert.equal(p.content.educationFieldCode,undefined);assert.equal(p.content.saudization,undefined);
- assert.match(p.content.odGenerationBasis,/not a live market survey or approved job evaluation/i);
+ assert.match(p.content.odGenerationBasis,/rule-based proposal.*expert approval pending/i);
 });
 
 async function app(locale='en'){

@@ -84,16 +84,56 @@ def phrase_matches(text, terms):
     return result
 
 
-def specialist_requested(seniority):
-    terms = ['أخصائي', 'أخصائية', 'اختصاصي', 'اختصاصية', 'متخصص', 'متخصصة', 'فردي', 'مساهم فردي', 'محلل', 'محللة',
-             'specialist', 'individual contributor', 'analyst', 'professional']
+LEVEL_TERMS = {
+    'assistant': ['مساعد', 'مساعدة', 'كاتب', 'كاتبة', 'مدخل', 'مدخلة', 'منسق', 'منسقة',
+                  'assistant', 'clerk', 'coordinator', 'assistant to manager',
+                  'مستوى مساعد فني', 'assistant technician level'],
+    'technician': ['فني', 'فنية', 'technician'],
+    'specialist': ['أخصائي', 'أخصائية', 'اختصاصي', 'اختصاصية', 'متخصص', 'متخصصة',
+                   'فردي', 'مساهم فردي', 'محلل', 'محللة', 'مهندس', 'مهندسة',
+                   'مسؤول', 'مسؤولة', 'مهني', 'مهنية', 'specialist',
+                   'individual contributor', 'analyst', 'professional', 'officer', 'engineer'],
+    'supervisor': ['مشرف', 'مشرفة', 'قائد فريق', 'قائدة فريق', 'رئيس فريق',
+                   'supervisor', 'team lead', 'team leader'],
+    'manager': ['مدير', 'مديرة', 'رئيس قسم', 'رئيسة قسم', 'manager', 'assistant manager'],
+    'director': ['مدير إدارة', 'مديرة إدارة', 'مدير عام', 'مديرة عامة', 'رئيس إدارة',
+                 'رئيسة إدارة', 'رئيس قطاع', 'رئيسة قطاع', 'رئيس', 'رئيسة',
+                 'director', 'head', 'head of', 'department head'],
+    'executive': ['تنفيذي', 'تنفيذية', 'رئيس تنفيذي', 'رئيسة تنفيذية',
+                  'مدير تنفيذي', 'مديرة تنفيذية', 'نائب الرئيس',
+                  'executive', 'executive director', 'chief executive officer',
+                  'chief human resources officer', 'chief financial officer',
+                  'chief operating officer', 'chief technology officer',
+                  'chief information officer', 'chief', 'ceo', 'chro',
+                  'cfo', 'coo', 'cto', 'vp', 'vice president'],
+}
+
+
+def requested_level(seniority):
+    """Use only an unambiguous explicitly entered level, never narrative duties.
+
+    A longer title (e.g. executive director / مدير إدارة) owns its nested
+    manager/director words. Independently stated conflicting levels retain the
+    existing unrestricted-review behavior instead of inventing one level.
+    """
     value = positive_field(seniority)
-    # Conflicting level statements require review rather than an assumed level.
-    if phrase_matches(value, ['مدير', 'مديرة', 'رئيس', 'رئيسة', 'تنفيذي', 'تنفيذية', 'قيادي',
-                              'قائد', 'قائدة', 'مشرف', 'مشرفة', 'manager', 'director', 'executive',
-                              'chief', 'head', 'lead', 'supervisor']):
-        return False
-    return bool(phrase_matches(value, terms))
+    matches = [(level, *match) for level, terms in LEVEL_TERMS.items()
+               for match in phrase_matches(value, terms)]
+    matches = [match for match in matches if not any(
+        other[0] != match[0] and other[3] <= match[3] and other[4] >= match[4]
+        and len(other[2]) > len(match[2]) for other in matches)]
+    levels = {match[0] for match in matches}
+    if len(levels) != 1:
+        return None
+    # A bare lead/leader does not establish a catalog level, and must not be
+    # ignored when paired with an explicitly stated individual-contributor level.
+    if levels == {'specialist'} and phrase_matches(value, ['قيادي', 'قيادية', 'قائد', 'قائدة', 'lead', 'leader']):
+        return None
+    return next(iter(levels))
+
+
+def specialist_requested(seniority):
+    return requested_level(seniority) == 'specialist'
 
 
 class OccupationScope:
@@ -118,7 +158,8 @@ class OccupationScope:
             and len(other[2]) > len(match[2]) for other in matches)]
         self.families = list(dict.fromkeys(match[0] for match in matches))
         self.matched_terms = list(dict.fromkeys(match[1] for match in matches))
-        self.specialist_only = specialist_requested(seniority)
+        self.requested_level = requested_level(seniority)
+        self.specialist_only = self.requested_level == 'specialist'
         self.intents = {}
         for family in self.families:
             intent_matches = []
@@ -140,7 +181,7 @@ class OccupationScope:
             family = role.get('family')
             if family not in self.families:
                 continue
-            if self.specialist_only and role.get('level') in {'manager', 'executive'}:
+            if self.requested_level is not None and role.get('level') != self.requested_level:
                 continue
             if family in self.intents and role.get('intent') not in self.intents[family] | {'general'}:
                 continue
@@ -165,7 +206,7 @@ class OccupationScope:
                 'coverage': 'authored-limited', 'candidateCount': count,
                 'intents': [{'family': family, 'intent': intent} for family, intents in self.intents.items()
                             for intent in sorted(intents)],
-                'requestedLevel': 'specialist' if self.specialist_only else None,
+                'requestedLevel': self.requested_level,
                 'notice': ('Explicit field phrases constrain candidates to source-verified authored references; '
                            'cosine values and order remain unchanged. Coverage is limited and every link '
                            'requires human review; adjacent references are not exact occupation equivalence.'

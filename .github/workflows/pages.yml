@@ -127,38 +127,22 @@ jobs:
           path: test-results/
           retention-days: 14
 
-  deploy:
-    if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+  release-checks:
+    name: All release checks passed
+    if: always()
     needs: [server-test, ui-test, e2e-test]
-    permissions:
-      contents: read
-      pages: write
-      id-token: write
+    permissions: {}
     runs-on: ubuntu-latest
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 22
-          cache: npm
-      - name: Build production assets
+      - name: Require every release test gate to succeed
+        env:
+          SERVER_RESULT: ${{ needs.server-test.result }}
+          UI_RESULT: ${{ needs.ui-test.result }}
+          E2E_RESULT: ${{ needs.e2e-test.result }}
         run: |
-          npm ci --ignore-scripts --no-audit --no-fund
-          npm run build
-      - name: Require the matching API release before publishing UI
-        run: python3 scripts/check-live-release.py
-      - name: Verify live public export and protected service responses
-        run: python3 scripts/check-live-services.py
-      - name: Configure Pages
-        uses: actions/configure-pages@v5
-      - name: Upload website
-        uses: actions/upload-pages-artifact@v3
-        with:
-          path: dist
-      - name: Deploy website
-        id: deployment
-        uses: actions/deploy-pages@v5
+          python3 - <<'PYTHON'
+          import os
+          results = {name: os.environ[name] for name in ['SERVER_RESULT', 'UI_RESULT', 'E2E_RESULT']}
+          assert all(value == 'success' for value in results.values()), results
+          print('Server, interface and real-browser release checks passed')
+          PYTHON

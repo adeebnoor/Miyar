@@ -27,7 +27,7 @@ const hrCases=[
 for(const [objective,intent,sc,mc] of hrCases)for(const [seniority,code] of [['أخصائي',sc],['مدير',mc]])test(`expert HR ${intent} / ${seniority}`,()=>{const r=R.recommend({objective,domain:'الموارد البشرية',seniority},nodes,education);assert.equal(r.candidate.intent,intent);assert.equal(r.candidate.ssco,code);assert.ok(r.finalTitle);assert.equal(r.checks.find(c=>c.id==='level').status,'pass');assert.equal(r.checks.find(c=>c.id==='ssco').status,'pass');});
 for(const [objective,domain,family,code] of [
  ['إدارة حملات التسويق الرقمي وقياس العائد','التسويق','marketing','243103'],
- ['الاشراف على عمليات الصيانة الوقائية للمعدات','العمليات','maintenance','214907'],
+ ['الاشراف على عمليات الصيانة الوقائية للمعدات','العمليات','maintenance','311509'],
  ['ضمان جودة المنتجات ومراجعة الامتثال للمواصفات','الجودة','quality','242198'],
  ['الرد على استفسارات العملاء ومعالجة الشكاوى','خدمة العملاء','customerService','332202'],
  ['تحليل تكلفة الرواتب ضمن الميزانية','المالية','finance','241104'],

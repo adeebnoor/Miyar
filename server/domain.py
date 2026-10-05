@@ -1,6 +1,6 @@
 """Pure governance and evaluation rules; no proprietary grading tables."""
 import copy,hashlib,json,math,re,unicodedata
-from decimal import Decimal
+from decimal import Decimal,ROUND_HALF_UP
 from datetime import date
 from urllib.parse import urlsplit
 
@@ -116,5 +116,5 @@ def grade(framework,answers,evidence):
         if not level or not str(evidence.get(factor['id'],'')).strip():raise ValueError('Each factor requires a valid level and evidence')
         weighted=Decimal(str(level['points']))*Decimal(str(factor['weight']))/10;score+=weighted
         breakdown.append({'factor':factor['id'],'level':level['id'],'weightedPoints':float(weighted),'evidence':evidence[factor['id']]})
-    rounded=int(score.quantize(Decimal('1')));band=next(x for x in f['bands'] if x['min']<=rounded<=x['max'])
+    rounded=int(score.quantize(Decimal('1'),rounding=ROUND_HALF_UP));band=next(x for x in f['bands'] if x['min']<=rounded<=x['max'])
     return {'points':rounded,'compensation':compensation_result(f,band,evidence),'band':band,'breakdown':breakdown,'frameworkId':f.get('id'),'frameworkVersion':f.get('version'),'method':f['method'],'illustrative':f.get('illustrative',False),'status':'specialist-review-required','currency':f.get('currency'),'computedBy':'configured-point-factor-formula','warning':f.get('notice')}

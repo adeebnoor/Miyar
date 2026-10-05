@@ -121,8 +121,8 @@ test('job evaluation resolves points to the approved institution grade and shows
   const events=[];a.w.addEventListener('miyar:grade-calculated',e=>events.push(e.detail.grade));
   for(const s of a.d.querySelectorAll('[data-factor]'))s.value='5';for(const e of a.d.querySelectorAll('[data-factor-evidence]'))e.value='Leads a programme with cross-functional decisions';
   a.$('ent-calculate').click();await settle();
-  const out=a.$('ent-grade-result');assert.match(out.querySelector('.ent-grade-output').textContent,/800/);assert.equal(out.querySelectorAll('.ent-grade-breakdown tbody tr').length,8);
-  assert.match(out.querySelector('.ent-institution-grade').textContent,/Approved structure grade: G13 · Director/);assert.deepEqual(events,['G13 · Director']);
+  const out=a.$('ent-grade-result');assert.match(out.querySelector('.ent-grade-output').textContent,/741/);assert.equal(out.querySelectorAll('.ent-grade-breakdown tbody tr').length,8);
+  assert.match(out.querySelector('.ent-institution-grade').textContent,/Approved structure grade: G11 · Manager/);assert.deepEqual(events,['G11 · Manager']);
   assert.deepEqual(a.errors,[]);
  }finally{a.dom.window.close();}
 });
@@ -132,7 +132,7 @@ test('job evaluation keeps the illustrative band when no institution grade struc
   const events=[];a.w.addEventListener('miyar:grade-calculated',e=>events.push(e.detail.grade));
   for(const s of a.d.querySelectorAll('[data-factor]'))s.value='2';for(const e of a.d.querySelectorAll('[data-factor-evidence]'))e.value='Evidence';
   a.$('ent-calculate').click();await settle();
-  assert.match(a.$('ent-grade-result').querySelector('.ent-institution-grade').textContent,/No institution grade structure/);assert.deepEqual(events,['G03']);
+  assert.match(a.$('ent-grade-result').querySelector('.ent-institution-grade').textContent,/No institution grade structure/);assert.deepEqual(events,['G04']);
  }finally{a.dom.window.close();}
 });
 
