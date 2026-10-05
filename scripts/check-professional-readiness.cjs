@@ -11,4 +11,4 @@ function assess(m){
  return {commercialReady:blockers.length===0,acceptedCases:accepted,totalCases:cases.length,acceptanceFraction,blockers:[...new Set(blockers)],notice:'Evidence-completeness gate over recorded expert assessments. It does not authenticate a reviewer or independently certify professional validity.'};
 }
 module.exports={assess};
-if(require.main===module){const result=assess(JSON.parse(fs.readFileSync(process.argv[2]||'docs/expert-review/launch-readiness.json')));console.log(JSON.stringify(result,null,2));if(process.argv.includes('--require-commercial')&&!result.commercialReady)process.exitCode=1;}
+if(require.main===module){const args=process.argv.slice(2),file=args.find(x=>!x.startsWith('--'))||'docs/expert-review/launch-readiness.json';const result=assess(JSON.parse(fs.readFileSync(file)));console.log(JSON.stringify(result,null,2));if(args.includes('--require-commercial')&&!result.commercialReady)process.exitCode=1;}

@@ -36,8 +36,8 @@ test('every service and trust route renders and every linked first-party file re
  for(const lang of ['ar','en']){await page.goto(BASE+'pitch.html?lang='+lang);await expect(page.locator('body')).toContainText(/MI.Y.R|معيار/);}
 });
 
-test('zero salary minimum displays an undefined diagnostic and invalid currency stops calculation',async({page})=>{
- await page.addInitScript(()=>localStorage.setItem('miyar-language','en'));await page.goto(BASE+'#enterprise/compensation');await page.locator('[data-cp-example]').click();await page.locator('#cp-min').fill('0');await page.locator('[data-cp-run]').click();await expect(page.locator('.cp-diagnostics')).toContainText('Not computable when the minimum is zero');await expect(page.locator('.cp-result')).not.toContainText(/Infinity|NaN/);
- await page.locator('#cp-currency').fill('SA');await page.locator('[data-cp-run]').click();await expect(page.locator('[data-cp-message]')).toContainText('Currency must be a three-letter code');await expect(page.locator('.cp-result')).toHaveCount(0);
+test('zero salary minimum and an unrecognized three-letter currency block calculation',async({page})=>{
+ await page.addInitScript(()=>localStorage.setItem('miyar-language','en'));await page.goto(BASE+'#enterprise/compensation');await page.locator('[data-cp-example]').click();await page.locator('#cp-min').fill('0');await page.locator('[data-cp-run]').click();await expect(page.locator('[data-cp-message]')).toContainText('Band minimum must be a valid number');await expect(page.locator('.cp-result')).toHaveCount(0);await expect(page.locator('[data-cp-export]')).toHaveCount(0);
+ await page.locator('#cp-min').fill('24000');await page.locator('#cp-currency').fill('ZZZ');await page.locator('[data-cp-run]').click();await expect(page.locator('[data-cp-message]')).toContainText('Currency must be a recognized currency code');await expect(page.locator('.cp-result')).toHaveCount(0);
  await page.goto(BASE+'#enterprise/create');await expect(page.locator('#ent-pdf-draft')).toHaveText('Download position PDF');
 });
