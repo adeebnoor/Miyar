@@ -218,7 +218,7 @@ def create_app(db_url=None,jwt_secret=None,catalog=None):
         try:
             with engine.connect() as connection:connection.execute(select(1))
         except SQLAlchemyError:return JSONResponse({'status':'unavailable','database':'unreachable'},status_code=503)
-        return {'status':'ok','version':app.version,'frontendVersion':RELEASE['version'],'buildId':RELEASE['buildId'],'frontendUrl':'https://adeebnoor.github.io/Miyar/','operations':app.state.operational_snapshot(),'taxonomy':references.occupations['id'],'occupations':len(references.roles),'semanticModelReady':references.model is not None,'storage':'postgresql' if engine.dialect.name=='postgresql' else 'local-development-sqlite','services':service_capabilities()}
+        return {'status':'ok','version':app.version,'frontendVersion':RELEASE['version'],'buildId':RELEASE['buildId'],'frontendUrl':os.getenv('MIYAR_FRONTEND_URL','https://adeebnoor.github.io/Miyar/'),'hostingPurpose':os.getenv('MIYAR_HOSTING_PURPOSE','expert-evaluation'),'operations':app.state.operational_snapshot(),'taxonomy':references.occupations['id'],'occupations':len(references.roles),'semanticModelReady':references.model is not None,'storage':'postgresql' if engine.dialect.name=='postgresql' else 'local-development-sqlite','services':service_capabilities()}
     @app.post('/api/v1/auth/login')
     def login(body:Login,request:Request,db=Depends(session)):
         email=body.email.strip().lower();key=digest({'email':email,'ip':request.client.host if request.client else ''});ts=int(time.time());window=db.get(LoginWindow,key)
@@ -535,5 +535,7 @@ def create_app(db_url=None,jwt_secret=None,catalog=None):
     @app.get('/',include_in_schema=False)
     @app.get('/index.html',include_in_schema=False)
     def canonical_frontend():
-        return RedirectResponse('https://adeebnoor.github.io/Miyar/?v='+VERSION+'#home',status_code=307,headers={'Cache-Control':'no-store'})
+        return RedirectResponse(os.getenv('MIYAR_FRONTEND_URL','https://adeebnoor.github.io/Miyar/').rstrip('/')+'/?v='+VERSION+'#home',status_code=307,headers={'Cache-Control':'no-store'})
+    if os.getenv('MIYAR_SERVE_UI')=='true':
+        app.mount('/app',StaticFiles(directory=Path(__file__).resolve().parents[1]/'dist',html=True),name='miyar-ui')
     return app

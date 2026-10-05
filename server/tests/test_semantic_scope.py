@@ -16,7 +16,7 @@ def catalog():
 
 def test_existing_authored_catalog_is_json_and_all_references_match_selected_source(catalog):
     payload = read_role_catalog()
-    assert len(payload['families']) == 20 and len(payload['roles']) == 89
+    assert len(payload['families']) == 20 and len(payload['roles']) == 91
     for role in payload['roles']:
         source = catalog.nodes[role['ssco']]
         assert source['level'] == 'occupation'

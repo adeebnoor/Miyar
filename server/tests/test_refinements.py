@@ -37,16 +37,16 @@ def test_performance_and_salary_roundtrip_in_official_exports(env):
         r=c.get('/api/v1/positions/'+p['id']+'/export/'+format,headers=auth());assert r.status_code==200,r.text[:300]
 
 def test_salary_band_validation_and_evaluation_binding():
-    f=copy.deepcopy(DEFAULT_FRAMEWORK);f['bands'][1].update(salaryMin=10000,salaryMax=15000)
-    evidence={k:'Specific duties and authority' for k in ['knowledge','complexity','impact']}
+    f=copy.deepcopy(DEFAULT_FRAMEWORK);f['bands'][2].update(salaryMin=10000,salaryMax=15000)
+    evidence={k:'Specific duties and authority' for k in [factor['id'] for factor in DEFAULT_FRAMEWORK['factors']]}
     r=grade(f,dict.fromkeys(evidence,'2'),evidence)
-    assert r['compensation']['grade']=='B2';assert r['compensation']['salaryMin']==10000
+    assert r['compensation']['grade']=='G03';assert r['compensation']['salaryMin']==10000
     assert r['compensation']['salaryPeriod']=='monthly'
     for invalid in [{'salaryMin':float('nan'),'salaryMax':15000},{'salaryMax':15000},{'salaryMin':10000,'salaryMax':9000},{'salaryMin':True,'salaryMax':15000}]:
         broken=copy.deepcopy(DEFAULT_FRAMEWORK);broken['bands'][1].update(invalid)
         with pytest.raises(ValueError):validate_framework(broken)
     f=copy.deepcopy(DEFAULT_FRAMEWORK);evidence['compensation']={'salaryMin':9000,'salaryMax':11000,'salaryPeriod':'monthly','salaryCurrency':'SAR','salarySource':'Rewards proposal'}
-    r=grade(f,{'knowledge':'2','complexity':'2','impact':'2'},evidence);assert r['compensation']['salaryMax']==11000
+    r=grade(f,{factor['id']:'2' for factor in DEFAULT_FRAMEWORK['factors']},evidence);assert r['compensation']['salaryMax']==11000
 
 def test_ai_requires_config_and_rejects_malformed_rows(env,monkeypatch):
     app,c,auth,position=env;p=position()

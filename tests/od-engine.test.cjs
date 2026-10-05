@@ -9,13 +9,13 @@ test('HC expert case becomes a reviewable Manager-level OD package without prete
  const p=engine.generate(engine.hcExample,'en');
  assert.equal(p.family.id,'hc');
  assert.equal(p.content.title,'Human Capital Projects & Operations Manager');
- assert.equal(p.gradeRecommendation.level,'Manager level');
+ assert.equal(p.gradeRecommendation.level,'manager');
  assert.match(p.content.responsibilities,/RFP/);assert.match(p.content.responsibilities,/OPEX/);assert.match(p.content.purpose,/strategic objective/i);
  assert.match(p.content.qualifications,/Human Resources Management/);assert.match(p.content.experience,/7–10/);
  assert.match(p.content.skills,/Procurement/);assert.match(p.content.skills,/OPEX/);assert.ok(p.content.kpis.length>=5);
  assert.match(p.content.saudization,/100% Saudi/);assert.match(p.notices.join(' '),/verify|current official source/i);
  assert.match(p.notices.join(' '),/does not calculate Korn Ferry, Mercer or WTW/i);
- assert.ok(p.referenceQueries.ssco.includes('مدير موارد بشرية'));assert.ok(p.referenceQueries.education.includes('إدارة الموارد البشرية'));
+ assert.ok(p.referenceQueries.ssco.includes('مدير عمليات الموارد البشرية'));assert.ok(p.referenceQueries.education.includes('041302'));
 });
 
 test('OD engine keeps uncertainty visible instead of inventing management or regulatory facts',()=>{
@@ -53,7 +53,7 @@ test('HC example can be generated inside Position Design, linked to references a
   assert.ok(a.w.document.querySelector('[data-field=educationFieldCode]').value.length>0,'education suggestion should be resolved from the supplied reference');
   const kpiTargets=[...a.w.document.querySelectorAll('[data-matrix-key="kpis"][data-matrix-field="target"]')].map(x=>x.value).join(' ');
   const skillNames=[...a.w.document.querySelectorAll('[data-matrix-key="skillRequirements"][data-matrix-field="name"]')].map(x=>x.value).join(' ');
-  assert.match(kpiTargets,/95%/);assert.match(skillNames,/OPEX/);
+  assert.match(kpiTargets,/baseline/);assert.match(skillNames,/OPEX/);
   assert.match(panel.querySelector('[data-od-result]').textContent,/Human Capital Projects & Operations Manager/);assert.match(panel.querySelector('[data-od-result]').textContent,/not a live market-survey result/i);
   a.$('ent-save').click();await settle();
   const saved=JSON.parse(a.w.localStorage.getItem(a.w.MiyarEnterpriseCore.KEY));assert.equal(saved.length,1);assert.equal(saved[0].content.jobFamily,'Human Capital');assert.match(saved[0].content.careerPath,/CHRO/);assert.match(saved[0].content.odGenerationBasis,/rule-based proposal/i);assert.ok(saved[0].content.kpis.length>=5);assert.match(saved[0].content.skillRequirements.map(x=>x.name).join(' '),/OPEX/);

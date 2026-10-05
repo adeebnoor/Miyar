@@ -55,3 +55,16 @@ def test_password_change_rate_limit_preserves_existing_credentials(env):
     for _ in range(5):assert c.post('/api/v1/auth/password',headers=auth(),json=body).status_code==422
     assert c.post('/api/v1/auth/password',headers=auth(),json=body).status_code==429
     assert c.post('/api/v1/auth/login',json={'email':'org-a-line_manager@example.test','password':'test-only-password-012345'}).status_code==200
+
+
+def test_saudi_profile_can_serve_ui_and_api_on_one_origin(monkeypatch):
+    from server.app import create_app
+    from fastapi.testclient import TestClient
+    monkeypatch.setenv('MIYAR_SERVE_UI','true')
+    monkeypatch.setenv('MIYAR_FRONTEND_URL','https://pilot.example.test/app/')
+    app=create_app('sqlite:///:memory:',jwt_secret='test-saudi-profile-secret-32-characters')
+    with TestClient(app) as client:
+        response=client.get('/',follow_redirects=False)
+        assert response.headers['location'].startswith('https://pilot.example.test/app/?v=')
+        assert client.get('/app/').status_code==200
+        assert client.get('/health').json()['frontendUrl']=='https://pilot.example.test/app/'

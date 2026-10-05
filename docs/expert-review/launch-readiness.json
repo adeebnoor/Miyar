@@ -1,0 +1,8 @@
+{
+  "schema": "miyar-launch-readiness/1.0",
+  "releasePurpose": "expert-evaluation",
+  "commercialReady": false,
+  "hosting": {"provider": null, "region": null, "country": null, "paidCapacity": false, "databasePaid": false, "backupCountry": null, "restoreTestEvidence": null, "residencyReviewedBy": null, "contractReference": null},
+  "professionalDataset": {"status": "pending-independent-expert-input", "sourceType": "authored-test-fixtures-only", "independentReviewer": null, "frozenBeforeEvaluation": false, "sha256": null, "acceptancePolicy": null, "cases": []},
+  "blockers": ["Contracted Saudi hosting and tested restoration are not provisioned", "30–50 real anonymized reference jobs and independent expert-approved outcomes are not supplied", "Illustrative factor weights and grade boundaries require organization calibration"]
+}

@@ -1,1 +1,426 @@
-{"id":"miyar-example-v1","name":"Illustrative organization point-factor framework","method":"custom","version":1,"illustrative":true,"currency":"SAR","factors":[{"id":"knowledge","labelAr":"المعرفة التطبيقية","labelEn":"Applied knowledge","weight":40,"levels":[{"id":"1","labelAr":"مهام محددة بإرشادات واضحة","labelEn":"Defined work with clear guidance","points":25},{"id":"2","labelAr":"تطبيق تخصص وتحليل مستقل","labelEn":"Specialist application and independent analysis","points":50},{"id":"3","labelAr":"تكامل تخصصات وحلول مؤسسية","labelEn":"Cross-disciplinary organizational solutions","points":75},{"id":"4","labelAr":"قيادة معرفة وسياسات على مستوى الجهة","labelEn":"Organization-wide expertise and policy leadership","points":100}]},{"id":"complexity","labelAr":"تعقيد القرارات","labelEn":"Decision complexity","weight":30,"levels":[{"id":"1","labelAr":"اختيار من إجراءات معروفة","labelEn":"Choose among established procedures","points":25},{"id":"2","labelAr":"حل مسائل متنوعة ضمن إطار معلوم","labelEn":"Solve varied problems within a known framework","points":50},{"id":"3","labelAr":"تصميم بدائل في ظروف غير مؤكدة","labelEn":"Design alternatives under uncertainty","points":75},{"id":"4","labelAr":"قرارات استراتيجية متعددة الآثار","labelEn":"Strategic decisions with multiple consequences","points":100}]},{"id":"impact","labelAr":"نطاق الأثر والمساءلة","labelEn":"Impact and accountability","weight":30,"levels":[{"id":"1","labelAr":"مخرجات مهمة محددة","labelEn":"Defined task outputs","points":25},{"id":"2","labelAr":"مخرجات عملية أو فريق","labelEn":"Process or team outcomes","points":50},{"id":"3","labelAr":"نتائج إدارة أو برنامج","labelEn":"Department or programme results","points":75},{"id":"4","labelAr":"نتائج المؤسسة ومواردها","labelEn":"Organization-wide results and resources","points":100}]}],"bands":[{"id":"B1","min":0,"max":399},{"id":"B2","min":400,"max":599},{"id":"B3","min":600,"max":799},{"id":"B4","min":800,"max":1000}],"notice":"Illustrative custom framework. Not Hay/Korn Ferry or Mercer IPE; do not use for pay decisions without organizational approval."}
+{
+  "id": "miyar-example-v2",
+  "name": "Illustrative analytical job evaluation — 8 factors / 12 grades",
+  "method": "custom",
+  "version": 2,
+  "illustrative": true,
+  "currency": "SAR",
+  "calibrationStatus": "independent-expert-and-organization-validation-required",
+  "factors": [
+    {
+      "id": "knowledge",
+      "labelAr": "المعرفة والتطبيق",
+      "labelEn": "Knowledge and application",
+      "weight": 20,
+      "levels": [
+        {
+          "id": "1",
+          "points": 0,
+          "labelAr": "تعليمات عملية بسيطة وتدريب أولي",
+          "labelEn": "Basic work instructions and introductory training"
+        },
+        {
+          "id": "2",
+          "points": 20,
+          "labelAr": "معرفة إجراءات متعددة وتطبيقها باستقلال محدود",
+          "labelEn": "Several procedures applied with limited independence"
+        },
+        {
+          "id": "3",
+          "points": 40,
+          "labelAr": "معرفة تخصصية لحل مسائل معتادة والتحقق من النتائج",
+          "labelEn": "Specialist knowledge to resolve recurring issues and verify results"
+        },
+        {
+          "id": "4",
+          "points": 60,
+          "labelAr": "تكامل تخصصات وتوجيه الممارسة المهنية",
+          "labelEn": "Integrates disciplines and guides professional practice"
+        },
+        {
+          "id": "5",
+          "points": 80,
+          "labelAr": "خبرة عميقة تصمم منهجيات وسياسات متعددة الإدارات",
+          "labelEn": "Deep expertise designs methods and policy across departments"
+        },
+        {
+          "id": "6",
+          "points": 100,
+          "labelAr": "مرجعية مؤسسية تطور المعرفة والاستراتيجية على نطاق واسع",
+          "labelEn": "Enterprise authority develops knowledge and long-term direction"
+        }
+      ]
+    },
+    {
+      "id": "complexity",
+      "labelAr": "تحليل المشكلات والتعقيد",
+      "labelEn": "Problem solving and complexity",
+      "weight": 15,
+      "levels": [
+        {
+          "id": "1",
+          "points": 0,
+          "labelAr": "حلول محددة واختيارات مباشرة",
+          "labelEn": "Prescribed solutions and direct choices"
+        },
+        {
+          "id": "2",
+          "points": 20,
+          "labelAr": "تشخيص فروقات مألوفة من بدائل معروفة",
+          "labelEn": "Diagnoses familiar deviations using known alternatives"
+        },
+        {
+          "id": "3",
+          "points": 40,
+          "labelAr": "تحليل عدة متغيرات واختيار حل مناسب",
+          "labelEn": "Analyses several variables and selects a fitting solution"
+        },
+        {
+          "id": "4",
+          "points": 60,
+          "labelAr": "حل مشكلات جديدة ذات معلومات غير مكتملة",
+          "labelEn": "Resolves novel problems with incomplete information"
+        },
+        {
+          "id": "5",
+          "points": 80,
+          "labelAr": "تصميم حلول لمشكلات مترابطة ذات آثار متعددة",
+          "labelEn": "Designs solutions for interconnected problems with several consequences"
+        },
+        {
+          "id": "6",
+          "points": 100,
+          "labelAr": "معالجة عدم يقين واسع وصياغة أطر قرارات استراتيجية",
+          "labelEn": "Addresses broad uncertainty and develops strategic decision frameworks"
+        }
+      ]
+    },
+    {
+      "id": "impact",
+      "labelAr": "الأثر والمساءلة عن النتائج",
+      "labelEn": "Impact and accountability",
+      "weight": 20,
+      "levels": [
+        {
+          "id": "1",
+          "points": 0,
+          "labelAr": "مساءلة عن دقة مهمة محددة",
+          "labelEn": "Accountable for accuracy of a defined task"
+        },
+        {
+          "id": "2",
+          "points": 20,
+          "labelAr": "مساءلة عن مجموعة مخرجات داخل عملية",
+          "labelEn": "Accountable for a set of outputs within a process"
+        },
+        {
+          "id": "3",
+          "points": 40,
+          "labelAr": "مساءلة عن نتيجة عملية أو خدمة متكاملة",
+          "labelEn": "Accountable for a complete process or service outcome"
+        },
+        {
+          "id": "4",
+          "points": 60,
+          "labelAr": "مساءلة عن نتائج إدارة أو برنامج متعدد الفرق",
+          "labelEn": "Accountable for department or multi-team programme results"
+        },
+        {
+          "id": "5",
+          "points": 80,
+          "labelAr": "مساءلة عن نتائج عدة إدارات أو محفظة رئيسية",
+          "labelEn": "Accountable for several departments or a major portfolio"
+        },
+        {
+          "id": "6",
+          "points": 100,
+          "labelAr": "مساءلة مؤسسية شاملة عن نتائج طويلة الأجل",
+          "labelEn": "Enterprise accountability for sustained organization-wide results"
+        }
+      ]
+    },
+    {
+      "id": "autonomy",
+      "labelAr": "استقلال القرار وحدود الصلاحية",
+      "labelEn": "Decision autonomy",
+      "weight": 10,
+      "levels": [
+        {
+          "id": "1",
+          "points": 0,
+          "labelAr": "مراجعة مباشرة مستمرة ضمن تعليمات محددة",
+          "labelEn": "Continuous direct review against specified instructions"
+        },
+        {
+          "id": "2",
+          "points": 20,
+          "labelAr": "تنظيم العمل اليومي ضمن إجراءات مع مراجعة دورية",
+          "labelEn": "Organizes daily work within procedures and periodic review"
+        },
+        {
+          "id": "3",
+          "points": 40,
+          "labelAr": "قرارات مهنية مستقلة ضمن سياسة واضحة",
+          "labelEn": "Independent professional decisions within clear policy"
+        },
+        {
+          "id": "4",
+          "points": 60,
+          "labelAr": "تحديد نهج العمل وتفسير السياسات ضمن تفويض",
+          "labelEn": "Sets work approach and interprets policy within delegation"
+        },
+        {
+          "id": "5",
+          "points": 80,
+          "labelAr": "تطوير السياسات وتخصيص الموارد ضمن حوكمة محددة",
+          "labelEn": "Develops policy and allocates resources within governance"
+        },
+        {
+          "id": "6",
+          "points": 100,
+          "labelAr": "تحديد توجه المؤسسة ضمن مساءلة مجلس الإدارة",
+          "labelEn": "Sets organization direction accountable to its governing body"
+        }
+      ]
+    },
+    {
+      "id": "people",
+      "labelAr": "المسؤولية عن الأفراد",
+      "labelEn": "People responsibility",
+      "weight": 10,
+      "levels": [
+        {
+          "id": "1",
+          "points": 0,
+          "labelAr": "لا مسؤولية رسمية عن أفراد آخرين",
+          "labelEn": "No formal responsibility for other people"
+        },
+        {
+          "id": "2",
+          "points": 20,
+          "labelAr": "إرشاد زملاء دون صلاحية تقييم أو قرارات أفراد",
+          "labelEn": "Coaches peers without appraisal or people-decision authority"
+        },
+        {
+          "id": "3",
+          "points": 40,
+          "labelAr": "إشراف مباشر على فريق مع مسؤولية توزيع ومراجعة العمل",
+          "labelEn": "Direct team supervision with work allocation and review"
+        },
+        {
+          "id": "4",
+          "points": 60,
+          "labelAr": "إدارة فرق عبر مشرفين وصلاحيات أفراد موثقة",
+          "labelEn": "Manages teams through supervisors with documented people authority"
+        },
+        {
+          "id": "5",
+          "points": 80,
+          "labelAr": "قيادة عدة فرق إدارية وتخطيط قدرات طويلة الأجل",
+          "labelEn": "Leads several management teams and long-term capability planning"
+        },
+        {
+          "id": "6",
+          "points": 100,
+          "labelAr": "مساءلة تنفيذية عن قدرة وثقافة القوى العاملة للمؤسسة",
+          "labelEn": "Executive accountability for organization workforce capability and culture"
+        }
+      ]
+    },
+    {
+      "id": "communication",
+      "labelAr": "التواصل والتأثير",
+      "labelEn": "Communication and influence",
+      "weight": 10,
+      "levels": [
+        {
+          "id": "1",
+          "points": 0,
+          "labelAr": "تبادل معلومات واضحة مع جهات معروفة",
+          "labelEn": "Exchanges clear information with known contacts"
+        },
+        {
+          "id": "2",
+          "points": 20,
+          "labelAr": "شرح إجراءات وتوضيح متطلبات عمل معتادة",
+          "labelEn": "Explains procedures and routine work requirements"
+        },
+        {
+          "id": "3",
+          "points": 40,
+          "labelAr": "عرض تحليل وإقناع أصحاب علاقة ضمن مصالح متقاربة",
+          "labelEn": "Presents analysis and persuades stakeholders with aligned interests"
+        },
+        {
+          "id": "4",
+          "points": 60,
+          "labelAr": "تفاوض وحل تعارض مصالح بين جهات متعددة",
+          "labelEn": "Negotiates and resolves conflicting interests across groups"
+        },
+        {
+          "id": "5",
+          "points": 80,
+          "labelAr": "تأثير في قرارات رئيسية مع أطراف داخلية وخارجية",
+          "labelEn": "Influences major decisions with internal and external parties"
+        },
+        {
+          "id": "6",
+          "points": 100,
+          "labelAr": "تمثيل المؤسسة في مفاوضات وتحالفات ذات أثر استراتيجي",
+          "labelEn": "Represents the organization in strategically significant negotiations"
+        }
+      ]
+    },
+    {
+      "id": "financial",
+      "labelAr": "المسؤولية المالية والموارد",
+      "labelEn": "Financial and resource responsibility",
+      "weight": 10,
+      "levels": [
+        {
+          "id": "1",
+          "points": 0,
+          "labelAr": "استخدام مسؤول للأدوات دون سلطة إنفاق",
+          "labelEn": "Responsible use of tools without spending authority"
+        },
+        {
+          "id": "2",
+          "points": 20,
+          "labelAr": "متابعة سجلات أو عهد دون اعتماد إنفاق",
+          "labelEn": "Maintains records or custody without spend approval"
+        },
+        {
+          "id": "3",
+          "points": 40,
+          "labelAr": "إعداد وتحليل ميزانية وتوصيات دون اعتماد نهائي",
+          "labelEn": "Prepares budgets and recommendations without final approval"
+        },
+        {
+          "id": "4",
+          "points": 60,
+          "labelAr": "اعتماد موارد أو إنفاق ضمن تفويض موثق",
+          "labelEn": "Approves resources or spending under documented delegation"
+        },
+        {
+          "id": "5",
+          "points": 80,
+          "labelAr": "مساءلة عن ميزانيات متعددة وقرارات تخصيص رئيسية",
+          "labelEn": "Accountable for multiple budgets and major resource allocation"
+        },
+        {
+          "id": "6",
+          "points": 100,
+          "labelAr": "مساءلة نهائية عن الموارد المالية المؤسسية ضمن الحوكمة",
+          "labelEn": "Final accountability for enterprise financial resources within governance"
+        }
+      ]
+    },
+    {
+      "id": "conditions",
+      "labelAr": "جهد وظروف العمل الملازمة",
+      "labelEn": "Inherent effort and working conditions",
+      "weight": 5,
+      "levels": [
+        {
+          "id": "1",
+          "points": 0,
+          "labelAr": "بيئة معتادة وجهد اعتيادي مع ضوابط مناسبة",
+          "labelEn": "Normal environment and ordinary effort with appropriate controls"
+        },
+        {
+          "id": "2",
+          "points": 20,
+          "labelAr": "تركيز متكرر أو حركة بدنية خفيفة لازمة للعمل",
+          "labelEn": "Recurring concentration or light physical movement inherent to work"
+        },
+        {
+          "id": "3",
+          "points": 40,
+          "labelAr": "متطلبات تركيز أو جهد بدني أو عاطفي مستمر ملحوظ",
+          "labelEn": "Sustained notable cognitive, physical or emotional demands"
+        },
+        {
+          "id": "4",
+          "points": 60,
+          "labelAr": "تعرض منتظم لظروف متعبة مع وسائل حماية موثقة",
+          "labelEn": "Regular demanding conditions with documented protections"
+        },
+        {
+          "id": "5",
+          "points": 80,
+          "labelAr": "جهد شديد متكرر أو ظروف صعبة ملازمة رغم الضوابط",
+          "labelEn": "Recurring intense effort or difficult conditions despite controls"
+        },
+        {
+          "id": "6",
+          "points": 100,
+          "labelAr": "ظروف استثنائية متكررة ومستمرة يثبتها تحليل مخاطر مهني",
+          "labelEn": "Persistent exceptional conditions evidenced by professional risk assessment"
+        }
+      ]
+    }
+  ],
+  "bands": [
+    {
+      "id": "G01",
+      "min": 0,
+      "max": 82
+    },
+    {
+      "id": "G02",
+      "min": 83,
+      "max": 165
+    },
+    {
+      "id": "G03",
+      "min": 166,
+      "max": 249
+    },
+    {
+      "id": "G04",
+      "min": 250,
+      "max": 332
+    },
+    {
+      "id": "G05",
+      "min": 333,
+      "max": 416
+    },
+    {
+      "id": "G06",
+      "min": 417,
+      "max": 499
+    },
+    {
+      "id": "G07",
+      "min": 500,
+      "max": 582
+    },
+    {
+      "id": "G08",
+      "min": 583,
+      "max": 666
+    },
+    {
+      "id": "G09",
+      "min": 667,
+      "max": 749
+    },
+    {
+      "id": "G10",
+      "min": 750,
+      "max": 833
+    },
+    {
+      "id": "G11",
+      "min": 834,
+      "max": 916
+    },
+    {
+      "id": "G12",
+      "min": 917,
+      "max": 1000
+    }
+  ],
+  "notice": "Original illustrative framework, not Hay/Korn Ferry, Mercer IPE or a validated pay structure. Evaluate job requirements, not incumbent performance or credentials. All weights, anchors and grade boundaries require independent expert calibration and organization approval before pay use. Normal work is the zero-point baseline; zero does not mean no job value."
+}

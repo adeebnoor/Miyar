@@ -1,3 +1,4 @@
+from .domain import DEFAULT_FRAMEWORK
 """Isolated investor demonstration tenant built only from synthetic data.
 
 The tenant is created through the same API routes, validation and audit trail as real
@@ -122,8 +123,8 @@ def seed(app, password):
                     if stage == target:
                         break
                     if stage == 'total_rewards':
-                        client.post('/api/v1/positions/' + p['id'] + '/evaluation', headers=auth(stage), json={'revision': p['revision'], 'answers': {'knowledge': '3', 'complexity': '2', 'impact': '2'},
-                                    'evidence': {'knowledge': 'Synthetic evidence', 'complexity': 'Synthetic evidence', 'impact': 'Synthetic evidence'}}).raise_for_status()
+                        client.post('/api/v1/positions/' + p['id'] + '/evaluation', headers=auth(stage), json={'revision': p['revision'], 'answers': {f['id']: '3' if f['id']=='knowledge' else '2' for f in DEFAULT_FRAMEWORK['factors']},
+                                    'evidence': {f['id']: 'Synthetic evidence' for f in DEFAULT_FRAMEWORK['factors']}}).raise_for_status()
                     evidence = {**EVIDENCE[stage], **({'approvedAnnualBudget': cost} if stage == 'finance' else {})}
                     r = client.post('/api/v1/positions/' + p['id'] + '/decisions', headers=auth(stage), json={'revision': p['revision'], 'decision': 'approve', 'comment': 'Synthetic approval for the demonstration', 'evidence': evidence})
                     r.raise_for_status()

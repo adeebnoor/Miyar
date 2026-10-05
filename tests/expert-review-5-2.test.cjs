@@ -66,7 +66,7 @@ test('compensation diagnostics check range spread, midpoint symmetry, compa-rati
 test('below-minimum pay separates the bring-to-minimum cost and allowances follow basic pay',()=>{
  const r=C.evaluate({...C.example,currentSalary:21000,allowancesPercent:35}).result;
  assert.equal(r.payAction,'below-band');assert.equal(r.minimumAdjustmentPerFte,3000);assert.equal(r.annualMinimumAdjustmentCost,55890);
- assert.equal(r.annualGuaranteedCash,486000);assert.equal(r.annualEmployerCost,558900);assert.equal(r.adjustmentPercent,42.9);
+ assert.equal(r.annualGuaranteedCash,388800);assert.equal(r.annualEmployerCost,447120);assert.equal(r.adjustmentPercent,14.3);
  const total=C.evaluate({...C.example,payBasis:'total',allowancesPercent:35});assert.equal(total.input.allowancesApplied,false);assert.equal(total.result.annualEmployerCost,414000);
  assert.throws(()=>C.evaluate({...C.example,allowancesPercent:-5}),/Fixed allowances/);
  assert.equal(C.evaluate({...C.example,currentSalary:39000}).result.adjustmentPerFte,0);
@@ -100,9 +100,9 @@ test('compensation workspace explains band position, bring-to-minimum and packag
  const a=await app('#enterprise/compensation');try{
   const page=a.d.querySelector('.cp-page');page.querySelector('[data-cp-example]').click();a.$('cp-current').value='21000';a.$('cp-allowances').value='35';a.$('cp-allowances').dispatchEvent(new a.w.Event('input',{bubbles:true}));page.querySelector('[data-cp-run]').click();await settle();
   const r=page.querySelector('.cp-result');assert.ok(r);
-  assert.equal(r.querySelector('.cp-range').getAttribute('dir'),'ltr');assert.match(r.querySelector('.cp-scale').textContent,/MinQ1MidQ3Max/);assert.ok(r.querySelector('.cp-line .cp-current'));
-  assert.match(r.querySelector('.cp-policy').textContent,/Below band — review required/);assert.match(r.querySelector('.cp-policy').textContent,/bring pay to at least the band minimum \(3,000 SAR per FTE; annual impact 55,890 SAR\)/);
-  assert.match(r.querySelector('.cp-cost').textContent,/Guaranteed cash486,000 SAR/);assert.match(r.querySelector('.cp-diagnostics').textContent,/Range spread 50%/);
+  assert.equal(r.querySelector('.cp-range').getAttribute('dir'),'ltr');assert.match(r.querySelector('.cp-scale').textContent,/MinQ1Range centreQ3Max/);assert.ok(r.querySelector('.cp-line .cp-current'));
+  assert.match(r.querySelector('.cp-policy').textContent,/Correction to organization band minimum/);assert.match(r.querySelector('.cp-policy').textContent,/Annual correction cost: 55,890 SAR/);
+  assert.match(r.querySelector('.cp-cost').textContent,/Guaranteed cash388,800 SAR/);assert.match(r.querySelector('.cp-diagnostics').textContent,/Range spread 50%/);
   assert.match(r.querySelector('.cp-metrics').textContent,/Well below midpoint · Below minimum/);assert.equal(r.querySelector('.qa-band-alert'),null);
   assert.deepEqual(a.errors,[]);
  }finally{a.dom.window.close();}
@@ -119,9 +119,9 @@ test('job evaluation resolves points to the approved institution grade and shows
  const a=await app('#enterprise/grading');try{
   const I=a.w.MiyarInstitutionProfile;I.saveLocal(I.profileExample(),true);
   const events=[];a.w.addEventListener('miyar:grade-calculated',e=>events.push(e.detail.grade));
-  for(const s of a.d.querySelectorAll('[data-factor]'))s.value='3';for(const e of a.d.querySelectorAll('[data-factor-evidence]'))e.value='Leads a programme with cross-functional decisions';
+  for(const s of a.d.querySelectorAll('[data-factor]'))s.value='5';for(const e of a.d.querySelectorAll('[data-factor-evidence]'))e.value='Leads a programme with cross-functional decisions';
   a.$('ent-calculate').click();await settle();
-  const out=a.$('ent-grade-result');assert.match(out.textContent,/750/);assert.equal(out.querySelectorAll('.ent-grade-breakdown tbody tr').length,3);
+  const out=a.$('ent-grade-result');assert.match(out.querySelector('.ent-grade-output').textContent,/800/);assert.equal(out.querySelectorAll('.ent-grade-breakdown tbody tr').length,8);
   assert.match(out.querySelector('.ent-institution-grade').textContent,/Approved structure grade: G13 · Director/);assert.deepEqual(events,['G13 · Director']);
   assert.deepEqual(a.errors,[]);
  }finally{a.dom.window.close();}
@@ -132,7 +132,7 @@ test('job evaluation keeps the illustrative band when no institution grade struc
   const events=[];a.w.addEventListener('miyar:grade-calculated',e=>events.push(e.detail.grade));
   for(const s of a.d.querySelectorAll('[data-factor]'))s.value='2';for(const e of a.d.querySelectorAll('[data-factor-evidence]'))e.value='Evidence';
   a.$('ent-calculate').click();await settle();
-  assert.match(a.$('ent-grade-result').querySelector('.ent-institution-grade').textContent,/No institution grade structure/);assert.deepEqual(events,['B2']);
+  assert.match(a.$('ent-grade-result').querySelector('.ent-institution-grade').textContent,/No institution grade structure/);assert.deepEqual(events,['G03']);
  }finally{a.dom.window.close();}
 });
 

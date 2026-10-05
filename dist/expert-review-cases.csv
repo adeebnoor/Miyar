@@ -1,0 +1,81 @@
+﻿case_id,provenance,language,family,department,responsibilities,expected_behavior,expert_reference_jd,expert_grade,salary_source,expert_salary,expert_approval
+payroll-en,expert-report-paraphrase,en,payroll,Human Resources,"Process monthly payroll
+Reconcile GOSI contributions and end-of-service inputs",reviewable-domain-proposal,,,,,
+payroll-ar,expert-report-paraphrase,ar,payroll,الموارد البشرية,"إعداد رواتب الموظفين الشهرية
+مطابقة اشتراكات التأمينات ومدخلات نهاية الخدمة",reviewable-domain-proposal,,,,,
+nursing-en,expert-report-paraphrase,en,nursing,Nursing,"Supervise the nursing shift team
+Train nurses and review medication administration errors",reviewable-domain-proposal,,,,,
+nursing-ar,expert-report-paraphrase,ar,nursing,التمريض,"يشرف على فريق التمريض في الوردية
+يدرب الممرضين ويراجع أخطاء إعطاء الأدوية",reviewable-domain-proposal,,,,,
+recruitment-en,authored-regression-fixture,en,recruitment,Human Resources,"Source recruitment candidates for approved vacancies
+Assess candidates and coordinate employment offers",reviewable-domain-proposal,,,,,
+recruitment-ar,authored-regression-fixture,ar,recruitment,الموارد البشرية,"استقطاب المرشحين للشواغر المعتمدة
+تقييم المرشحين وتنسيق عروض التوظيف",reviewable-domain-proposal,,,,,
+learning-en,authored-regression-fixture,en,learning,Human Resources,"Assess employee training needs
+Evaluate learning outcomes and track training completion",reviewable-domain-proposal,,,,,
+learning-ar,authored-regression-fixture,ar,learning,الموارد البشرية,"تحليل احتياجات تدريب الموظفين
+تقييم نتائج التعلم ومتابعة اكتمال التدريب",reviewable-domain-proposal,,,,,
+finance-en,authored-regression-fixture,en,finance,Finance,"Prepare financial close reconciliations
+Review accounting entries and explain budget variances",reviewable-domain-proposal,,,,,
+finance-ar,authored-regression-fixture,ar,finance,المالية,"إعداد تسويات الإقفال المالي
+مراجعة القيود المحاسبية وتحليل انحرافات الميزانية",reviewable-domain-proposal,,,,,
+procurement-en,authored-regression-fixture,en,procurement,Procurement,"Evaluate supplier bids against sourcing criteria
+Track purchase orders and contract delivery",reviewable-domain-proposal,,,,,
+procurement-ar,authored-regression-fixture,ar,procurement,المشتريات,"تقييم عروض الموردين وفق معايير التوريد
+متابعة أوامر الشراء وتنفيذ العقود",reviewable-domain-proposal,,,,,
+supplyChain-en,authored-regression-fixture,en,supplyChain,Supply Chain,"Plan inventory replenishment from demand forecasts
+Monitor logistics delivery and stock accuracy",reviewable-domain-proposal,,,,,
+supplyChain-ar,authored-regression-fixture,ar,supplyChain,سلاسل الإمداد,"تخطيط تجديد المخزون من توقعات الطلب
+متابعة التسليم اللوجستي ودقة المخزون",reviewable-domain-proposal,,,,,
+sales-en,authored-regression-fixture,en,sales,Sales,"Manage key customer sales accounts
+Qualify sales opportunities and forecast revenue",reviewable-domain-proposal,,,,,
+sales-ar,authored-regression-fixture,ar,sales,المبيعات,"إدارة حسابات عملاء المبيعات
+تأهيل فرص البيع وتوقع الإيرادات",reviewable-domain-proposal,,,,,
+marketing-en,authored-regression-fixture,en,marketing,Marketing,"Plan measurable marketing campaigns
+Evaluate campaign conversion and acquisition cost",reviewable-domain-proposal,,,,,
+marketing-ar,authored-regression-fixture,ar,marketing,التسويق,"تخطيط حملات تسويقية قابلة للقياس
+تقييم تحويل الحملات وتكلفة الاستحواذ",reviewable-domain-proposal,,,,,
+legal-en,authored-regression-fixture,en,legal,Legal,"Review commercial legal contracts
+Draft legal opinions and track litigation deadlines",reviewable-domain-proposal,,,,,
+legal-ar,authored-regression-fixture,ar,legal,الشؤون القانونية,"مراجعة العقود التجارية القانونية
+صياغة الآراء القانونية ومتابعة مواعيد القضايا",reviewable-domain-proposal,,,,,
+governance-en,authored-regression-fixture,en,governance,GRC,"Assess compliance obligations and governance controls
+Report compliance exceptions with evidence",reviewable-domain-proposal,,,,,
+governance-ar,authored-regression-fixture,ar,governance,الحوكمة والالتزام,"تقييم متطلبات الالتزام وضوابط الحوكمة
+رفع استثناءات الالتزام مع الأدلة",reviewable-domain-proposal,,,,,
+projectDevelopment-en,authored-regression-fixture,en,projectDevelopment,Project Development,"Evaluate project feasibility and development options
+Coordinate permits and development stage gates",reviewable-domain-proposal,,,,,
+projectDevelopment-ar,authored-regression-fixture,ar,projectDevelopment,تطوير المشاريع,"تقييم جدوى المشاريع وخيارات التطوير
+تنسيق التراخيص وبوابات مراحل التطوير",reviewable-domain-proposal,,,,,
+investment-en,authored-regression-fixture,en,investment,Investment,"Analyze investment opportunities and valuation models
+Prepare investment committee recommendations",reviewable-domain-proposal,,,,,
+investment-ar,authored-regression-fixture,ar,investment,الاستثمار,"تحليل فرص الاستثمار ونماذج التقييم
+إعداد توصيات لجنة الاستثمار",reviewable-domain-proposal,,,,,
+internalAudit-en,authored-regression-fixture,en,internalAudit,Internal Audit,"Develop risk-based internal audit plans
+Test controls and report findings without operating controls",reviewable-domain-proposal,,,,,
+internalAudit-ar,authored-regression-fixture,ar,internalAudit,المراجعة الداخلية,"إعداد خطط المراجعة الداخلية المبنية على المخاطر
+اختبار الضوابط ورفع النتائج دون تشغيل الضوابط",reviewable-domain-proposal,,,,,
+strategy-en,authored-regression-fixture,en,strategy,Strategy,"Analyze strategic objectives and strategic initiatives
+Review strategy performance and recommend priorities",reviewable-domain-proposal,,,,,
+strategy-ar,authored-regression-fixture,ar,strategy,الاستراتيجية,"تحليل الأهداف والمبادرات الاستراتيجية
+مراجعة الأداء الاستراتيجي وتوصية الأولويات",reviewable-domain-proposal,,,,,
+pmo-en,authored-regression-fixture,en,pmo,PMO,"Track project portfolio milestones and dependencies
+Maintain PMO governance and escalate schedule deviations",reviewable-domain-proposal,,,,,
+pmo-ar,authored-regression-fixture,ar,pmo,مكتب إدارة المشاريع,"متابعة معالم محفظة المشاريع والاعتماديات
+إدارة حوكمة مكتب المشاريع وتصعيد انحرافات الجدول",reviewable-domain-proposal,,,,,
+customerService-en,authored-regression-fixture,en,customerService,Customer Service,"Resolve customer service complaints
+Monitor resolution time and service satisfaction",reviewable-domain-proposal,,,,,
+customerService-ar,authored-regression-fixture,ar,customerService,خدمة العملاء,"معالجة شكاوى خدمة العملاء
+متابعة زمن الحل ورضا المستفيدين",reviewable-domain-proposal,,,,,
+software-en,authored-regression-fixture,en,software,Information Technology,"Develop software features from approved requirements
+Test software and document release defects",reviewable-domain-proposal,,,,,
+software-ar,authored-regression-fixture,ar,software,تقنية المعلومات,"تطوير خصائص برمجية من المتطلبات المعتمدة
+اختبار البرمجيات وتوثيق عيوب الإصدار",reviewable-domain-proposal,,,,,
+civilEngineering-en,authored-regression-fixture,en,civilEngineering,Civil Engineering,"Design civil engineering bridge structures
+Approve structural safety calculations",block-with-explanation,,,,,
+civilEngineering-ar,authored-regression-fixture,ar,civilEngineering,الهندسة المدنية,"تصميم منشآت جسور الهندسة المدنية
+اعتماد حسابات السلامة الإنشائية",block-with-explanation,,,,,
+unknown-en,expert-report-paraphrase,en,unknown,Unknown,"Do everything
+Help with everything",block-with-explanation,,,,,
+unknown-ar,expert-report-paraphrase,ar,unknown,غير محدد,"يسوي كل شي
+يساعد في كل شي",block-with-explanation,,,,,

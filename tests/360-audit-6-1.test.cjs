@@ -43,8 +43,8 @@ test('first-visit value precedes updates and the complete service directory dist
   assert.ok(a.d.querySelector('.lp-nav a[href="#home/services"]'));assert.deepEqual(a.errors,[]);
  }finally{a.dom.window.close();}}
 });
-test('zero-minimum salary band retains valid calculations but never serializes or displays infinite spread',async()=>{
- const C=require('../dist/compensation-engine.js'),v=C.evaluate({...C.example,bandMin:0,targetPenetration:0,oncostPercent:0});assert.equal(v.result.targetSalary,0);assert.equal(v.bandDiagnostics.rangeSpreadPercent,null);assert.equal(v.bandDiagnostics.spreadAssessment,'undefined');assert.deepEqual(JSON.parse(JSON.stringify(v)).bandDiagnostics,v.bandDiagnostics);
- const a=await app('#enterprise/compensation');try{const p=a.d.querySelector('.cp-page');p.querySelector('[data-cp-example]').click();a.d.getElementById('cp-min').value='0';p.querySelector('[data-cp-run]').click();assert.match(p.querySelector('.cp-diagnostics').textContent,/Not computable when the minimum is zero/);assert.doesNotMatch(p.querySelector('.cp-result').textContent,/Infinity|NaN/);assert.deepEqual(a.errors,[]);}finally{a.dom.window.close();}
+test('zero salary band is blocked before a result or budget can be saved',async()=>{
+ const C=require('../dist/compensation-engine.js');assert.throws(()=>C.evaluate({...C.example,bandMin:0}),/Band minimum/);
+ const a=await app('#enterprise/compensation');try{const p=a.d.querySelector('.cp-page');p.querySelector('[data-cp-example]').click();a.d.getElementById('cp-min').value='0';p.querySelector('[data-cp-run]').click();assert.match(p.querySelector('[data-cp-message]').textContent,/Band minimum/);assert.equal(p.querySelector('.cp-result'),null);assert.deepEqual(a.errors,[]);}finally{a.dom.window.close();}
 });
-test('salary currency is preserved and malformed codes are rejected rather than truncated',()=>{const C=require('../dist/compensation-engine.js');assert.equal(C.evaluate({...C.example,currency:' usd '}).input.currency,'USD');for(const currency of ['S','SA','SAR1','SAUDI','123','<x>'])assert.throws(()=>C.evaluate({...C.example,currency}),/three-letter/);});
+test('salary currency is preserved and malformed codes are rejected rather than truncated',()=>{const C=require('../dist/compensation-engine.js');assert.equal(C.evaluate({...C.example,currency:' usd '}).input.currency,'USD');for(const currency of ['S','SA','SAR1','SAUDI','123','<x>'])assert.throws(()=>C.evaluate({...C.example,currency}),/recognized currency/);});

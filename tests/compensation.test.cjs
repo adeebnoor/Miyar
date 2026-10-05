@@ -8,7 +8,7 @@ test('compensation engine uses only a sourced organization band and keeps missin
 });
 
 test('current salary produces auditable compa-ratio and adjustment without changing the band',()=>{
- const v=C.evaluate({...C.example,currentSalary:27000,targetPenetration:60,headcount:2,oncostPercent:10});assert.equal(v.result.targetSalary,31200);assert.equal(v.result.compaRatio,.9);assert.equal(v.result.currentRangePenetrationPercent,25);assert.equal(v.result.adjustmentPerFte,4200);assert.equal(v.result.annualAdjustmentCost,110880);assert.equal(v.input.bandMin,24000);assert.equal(v.input.bandMax,36000);
+ const v=C.evaluate({...C.example,currentSalary:27000,targetCompaPercent:104,progressionEnabled:true,progressionApproved:true,progressionPolicy:"TR approved policy 2026",progressionEvidence:"Demonstrated full proficiency",headcount:2,oncostPercent:10});assert.equal(v.result.targetSalary,31200);assert.equal(v.result.compaRatio,.9);assert.equal(v.result.currentRangePenetrationPercent,25);assert.equal(v.result.adjustmentPerFte,4200);assert.equal(v.result.annualAdjustmentCost,110880);assert.equal(v.input.bandMin,24000);assert.equal(v.input.bandMax,36000);
 });
 
 async function app(route='#enterprise/compensation'){
@@ -29,9 +29,23 @@ test('manpower gap can hand headcount and institution grade into compensation wi
  const a=await app('#enterprise/manpower');try{const I=a.w.MiyarInstitutionProfile;I.saveLocal(I.profileExample(),true);const mp=a.w.document.querySelector('.mp-page');assert.ok(mp);mp.querySelector('[data-mp-example]').click();mp.querySelector('[data-mp-run]').click();await new Promise(r=>setTimeout(r,10));const button=a.w.document.querySelector('[data-cp-from-mp]');assert.ok(button);button.click();await settle();await new Promise(r=>setTimeout(r,10));assert.equal(a.w.location.hash,'#enterprise/compensation');for(let i=0;i<50&&!a.$('cp-role');i++)await new Promise(r=>setTimeout(r,20));assert.equal(a.$('cp-role').value,'Human Capital Projects & Operations Manager');assert.equal(a.$('cp-headcount').value,'1');assert.match(a.$('cp-grade').value,/G11/);assert.equal(a.$('cp-min').value,'');assert.equal(a.$('cp-mid').value,'');assert.equal(a.$('cp-max').value,'');assert.deepEqual(a.errors,[]);}finally{a.dom.window.close();}
 });
 
-test('required compensation numbers reject empty values while explicit zero stays valid',()=>{
- for(const key of ['bandMin','bandMid','bandMax','targetPenetration','headcount','oncostPercent'])for(const value of ['', ' ',false])assert.throws(()=>C.evaluate({...C.example,[key]:value}),key);
+test('required compensation numbers reject empty values and zero salary while allowing zero on-cost',()=>{
+ for(const key of ['bandMin','bandMid','bandMax','targetCompaPercent','headcount','oncostPercent'])for(const value of ['', ' ',false])assert.throws(()=>C.evaluate({...C.example,[key]:value}),key);
  for(const value of [null,undefined])assert.throws(()=>C.evaluate({...C.example,bandMin:value}));
- assert.equal(C.evaluate({...C.example,bandMin:0,targetPenetration:0,oncostPercent:0}).result.targetSalary,0);
+ assert.throws(()=>C.evaluate({...C.example,bandMin:0}),/Band minimum/);assert.equal(C.evaluate({...C.example,oncostPercent:0}).result.annualEmployerCost,360000);
  assert.equal(C.evaluate({...C.example,currentSalary:' '}).result.compaRatio,null);
+});
+
+for(const locale of ['en','ar'])test('expert workflow: actual roster, optional progression, Saudi costs and stale-result removal '+locale,async()=>{
+ const a=await app();try{
+  a.w.localStorage.setItem('miyar-language',locale);a.w.document.documentElement.lang=locale;a.w.MiyarCompensationWorkbench.render();await settle();
+  const d=a.w.document,run=()=>d.querySelector('[data-cp-run]').click(),edit=(id,value)=>{a.$(id).value=value;a.$(id).dispatchEvent(new a.w.Event('input',{bubbles:true}));};
+  d.querySelector('[data-cp-example]').click();assert.ok(a.$('cp-roster'));edit('cp-current','25000');run();assert.ok(d.querySelector('.cp-result'));assert.match(d.querySelector('.cp-result-head strong').textContent,locale==='en'?/25,000/:/٢٥٬٠٠٠/);
+  edit('cp-roster','id,currentSalary\nP001,23000\nP002,25000');run();assert.equal(d.querySelectorAll('.cp-roster-results tbody tr').length,2);d.querySelector('[data-cp-save]').click();const stored=JSON.parse(a.w.localStorage.getItem(a.w.MiyarCompensationWorkbench.KEY));assert.equal(stored[0].result.annualAdjustmentCost,13800);assert.equal(stored[0].input.headcount,2);
+  edit('cp-roster','id,currentSalary\nP001,');run();assert.equal(d.querySelector('.cp-result'),null);assert.equal(d.querySelector('[data-cp-export]'),null);
+  d.querySelector('[data-cp-example]').click();edit('cp-current','25000');edit('cp-oncost','0');a.$('cp-saudi').checked=true;a.$('cp-applicability').checked=true;a.$('cp-saned').checked=true;
+  for(const [id,value]of Object.entries({'cp-regime':'saudi-new','cp-housing':'2500','cp-othercash':'500','cp-contributory':'0','cp-medical':'4000','cp-service':'4.5'}))edit(id,value);
+  run();assert.ok(d.querySelector('.cp-cost'));assert.match(d.querySelector('.cp-cost').textContent,/10%/);assert.match(d.querySelector('.cp-cost').textContent,/IAS 19/);
+  edit('cp-medical','5000');assert.equal(d.querySelector('.cp-result'),null);assert.deepEqual(a.errors,[]);
+ }finally{a.dom.window.close();}
 });

@@ -7,9 +7,9 @@ from urllib.parse import urlsplit
 def validate_salary(value):
     minimum,maximum=value.get('salaryMin'),value.get('salaryMax')
     if minimum is None and maximum is None:return
-    if any(isinstance(v,bool) or not isinstance(v,(int,float)) or not math.isfinite(v) for v in (minimum,maximum)) or minimum<0 or maximum<minimum or maximum>1e12:raise ValueError('Enter a valid minimum and maximum salary')
+    if any(isinstance(v,bool) or not isinstance(v,(int,float)) or not math.isfinite(v) for v in (minimum,maximum)) or minimum<=0 or maximum<minimum or maximum>1e12:raise ValueError('Enter a valid minimum and maximum salary')
     if value.get('salaryPeriod','monthly') not in ('monthly','annual'):raise ValueError('Choose monthly or annual salary')
-    if not re.fullmatch(r'[A-Z]{3}',value.get('salaryCurrency','SAR')):raise ValueError('Use a three-letter currency code')
+    if value.get('salaryCurrency','SAR') not in CURRENCY_CODES:raise ValueError('Use a recognized currency code')
 
 def compensation_result(framework,band,evidence):
     if 'salaryMin' in band or 'salaryMax' in band:
@@ -53,12 +53,9 @@ ROLES={'line_manager','od_specialist','total_rewards','finance','chro','admin','
 DEFAULT_WORKFLOW=[{'role':'od_specialist','nameAr':'التطوير التنظيمي','nameEn':'Organization Development'}, {'role':'total_rewards','nameAr':'التعويضات والمزايا','nameEn':'Total Rewards'}, {'role':'finance','nameAr':'المالية وتخطيط القوى العاملة','nameEn':'Finance & Workforce Planning'}, {'role':'chro','nameAr':'صاحب الصلاحية','nameEn':'Final authority'}]
 CORE=['title','businessNeed','alternatives','successMeasures','purpose','responsibilities','team','budget','authority','impact','stakeholders','qualifications','experience','skills','behaviors']
 REQUEST_TYPES={'additional-headcount','proposed-role','redesign'}
-DEFAULT_FRAMEWORK={'id':'miyar-example-v1','name':'Illustrative organization point-factor framework','method':'custom','version':1,'illustrative':True,'currency':'SAR','factors':[
- {'id':'knowledge','labelAr':'المعرفة التطبيقية','labelEn':'Applied knowledge','weight':40,'levels':[{'id':'1','labelAr':'مهام محددة بإرشادات واضحة','labelEn':'Defined work with clear guidance','points':25},{'id':'2','labelAr':'تطبيق تخصص وتحليل مستقل','labelEn':'Specialist application and independent analysis','points':50},{'id':'3','labelAr':'تكامل تخصصات وحلول مؤسسية','labelEn':'Cross-disciplinary organizational solutions','points':75},{'id':'4','labelAr':'قيادة معرفة وسياسات على مستوى الجهة','labelEn':'Organization-wide expertise and policy leadership','points':100}]},
- {'id':'complexity','labelAr':'تعقيد القرارات','labelEn':'Decision complexity','weight':30,'levels':[{'id':'1','labelAr':'اختيار من إجراءات معروفة','labelEn':'Choose among established procedures','points':25},{'id':'2','labelAr':'حل مسائل متنوعة ضمن إطار معلوم','labelEn':'Solve varied problems within a known framework','points':50},{'id':'3','labelAr':'تصميم بدائل في ظروف غير مؤكدة','labelEn':'Design alternatives under uncertainty','points':75},{'id':'4','labelAr':'قرارات استراتيجية متعددة الآثار','labelEn':'Strategic decisions with multiple consequences','points':100}]},
- {'id':'impact','labelAr':'نطاق الأثر والمساءلة','labelEn':'Impact and accountability','weight':30,'levels':[{'id':'1','labelAr':'مخرجات مهمة محددة','labelEn':'Defined task outputs','points':25},{'id':'2','labelAr':'مخرجات عملية أو فريق','labelEn':'Process or team outcomes','points':50},{'id':'3','labelAr':'نتائج إدارة أو برنامج','labelEn':'Department or programme results','points':75},{'id':'4','labelAr':'نتائج المؤسسة ومواردها','labelEn':'Organization-wide results and resources','points':100}]}],
- 'bands':[{'id':'B1','min':0,'max':399},{'id':'B2','min':400,'max':599},{'id':'B3','min':600,'max':799},{'id':'B4','min':800,'max':1000}],
- 'notice':'Illustrative custom framework. Not Hay/Korn Ferry or Mercer IPE; do not use for pay decisions without organizational approval.'}
+from pathlib import Path
+DEFAULT_FRAMEWORK=json.loads((Path(__file__).resolve().parents[1]/'dist/classifications/framework-example.json').read_text(encoding='utf-8'))
+CURRENCY_CODES=set(json.loads((Path(__file__).resolve().parents[1]/'dist/classifications/currencies.json').read_text(encoding='utf-8')))
 
 def normalized(text):
     text=unicodedata.normalize('NFKC',str(text or '')).lower();text=''.join(str(unicodedata.digit(c)) if c.isdigit() else c for c in text)

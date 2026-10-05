@@ -1,5 +1,6 @@
 (function(root){
 'use strict';
+if(typeof require==='function'&&typeof module!=='undefined'&&module.exports&&!root.MiyarRoleRecommender)root.MiyarRoleRecommender=require('./role-recommender.js');
 const normalize=value=>String(value??'').normalize('NFKC').toLowerCase().replace(/[\u064b-\u065f\u0670ـ]/g,'').replace(/[أإآٱ]/g,'ا').replace(/ى/g,'ي').replace(/[^\p{L}\p{N}\s]/gu,' ').replace(/\s+/g,' ').trim();
 const uniq=rows=>[...new Set(rows.filter(Boolean).map(x=>String(x).trim()).filter(Boolean))];
 function sentences(value){
@@ -18,7 +19,7 @@ const behaviorEn=['Stakeholder management','Communication','Analytical thinking'
 const behaviorAr=['إدارة أصحاب العلاقة','التواصل','التفكير التحليلي','التخطيط وتحديد الأولويات','المساءلة','التحسين المستمر','التعاون'];
 function familyScore(def,text){return def.keywords.reduce((score,k)=>score+(normalize(text).includes(normalize(k))?1:0),0);}
 function detectFamily(input){
- const shared=root.MiyarRoleRecommender?.familyDefinition(input);if(shared){const existing=families.find(f=>f.id===shared.id);return {...shared,...(existing||{}),ssco:shared.ssco,education:existing?.education||[]};}if(root.MiyarRoleRecommender)return families.find(f=>f.id==='generic');
+ const shared=root.MiyarRoleRecommender?.familyDefinition(input);if(shared){const existing=families.find(f=>f.id===shared.id);return {...shared,...(existing||{}),ssco:shared.ssco,education:existing?.education||[]};}
  const text=[input.strategyObjective,input.responsibilities,input.department,input.context].join(' ');
  const ranked=families.filter(x=>x.id!=='generic').map(x=>({family:x,score:familyScore(x,text)})).sort((a,b)=>b.score-a.score);
  return ranked[0]?.score?ranked[0].family:families.find(x=>x.id==='generic');
@@ -68,8 +69,16 @@ function successMeasures(signals,locale){
  if(rows.length<3)rows.push(ar?'تحقيق ≥95% من الالتزامات التشغيلية المتفق عليها في موعدها':'Deliver ≥95% of agreed operational commitments on time',ar?'إغلاق الإجراءات المتأخرة وفق خطة تصحيحية معتمدة':'Close overdue actions through an approved corrective plan',ar?'تحديث أصحاب العلاقة بالمخاطر والقرارات المطلوبة في الدورية المتفق عليها':'Update stakeholders on risks and required decisions at the agreed cadence');
  return uniq(rows).slice(0,6);
 }
-function kpiRows(measures,locale){
- const ar=locale==='ar';return measures.slice(0,5).map((outcome,i)=>({outcome,metric:i===1?(ar?'نسبة التقارير/المخرجات المسلمة في موعدها':'Percent of scheduled reports/outputs delivered on time'):(ar?'المخرجات المقبولة في موعدها ÷ المخرجات المستحقة × 100':'Accepted outputs delivered on time / outputs due × 100'),target:/[0-9٠-٩]/.test(outcome)?outcome:(ar?'≥95% — هدف مقترح للمراجعة':'≥95% — proposed target for review'),frequency:ar?'شهريًا؛ مع مراجعة ربع سنوية':'Monthly; quarterly review',deliverable:ar?'سجل قياس ومصدر بيانات معتمد من الإدارة':'Measurement log and department-approved data source'}));
+function domainKpis(signals,locale){
+ const ar=locale==='ar',defs=[
+ ['project','المعالم المنجزة في موعدها','On-time milestones','المعالم المنجزة في الموعد ÷ المعالم المستحقة × 100','On-time milestones / milestones due × 100'],
+ ['reporting','التقارير الدورية','Scheduled reporting','التقارير الصادرة في الموعد ÷ التقارير المجدولة × 100','Reports issued on time / scheduled reports × 100'],
+ ['procurement','اكتمال ملفات الشراء','Procurement file completeness','ملفات الشراء المستوفية للأدلة ÷ الملفات المدققة × 100','Procurement files with required evidence / files audited × 100'],
+ ['budget','دقة التوقعات المالية','Forecast accuracy','القيمة المطلقة للفعلي ناقص المتوقع ÷ القيمة المطلقة للمتوقع × 100؛ إذا كان المتوقع صفرًا فالمؤشر غير قابل للحساب','Absolute actual minus forecast / absolute forecast × 100; undefined when forecast is zero'],
+ ['improvement','تحسن زمن الدورة','Cycle-time improvement','خط الأساس ناقص زمن الدورة الحالي ÷ خط الأساس × 100','Baseline minus current cycle time / baseline × 100'],
+ ['strategy','جاهزية المبادرات للتنفيذ','Initiative readiness','المبادرات ذات مالك وخطة وقياس معتمد ÷ المبادرات ذات الأولوية × 100','Priority initiatives with approved owner, plan and measure / priority initiatives × 100']];
+ const selected=defs.filter(x=>signals[x[0]]);if(!selected.length)selected.push(['delivery','جودة مخرجات الخدمة','Service output quality','المخرجات المقبولة دون إعادة عمل ÷ المخرجات المسلمة × 100','Outputs accepted without rework / delivered outputs × 100']);
+ return selected.map(x=>({outcome:ar?x[1]:x[2],metric:ar?x[3]:x[4],target:ar?'يحدد بعد توثيق خط الأساس واعتماد مالك العملية':'Set after documenting baseline and process-owner approval',frequency:ar?'شهريًا — مقترح للمراجعة':'Monthly — proposed for review',deliverable:ar?'سجل قياس بمصدر موثق؛ لا يُعامل المقام صفرًا كنتيجة صفر':'Measurement log with documented source; zero denominator is undefined, not zero performance'}));
 }
 function generationPurpose(input,family,title,locale){
  const ar=locale==='ar',objective=String(input.strategyObjective||'').trim();
@@ -78,10 +87,23 @@ function generationPurpose(input,family,title,locale){
 }
 function generationAuthority(signals,locale){const ar=locale==='ar';const rows=[ar?'تنسيق خطط العمل ومتابعة التنفيذ ورفع الانحرافات والتوصيات':'Coordinate work plans, monitor delivery and escalate variances and recommendations'];if(signals.procurement)rows.push(ar?'إعداد ومتابعة وثائق المشتريات والعقود والفواتير دون افتراض صلاحية اعتماد نهائي':'Prepare and track procurement, contract and invoice documents without assuming final approval authority');if(signals.budget)rows.push(ar?'متابعة المصروفات والتوقعات ورفع التوصيات؛ الاعتماد المالي وفق مصفوفة الصلاحيات':'Monitor spend and forecasts and raise recommendations; financial approval follows delegated authority');return rows.join('\n');}
 function buildSkills(family,signals,locale){const ar=locale==='ar',base=ar?family.technicalAr:family.technicalEn,extra=[];if(signals.project)extra.push(ar?'إدارة الجداول والمخاطر والمبادرات':'Schedules, risks and initiative management');if(signals.procurement)extra.push(ar?'إدارة دورة RFP / PR / PO والعقود':'RFP / PR / PO and contract lifecycle coordination');if(signals.budget)extra.push(ar?'متابعة OPEX وتحليل الانحراف':'OPEX monitoring and variance analysis');if(signals.reporting)extra.push(ar?'إعداد تقارير التقدم ولوحات المتابعة':'Progress reporting and management dashboards');if(signals.improvement)extra.push(ar?'تحليل وتحسين العمليات':'Process analysis and improvement');return uniq([...base,...extra]).slice(0,10);}
+function validateScope(input,locale){
+ const ar=locale==='ar',r=root.MiyarRoleRecommender,work=r?.interpret({responsibilities:input.responsibilities})?.text||String(input.responsibilities||''),n=normalize(work),words=new Set(n.split(' ').filter(x=>x.length>1));
+ const vague=/^(?:يسوي كل شي|يساعد في كل شي|نبي نطور الشغل|تطوير الشغل|do everything|help with everything|improve work|all tasks|كل شي)$/;
+ const meaningful=sentences(work).filter(x=>!vague.test(normalize(x)));
+ if(n.length<30||words.size<5||!meaningful.length)throw Error(ar?'المهام غير واضحة: اذكر العمل الفعلي والمخرج والمسؤولية وحدود الصلاحية؛ لن ننشئ وصفًا عامًا.':'Unclear duties: describe actual work, outputs, accountability and authority; a generic job will not be generated.');
+ if(/\b(veterinar\w*|surgeon|physician|pilot|astronaut|geologist|civil engineer(?:ing)?|chemical engineer(?:ing)?)\b|طبيب|جراح|بيطري|طيار|جيولوج|هندس[ةي].*مدني|مهندس.*مدني|مهندس كيميائي/.test(n))throw Error(ar?'هذا التخصص خارج نطاق قوالب OD المتاحة. يلزم وصف ومؤهلات ومؤشرات يراجعها مختص المجال قبل التوليد.':'This specialization is outside the supported OD templates. A domain specialist must provide and review duties, qualifications and measures.');
+ const family=detectFamily({...input,context:''});
+ const nursing=/nurs|تمريض|ممرض/.test(n+' '+normalize(input.department));
+ if(family.id==='generic'&&!nursing)throw Error(ar?'تعذر تحديد عائلة وظيفية مدعومة من المهام. حدد المجال ومخرجات الدور؛ لا يُستخدم قالب بديل عشوائي.':'No supported job family was identified from the duties. Specify the domain and outputs; no fallback job is generated.');
+ return {status:'proposed-for-domain-review',pilot:['hc','finance','admin'].includes(family.id),family:family.id};
+}
+
 function generate(input={},locale='en'){
+ validateScope(input,locale);
  const ar=locale==='ar',responsibilities=sentences(input.responsibilities),strategy=String(input.strategyObjective||'').trim();
  if(!strategy&&!responsibilities.length)throw Error(ar?'أدخل هدفًا استراتيجيًا أو مسؤوليات الدور.':'Enter a strategic objective or role responsibilities.');
- if(responsibilities.length<2)throw Error(ar?'أدخل مسؤوليتين على الأقل حتى تكون حزمة الوصف الوظيفي قابلة للمراجعة.':'Enter at least two responsibilities so the job-description proposal is reviewable.');
+ if(responsibilities.length<2&&(root.MiyarRoleRecommender?.interpret({responsibilities:input.responsibilities})?.clauses.length||0)<2)throw Error(ar?'أدخل مسؤوليتين على الأقل حتى تكون حزمة الوصف الوظيفي قابلة للمراجعة.':'Enter at least two responsibilities so the job-description proposal is reviewable.');
  const text=[strategy,responsibilities.join(' '),input.department,input.context].join(' '),family=detectFamily(input),signals=detectSignals(text),level=recommendLevel(input,signals,responsibilities.length),title=proposedTitle(family,level,signals,locale),skills=buildSkills(family,signals,locale),measures=successMeasures(signals,locale),career=ar?family.careerAr:family.careerEn;
  const department=String(input.department||'').trim()||(ar?family.departmentAr:family.departmentEn);
  const behaviors=ar?behaviorAr:behaviorEn;
@@ -114,14 +136,14 @@ function generate(input={},locale='en'){
   behaviors:behaviors.join('\n'),
   certifications:family.id==='hc'?(ar?'PMP أو ما يعادلها مفضلة لأدوار المشاريع؛ SHRM/CIPD أو اعتماد موارد بشرية مناسب مفضل — ليست اشتراطات تنظيمية تلقائية.':'PMP or equivalent preferred for project-heavy scope; SHRM/CIPD or relevant HR certification preferred — not automatic regulatory requirements.'):(ar?'تحدد الشهادات المهنية المناسبة بعد مراجعة طبيعة العمل وسياسة الجهة.':'Relevant professional certifications are defined after reviewing the work and organization policy.'),
   constraints:String(input.constraints||'').trim(),
-  kpis:kpiRows(measures,locale),
+  kpis:domainKpis(signals,locale),
   skillRequirements:skills.slice(0,7).map((name,i)=>({name,type:i<Math.ceil(skills.length/2)?(ar?'فنية':'Technical'):(ar?'عابرة للمهن':'Transferable'),level:level.id==='professional'?(ar?'متوسط':'Working'):(ar?'متقدم':'Advanced'),evidence:ar?'مقترح مولد من نطاق المسؤوليات؛ يحتاج اعتماد OD.':'Generated from the responsibility scope; OD review required.'})),
   odGenerationBasis:ar?'اقتراح قواعد شفافة من الهدف والمسؤوليات؛ ليس مسح سوق حيًا ولا تقييمًا وظيفيًا معتمدًا.':'Transparent rule-based proposal from the objective and responsibilities; not a live market survey or approved job evaluation.'
  };
  if(input.saudizationNote)content.saudization=String(input.saudizationNote).trim();
- return {schema:'miyar-od-proposal/1.0',mode:'transparent-rules',locale,family:{id:family.id,label:ar?family.ar:family.en},signals,gradeRecommendation:{level:ar?level.ar:level.en,rationale:ar?level.rationaleAr:level.rationaleEn,status:'pre-evaluation'},content,referenceQueries:{ssco:family.ssco,education:family.education,educationLevel:'6'},notices:[ar?'المسمى «متوافق مع السوق» هو اقتراح تسمية شائع وليس نتيجة مسح سوق حي.':'The market-aligned title is a naming proposal, not a live market-survey result.',ar?'الدرجة النهائية تُحسب فقط من إطار التقييم المعتمد لدى الجهة؛ لا يحسب هذا المحرك Korn Ferry أو Mercer أو WTW.':'Final grade comes only from the organization-approved evaluation framework; this engine does not calculate Korn Ferry, Mercer or WTW.',ar?'نسبة التوطين والمتطلبات المهنية يجب التحقق منها من مصدر رسمي حالي قبل الاعتماد.':'Saudization and professional requirements must be verified against a current official source before approval.']};
+ return {scopeReview:validateScope(input,locale),schema:'miyar-od-proposal/1.0',mode:'transparent-rules',locale,family:{id:family.id,label:ar?family.ar:family.en},signals,gradeRecommendation:{level:ar?level.ar:level.en,rationale:ar?level.rationaleAr:level.rationaleEn,status:'pre-evaluation'},content,referenceQueries:{ssco:family.ssco,education:family.education,educationLevel:'6'},notices:[ar?'المسمى «متوافق مع السوق» هو اقتراح تسمية شائع وليس نتيجة مسح سوق حي.':'The market-aligned title is a naming proposal, not a live market-survey result.',ar?'الدرجة النهائية تُحسب فقط من إطار التقييم المعتمد لدى الجهة؛ لا يحسب هذا المحرك Korn Ferry أو Mercer أو WTW.':'Final grade comes only from the organization-approved evaluation framework; this engine does not calculate Korn Ferry, Mercer or WTW.',ar?'نسبة التوطين والمتطلبات المهنية يجب التحقق منها من مصدر رسمي حالي قبل الاعتماد.':'Saudization and professional requirements must be verified against a current official source before approval.']};
 }
 const hcExample={strategyObjective:'Cascade the Human Capital strategy into prioritized action plans and improve execution efficiency.',department:'Human Capital',responsibilities:'Manage HC projects in terms of coordination, follow up, progress monitoring and reports\nManage procurement process including RFP, PR and PO, vendor contracts and invoice submission\nProvide daily, weekly, monthly, quarterly and annual progress reports\nOversee HC OPEX preparation, submission and monitoring\nImprove HC processes for greater efficiency\nCascade HC strategy into action plans with timelines and prioritization of critical initiatives',saudizationNote:'100% Saudi — expert-provided example requirement; verify against the current official source before approval.'};
 const api={generate,normalize,sentences,detectFamily,detectSignals,recommendLevel,hcExample};
-root.MiyarODEngine=api;if(typeof module!=='undefined'&&module.exports)module.exports=api;
+root.MiyarODEngine=api;if(typeof module!=='undefined'&&module.exports){module.exports=api;if(typeof require==='function')require('./qa-od-v5.js');}
 })(typeof window!=='undefined'?window:globalThis);

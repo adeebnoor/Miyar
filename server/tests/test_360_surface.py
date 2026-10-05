@@ -1,3 +1,4 @@
+from server.domain import DEFAULT_FRAMEWORK
 import pytest
 from pathlib import Path
 from .conftest import submit,decide
@@ -82,8 +83,8 @@ def test_360_withdraw_evaluation_history_and_skill_extraction(env):
     assert od.status_code==200,od.text
     evaluation=c.post('/api/v1/positions/'+p2['id']+'/evaluation',headers=auth('total_rewards'),json={
         'revision':p2['revision'],
-        'answers':{'knowledge':'2','complexity':'2','impact':'2'},
-        'evidence':{'knowledge':'Audit knowledge scope','complexity':'Audit complexity scope','impact':'Audit impact scope'}
+        'answers':{factor['id']:'2' for factor in DEFAULT_FRAMEWORK['factors']},
+        'evidence':{factor['id']:'Audit scope evidence' for factor in DEFAULT_FRAMEWORK['factors']}
     })
     assert evaluation.status_code==200,evaluation.text
     history=c.get('/api/v1/positions/'+p2['id']+'/evaluations',headers=auth('line_manager'))

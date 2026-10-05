@@ -1,0 +1,645 @@
+{
+  "status": "not-an-independent-golden-set",
+  "cases": [
+    {
+      "id": "payroll-en",
+      "provenance": "expert-report-paraphrase",
+      "locale": "en",
+      "family": "payroll",
+      "input": {
+        "strategyObjective": "Improve quality and accountable delivery",
+        "department": "Human Resources",
+        "responsibilities": "Process monthly payroll\nReconcile GOSI contributions and end-of-service inputs"
+      },
+      "expectedBehavior": "reviewable-domain-proposal",
+      "expertReference": null,
+      "expertGrade": null,
+      "expertSalary": null,
+      "expertApproval": null
+    },
+    {
+      "id": "payroll-ar",
+      "provenance": "expert-report-paraphrase",
+      "locale": "ar",
+      "family": "payroll",
+      "input": {
+        "strategyObjective": "رفع الجودة ووضوح المسؤولية عن النتائج",
+        "department": "الموارد البشرية",
+        "responsibilities": "إعداد رواتب الموظفين الشهرية\nمطابقة اشتراكات التأمينات ومدخلات نهاية الخدمة"
+      },
+      "expectedBehavior": "reviewable-domain-proposal",
+      "expertReference": null,
+      "expertGrade": null,
+      "expertSalary": null,
+      "expertApproval": null
+    },
+    {
+      "id": "nursing-en",
+      "provenance": "expert-report-paraphrase",
+      "locale": "en",
+      "family": "nursing",
+      "input": {
+        "strategyObjective": "Improve quality and accountable delivery",
+        "department": "Nursing",
+        "responsibilities": "Supervise the nursing shift team\nTrain nurses and review medication administration errors"
+      },
+      "expectedBehavior": "reviewable-domain-proposal",
+      "expertReference": null,
+      "expertGrade": null,
+      "expertSalary": null,
+      "expertApproval": null
+    },
+    {
+      "id": "nursing-ar",
+      "provenance": "expert-report-paraphrase",
+      "locale": "ar",
+      "family": "nursing",
+      "input": {
+        "strategyObjective": "رفع الجودة ووضوح المسؤولية عن النتائج",
+        "department": "التمريض",
+        "responsibilities": "يشرف على فريق التمريض في الوردية\nيدرب الممرضين ويراجع أخطاء إعطاء الأدوية"
+      },
+      "expectedBehavior": "reviewable-domain-proposal",
+      "expertReference": null,
+      "expertGrade": null,
+      "expertSalary": null,
+      "expertApproval": null
+    },
+    {
+      "id": "recruitment-en",
+      "provenance": "authored-regression-fixture",
+      "locale": "en",
+      "family": "recruitment",
+      "input": {
+        "strategyObjective": "Improve quality and accountable delivery",
+        "department": "Human Resources",
+        "responsibilities": "Source recruitment candidates for approved vacancies\nAssess candidates and coordinate employment offers"
+      },
+      "expectedBehavior": "reviewable-domain-proposal",
+      "expertReference": null,
+      "expertGrade": null,
+      "expertSalary": null,
+      "expertApproval": null
+    },
+    {
+      "id": "recruitment-ar",
+      "provenance": "authored-regression-fixture",
+      "locale": "ar",
+      "family": "recruitment",
+      "input": {
+        "strategyObjective": "رفع الجودة ووضوح المسؤولية عن النتائج",
+        "department": "الموارد البشرية",
+        "responsibilities": "استقطاب المرشحين للشواغر المعتمدة\nتقييم المرشحين وتنسيق عروض التوظيف"
+      },
+      "expectedBehavior": "reviewable-domain-proposal",
+      "expertReference": null,
+      "expertGrade": null,
+      "expertSalary": null,
+      "expertApproval": null
+    },
+    {
+      "id": "learning-en",
+      "provenance": "authored-regression-fixture",
+      "locale": "en",
+      "family": "learning",
+      "input": {
+        "strategyObjective": "Improve quality and accountable delivery",
+        "department": "Human Resources",
+        "responsibilities": "Assess employee training needs\nEvaluate learning outcomes and track training completion"
+      },
+      "expectedBehavior": "reviewable-domain-proposal",
+      "expertReference": null,
+      "expertGrade": null,
+      "expertSalary": null,
+      "expertApproval": null
+    },
+    {
+      "id": "learning-ar",
+      "provenance": "authored-regression-fixture",
+      "locale": "ar",
+      "family": "learning",
+      "input": {
+        "strategyObjective": "رفع الجودة ووضوح المسؤولية عن النتائج",
+        "department": "الموارد البشرية",
+        "responsibilities": "تحليل احتياجات تدريب الموظفين\nتقييم نتائج التعلم ومتابعة اكتمال التدريب"
+      },
+      "expectedBehavior": "reviewable-domain-proposal",
+      "expertReference": null,
+      "expertGrade": null,
+      "expertSalary": null,
+      "expertApproval": null
+    },
+    {
+      "id": "finance-en",
+      "provenance": "authored-regression-fixture",
+      "locale": "en",
+      "family": "finance",
+      "input": {
+        "strategyObjective": "Improve quality and accountable delivery",
+        "department": "Finance",
+        "responsibilities": "Prepare financial close reconciliations\nReview accounting entries and explain budget variances"
+      },
+      "expectedBehavior": "reviewable-domain-proposal",
+      "expertReference": null,
+      "expertGrade": null,
+      "expertSalary": null,
+      "expertApproval": null
+    },
+    {
+      "id": "finance-ar",
+      "provenance": "authored-regression-fixture",
+      "locale": "ar",
+      "family": "finance",
+      "input": {
+        "strategyObjective": "رفع الجودة ووضوح المسؤولية عن النتائج",
+        "department": "المالية",
+        "responsibilities": "إعداد تسويات الإقفال المالي\nمراجعة القيود المحاسبية وتحليل انحرافات الميزانية"
+      },
+      "expectedBehavior": "reviewable-domain-proposal",
+      "expertReference": null,
+      "expertGrade": null,
+      "expertSalary": null,
+      "expertApproval": null
+    },
+    {
+      "id": "procurement-en",
+      "provenance": "authored-regression-fixture",
+      "locale": "en",
+      "family": "procurement",
+      "input": {
+        "strategyObjective": "Improve quality and accountable delivery",
+        "department": "Procurement",
+        "responsibilities": "Evaluate supplier bids against sourcing criteria\nTrack purchase orders and contract delivery"
+      },
+      "expectedBehavior": "reviewable-domain-proposal",
+      "expertReference": null,
+      "expertGrade": null,
+      "expertSalary": null,
+      "expertApproval": null
+    },
+    {
+      "id": "procurement-ar",
+      "provenance": "authored-regression-fixture",
+      "locale": "ar",
+      "family": "procurement",
+      "input": {
+        "strategyObjective": "رفع الجودة ووضوح المسؤولية عن النتائج",
+        "department": "المشتريات",
+        "responsibilities": "تقييم عروض الموردين وفق معايير التوريد\nمتابعة أوامر الشراء وتنفيذ العقود"
+      },
+      "expectedBehavior": "reviewable-domain-proposal",
+      "expertReference": null,
+      "expertGrade": null,
+      "expertSalary": null,
+      "expertApproval": null
+    },
+    {
+      "id": "supplyChain-en",
+      "provenance": "authored-regression-fixture",
+      "locale": "en",
+      "family": "supplyChain",
+      "input": {
+        "strategyObjective": "Improve quality and accountable delivery",
+        "department": "Supply Chain",
+        "responsibilities": "Plan inventory replenishment from demand forecasts\nMonitor logistics delivery and stock accuracy"
+      },
+      "expectedBehavior": "reviewable-domain-proposal",
+      "expertReference": null,
+      "expertGrade": null,
+      "expertSalary": null,
+      "expertApproval": null
+    },
+    {
+      "id": "supplyChain-ar",
+      "provenance": "authored-regression-fixture",
+      "locale": "ar",
+      "family": "supplyChain",
+      "input": {
+        "strategyObjective": "رفع الجودة ووضوح المسؤولية عن النتائج",
+        "department": "سلاسل الإمداد",
+        "responsibilities": "تخطيط تجديد المخزون من توقعات الطلب\nمتابعة التسليم اللوجستي ودقة المخزون"
+      },
+      "expectedBehavior": "reviewable-domain-proposal",
+      "expertReference": null,
+      "expertGrade": null,
+      "expertSalary": null,
+      "expertApproval": null
+    },
+    {
+      "id": "sales-en",
+      "provenance": "authored-regression-fixture",
+      "locale": "en",
+      "family": "sales",
+      "input": {
+        "strategyObjective": "Improve quality and accountable delivery",
+        "department": "Sales",
+        "responsibilities": "Manage key customer sales accounts\nQualify sales opportunities and forecast revenue"
+      },
+      "expectedBehavior": "reviewable-domain-proposal",
+      "expertReference": null,
+      "expertGrade": null,
+      "expertSalary": null,
+      "expertApproval": null
+    },
+    {
+      "id": "sales-ar",
+      "provenance": "authored-regression-fixture",
+      "locale": "ar",
+      "family": "sales",
+      "input": {
+        "strategyObjective": "رفع الجودة ووضوح المسؤولية عن النتائج",
+        "department": "المبيعات",
+        "responsibilities": "إدارة حسابات عملاء المبيعات\nتأهيل فرص البيع وتوقع الإيرادات"
+      },
+      "expectedBehavior": "reviewable-domain-proposal",
+      "expertReference": null,
+      "expertGrade": null,
+      "expertSalary": null,
+      "expertApproval": null
+    },
+    {
+      "id": "marketing-en",
+      "provenance": "authored-regression-fixture",
+      "locale": "en",
+      "family": "marketing",
+      "input": {
+        "strategyObjective": "Improve quality and accountable delivery",
+        "department": "Marketing",
+        "responsibilities": "Plan measurable marketing campaigns\nEvaluate campaign conversion and acquisition cost"
+      },
+      "expectedBehavior": "reviewable-domain-proposal",
+      "expertReference": null,
+      "expertGrade": null,
+      "expertSalary": null,
+      "expertApproval": null
+    },
+    {
+      "id": "marketing-ar",
+      "provenance": "authored-regression-fixture",
+      "locale": "ar",
+      "family": "marketing",
+      "input": {
+        "strategyObjective": "رفع الجودة ووضوح المسؤولية عن النتائج",
+        "department": "التسويق",
+        "responsibilities": "تخطيط حملات تسويقية قابلة للقياس\nتقييم تحويل الحملات وتكلفة الاستحواذ"
+      },
+      "expectedBehavior": "reviewable-domain-proposal",
+      "expertReference": null,
+      "expertGrade": null,
+      "expertSalary": null,
+      "expertApproval": null
+    },
+    {
+      "id": "legal-en",
+      "provenance": "authored-regression-fixture",
+      "locale": "en",
+      "family": "legal",
+      "input": {
+        "strategyObjective": "Improve quality and accountable delivery",
+        "department": "Legal",
+        "responsibilities": "Review commercial legal contracts\nDraft legal opinions and track litigation deadlines"
+      },
+      "expectedBehavior": "reviewable-domain-proposal",
+      "expertReference": null,
+      "expertGrade": null,
+      "expertSalary": null,
+      "expertApproval": null
+    },
+    {
+      "id": "legal-ar",
+      "provenance": "authored-regression-fixture",
+      "locale": "ar",
+      "family": "legal",
+      "input": {
+        "strategyObjective": "رفع الجودة ووضوح المسؤولية عن النتائج",
+        "department": "الشؤون القانونية",
+        "responsibilities": "مراجعة العقود التجارية القانونية\nصياغة الآراء القانونية ومتابعة مواعيد القضايا"
+      },
+      "expectedBehavior": "reviewable-domain-proposal",
+      "expertReference": null,
+      "expertGrade": null,
+      "expertSalary": null,
+      "expertApproval": null
+    },
+    {
+      "id": "governance-en",
+      "provenance": "authored-regression-fixture",
+      "locale": "en",
+      "family": "governance",
+      "input": {
+        "strategyObjective": "Improve quality and accountable delivery",
+        "department": "GRC",
+        "responsibilities": "Assess compliance obligations and governance controls\nReport compliance exceptions with evidence"
+      },
+      "expectedBehavior": "reviewable-domain-proposal",
+      "expertReference": null,
+      "expertGrade": null,
+      "expertSalary": null,
+      "expertApproval": null
+    },
+    {
+      "id": "governance-ar",
+      "provenance": "authored-regression-fixture",
+      "locale": "ar",
+      "family": "governance",
+      "input": {
+        "strategyObjective": "رفع الجودة ووضوح المسؤولية عن النتائج",
+        "department": "الحوكمة والالتزام",
+        "responsibilities": "تقييم متطلبات الالتزام وضوابط الحوكمة\nرفع استثناءات الالتزام مع الأدلة"
+      },
+      "expectedBehavior": "reviewable-domain-proposal",
+      "expertReference": null,
+      "expertGrade": null,
+      "expertSalary": null,
+      "expertApproval": null
+    },
+    {
+      "id": "projectDevelopment-en",
+      "provenance": "authored-regression-fixture",
+      "locale": "en",
+      "family": "projectDevelopment",
+      "input": {
+        "strategyObjective": "Improve quality and accountable delivery",
+        "department": "Project Development",
+        "responsibilities": "Evaluate project feasibility and development options\nCoordinate permits and development stage gates"
+      },
+      "expectedBehavior": "reviewable-domain-proposal",
+      "expertReference": null,
+      "expertGrade": null,
+      "expertSalary": null,
+      "expertApproval": null
+    },
+    {
+      "id": "projectDevelopment-ar",
+      "provenance": "authored-regression-fixture",
+      "locale": "ar",
+      "family": "projectDevelopment",
+      "input": {
+        "strategyObjective": "رفع الجودة ووضوح المسؤولية عن النتائج",
+        "department": "تطوير المشاريع",
+        "responsibilities": "تقييم جدوى المشاريع وخيارات التطوير\nتنسيق التراخيص وبوابات مراحل التطوير"
+      },
+      "expectedBehavior": "reviewable-domain-proposal",
+      "expertReference": null,
+      "expertGrade": null,
+      "expertSalary": null,
+      "expertApproval": null
+    },
+    {
+      "id": "investment-en",
+      "provenance": "authored-regression-fixture",
+      "locale": "en",
+      "family": "investment",
+      "input": {
+        "strategyObjective": "Improve quality and accountable delivery",
+        "department": "Investment",
+        "responsibilities": "Analyze investment opportunities and valuation models\nPrepare investment committee recommendations"
+      },
+      "expectedBehavior": "reviewable-domain-proposal",
+      "expertReference": null,
+      "expertGrade": null,
+      "expertSalary": null,
+      "expertApproval": null
+    },
+    {
+      "id": "investment-ar",
+      "provenance": "authored-regression-fixture",
+      "locale": "ar",
+      "family": "investment",
+      "input": {
+        "strategyObjective": "رفع الجودة ووضوح المسؤولية عن النتائج",
+        "department": "الاستثمار",
+        "responsibilities": "تحليل فرص الاستثمار ونماذج التقييم\nإعداد توصيات لجنة الاستثمار"
+      },
+      "expectedBehavior": "reviewable-domain-proposal",
+      "expertReference": null,
+      "expertGrade": null,
+      "expertSalary": null,
+      "expertApproval": null
+    },
+    {
+      "id": "internalAudit-en",
+      "provenance": "authored-regression-fixture",
+      "locale": "en",
+      "family": "internalAudit",
+      "input": {
+        "strategyObjective": "Improve quality and accountable delivery",
+        "department": "Internal Audit",
+        "responsibilities": "Develop risk-based internal audit plans\nTest controls and report findings without operating controls"
+      },
+      "expectedBehavior": "reviewable-domain-proposal",
+      "expertReference": null,
+      "expertGrade": null,
+      "expertSalary": null,
+      "expertApproval": null
+    },
+    {
+      "id": "internalAudit-ar",
+      "provenance": "authored-regression-fixture",
+      "locale": "ar",
+      "family": "internalAudit",
+      "input": {
+        "strategyObjective": "رفع الجودة ووضوح المسؤولية عن النتائج",
+        "department": "المراجعة الداخلية",
+        "responsibilities": "إعداد خطط المراجعة الداخلية المبنية على المخاطر\nاختبار الضوابط ورفع النتائج دون تشغيل الضوابط"
+      },
+      "expectedBehavior": "reviewable-domain-proposal",
+      "expertReference": null,
+      "expertGrade": null,
+      "expertSalary": null,
+      "expertApproval": null
+    },
+    {
+      "id": "strategy-en",
+      "provenance": "authored-regression-fixture",
+      "locale": "en",
+      "family": "strategy",
+      "input": {
+        "strategyObjective": "Improve quality and accountable delivery",
+        "department": "Strategy",
+        "responsibilities": "Analyze strategic objectives and strategic initiatives\nReview strategy performance and recommend priorities"
+      },
+      "expectedBehavior": "reviewable-domain-proposal",
+      "expertReference": null,
+      "expertGrade": null,
+      "expertSalary": null,
+      "expertApproval": null
+    },
+    {
+      "id": "strategy-ar",
+      "provenance": "authored-regression-fixture",
+      "locale": "ar",
+      "family": "strategy",
+      "input": {
+        "strategyObjective": "رفع الجودة ووضوح المسؤولية عن النتائج",
+        "department": "الاستراتيجية",
+        "responsibilities": "تحليل الأهداف والمبادرات الاستراتيجية\nمراجعة الأداء الاستراتيجي وتوصية الأولويات"
+      },
+      "expectedBehavior": "reviewable-domain-proposal",
+      "expertReference": null,
+      "expertGrade": null,
+      "expertSalary": null,
+      "expertApproval": null
+    },
+    {
+      "id": "pmo-en",
+      "provenance": "authored-regression-fixture",
+      "locale": "en",
+      "family": "pmo",
+      "input": {
+        "strategyObjective": "Improve quality and accountable delivery",
+        "department": "PMO",
+        "responsibilities": "Track project portfolio milestones and dependencies\nMaintain PMO governance and escalate schedule deviations"
+      },
+      "expectedBehavior": "reviewable-domain-proposal",
+      "expertReference": null,
+      "expertGrade": null,
+      "expertSalary": null,
+      "expertApproval": null
+    },
+    {
+      "id": "pmo-ar",
+      "provenance": "authored-regression-fixture",
+      "locale": "ar",
+      "family": "pmo",
+      "input": {
+        "strategyObjective": "رفع الجودة ووضوح المسؤولية عن النتائج",
+        "department": "مكتب إدارة المشاريع",
+        "responsibilities": "متابعة معالم محفظة المشاريع والاعتماديات\nإدارة حوكمة مكتب المشاريع وتصعيد انحرافات الجدول"
+      },
+      "expectedBehavior": "reviewable-domain-proposal",
+      "expertReference": null,
+      "expertGrade": null,
+      "expertSalary": null,
+      "expertApproval": null
+    },
+    {
+      "id": "customerService-en",
+      "provenance": "authored-regression-fixture",
+      "locale": "en",
+      "family": "customerService",
+      "input": {
+        "strategyObjective": "Improve quality and accountable delivery",
+        "department": "Customer Service",
+        "responsibilities": "Resolve customer service complaints\nMonitor resolution time and service satisfaction"
+      },
+      "expectedBehavior": "reviewable-domain-proposal",
+      "expertReference": null,
+      "expertGrade": null,
+      "expertSalary": null,
+      "expertApproval": null
+    },
+    {
+      "id": "customerService-ar",
+      "provenance": "authored-regression-fixture",
+      "locale": "ar",
+      "family": "customerService",
+      "input": {
+        "strategyObjective": "رفع الجودة ووضوح المسؤولية عن النتائج",
+        "department": "خدمة العملاء",
+        "responsibilities": "معالجة شكاوى خدمة العملاء\nمتابعة زمن الحل ورضا المستفيدين"
+      },
+      "expectedBehavior": "reviewable-domain-proposal",
+      "expertReference": null,
+      "expertGrade": null,
+      "expertSalary": null,
+      "expertApproval": null
+    },
+    {
+      "id": "software-en",
+      "provenance": "authored-regression-fixture",
+      "locale": "en",
+      "family": "software",
+      "input": {
+        "strategyObjective": "Improve quality and accountable delivery",
+        "department": "Information Technology",
+        "responsibilities": "Develop software features from approved requirements\nTest software and document release defects"
+      },
+      "expectedBehavior": "reviewable-domain-proposal",
+      "expertReference": null,
+      "expertGrade": null,
+      "expertSalary": null,
+      "expertApproval": null
+    },
+    {
+      "id": "software-ar",
+      "provenance": "authored-regression-fixture",
+      "locale": "ar",
+      "family": "software",
+      "input": {
+        "strategyObjective": "رفع الجودة ووضوح المسؤولية عن النتائج",
+        "department": "تقنية المعلومات",
+        "responsibilities": "تطوير خصائص برمجية من المتطلبات المعتمدة\nاختبار البرمجيات وتوثيق عيوب الإصدار"
+      },
+      "expectedBehavior": "reviewable-domain-proposal",
+      "expertReference": null,
+      "expertGrade": null,
+      "expertSalary": null,
+      "expertApproval": null
+    },
+    {
+      "id": "civilEngineering-en",
+      "provenance": "authored-regression-fixture",
+      "locale": "en",
+      "family": "civilEngineering",
+      "input": {
+        "strategyObjective": "Improve quality and accountable delivery",
+        "department": "Civil Engineering",
+        "responsibilities": "Design civil engineering bridge structures\nApprove structural safety calculations"
+      },
+      "expectedBehavior": "block-with-explanation",
+      "expertReference": null,
+      "expertGrade": null,
+      "expertSalary": null,
+      "expertApproval": null
+    },
+    {
+      "id": "civilEngineering-ar",
+      "provenance": "authored-regression-fixture",
+      "locale": "ar",
+      "family": "civilEngineering",
+      "input": {
+        "strategyObjective": "رفع الجودة ووضوح المسؤولية عن النتائج",
+        "department": "الهندسة المدنية",
+        "responsibilities": "تصميم منشآت جسور الهندسة المدنية\nاعتماد حسابات السلامة الإنشائية"
+      },
+      "expectedBehavior": "block-with-explanation",
+      "expertReference": null,
+      "expertGrade": null,
+      "expertSalary": null,
+      "expertApproval": null
+    },
+    {
+      "id": "unknown-en",
+      "provenance": "expert-report-paraphrase",
+      "locale": "en",
+      "family": "unknown",
+      "input": {
+        "strategyObjective": "Improve quality and accountable delivery",
+        "department": "Unknown",
+        "responsibilities": "Do everything\nHelp with everything"
+      },
+      "expectedBehavior": "block-with-explanation",
+      "expertReference": null,
+      "expertGrade": null,
+      "expertSalary": null,
+      "expertApproval": null
+    },
+    {
+      "id": "unknown-ar",
+      "provenance": "expert-report-paraphrase",
+      "locale": "ar",
+      "family": "unknown",
+      "input": {
+        "strategyObjective": "رفع الجودة ووضوح المسؤولية عن النتائج",
+        "department": "غير محدد",
+        "responsibilities": "يسوي كل شي\nيساعد في كل شي"
+      },
+      "expectedBehavior": "block-with-explanation",
+      "expertReference": null,
+      "expertGrade": null,
+      "expertSalary": null,
+      "expertApproval": null
+    }
+  ]
+}

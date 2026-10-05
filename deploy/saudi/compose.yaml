@@ -1,0 +1,48 @@
+# Run on a contracted Saudi VM; this file provisions no cloud resources.
+# Use a paid Saudi-hosted PostgreSQL service via DATABASE_URL. No free/local DB fallback.
+services:
+  api:
+    build:
+      context: ../..
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      MIYAR_ENV: production
+      MIYAR_HOSTING_PURPOSE: restricted-pilot
+      MIYAR_SERVE_UI: "true"
+      MIYAR_FRONTEND_URL: https://${MIYAR_DOMAIN:?Set your domain}/app/
+      MIYAR_ENABLE_EMBEDDINGS: "true"
+      MIYAR_EMBEDDING_PROVIDER: local-e5-small
+      MIYAR_EMBEDDING_MODEL: intfloat/multilingual-e5-small
+      MIYAR_ENABLE_STRATEGIC_AI: "false"
+      MIYAR_ENABLE_EXPERT_REVIEW: "false"
+      MIYAR_ENABLE_KPI_AI: "false"
+      MIYAR_KPI_PROVIDER: disabled
+      DATABASE_URL: ${DATABASE_URL:?Configure paid Saudi PostgreSQL with TLS}
+      MIYAR_JWT_SECRET: ${MIYAR_JWT_SECRET:?Set a new secret}
+      MIYAR_SIGNING_KEY: ${MIYAR_SIGNING_KEY:?Set a new signing key}
+      MIYAR_CORS_ORIGINS: https://${MIYAR_DOMAIN:?Set your domain}
+    expose: ["8000"]
+    security_opt: ["no-new-privileges:true"]
+    cap_drop: ["ALL"]
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health',timeout=5)"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+  edge:
+    image: ${MIYAR_PROXY_IMAGE:?Set a reviewed Caddy image pinned by digest}
+    restart: unless-stopped
+    environment:
+      MIYAR_DOMAIN: ${MIYAR_DOMAIN:?Set your domain}
+    ports: ["80:80", "443:443"]
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - edge_data:/data
+      - edge_config:/config
+    depends_on:
+      api:
+        condition: service_healthy
+volumes:
+  edge_data:
+  edge_config:

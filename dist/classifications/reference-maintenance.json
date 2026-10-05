@@ -1,0 +1,11 @@
+{
+  "schema": "miyar-reference-maintenance/1.0",
+  "checkedOn": "2026-10-05",
+  "nextReviewOn": "2027-01-05",
+  "ownerRole": "OD reference steward",
+  "currentSnapshots": ["ssco-2019-supplied", "saudi-education-2020-supplied"],
+  "status": "supplied-snapshots-not-certified-latest",
+  "finding": "Current official methodology pages still refer to SSCO and SASCED-20. A newer replacement dataset has not been independently verified or installed. A page update date is not a new classification edition.",
+  "officialSources": ["https://www.hrsd.gov.sa/en/skills-occupations", "https://www.stats.gov.sa/ar/w/methodology-and-quality-report-for-labor-market-statistics", "https://stats.gov.sa/ar/w/methodology-and-quality-report-for-health-and-safety-at-work-statistics-2025"],
+  "workflow": ["Check official publisher quarterly and when an official release is announced", "Retain source PDF and calculate SHA256", "Extract into a new version ID; never overwrite the supplied snapshot", "Run scripts/review-reference-update.cjs with source bytes and reviewer record", "Review added, removed, renamed and reparented codes and affected positions", "Stage occupation edition through the administrator API; OD activates separately with reason", "Education edition changes require a reviewed application release and historical snapshot retention", "Existing approved positions require a new reviewed revision before migration"]
+}

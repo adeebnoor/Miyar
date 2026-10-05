@@ -16,7 +16,7 @@ test('a corrected job evaluation clears the prior error and recalculation hint',
   a.d.getElementById('ent-calculate').click();await settle();assert.equal(a.d.getElementById('ent-message').getAttribute('role'),'alert');
   for(const x of a.d.querySelectorAll('[data-factor]')){x.value='2';x.dispatchEvent(new a.w.Event('input',{bubbles:true}));}
   for(const x of a.d.querySelectorAll('[data-factor-evidence]')){x.value='Independent responsibilities and authority evidence';x.dispatchEvent(new a.w.Event('input',{bubbles:true}));}
-  a.d.getElementById('ent-calculate').click();await settle();assert.match(a.d.getElementById('ent-grade-result').textContent,/500/);assert.equal(a.d.getElementById('ent-grade-hint').textContent,'');assert.equal(a.d.getElementById('ent-message').getAttribute('role'),'status');assert.match(a.d.getElementById('ent-message').textContent,/calculated/);assert.deepEqual(a.errors,[]);
+  a.d.getElementById('ent-calculate').click();await settle();assert.match(a.d.getElementById('ent-grade-result').textContent,/200/);assert.equal(a.d.getElementById('ent-grade-hint').textContent,'');assert.equal(a.d.getElementById('ent-message').getAttribute('role'),'status');assert.match(a.d.getElementById('ent-message').textContent,/calculated/);assert.deepEqual(a.errors,[]);
  }finally{a.dom.window.close();}
 });
 test('editing the source description or context invalidates extracted skill evidence',async()=>{
@@ -42,9 +42,9 @@ for(const tab of ['manpower','compensation'])test(tab+' invalid imported JSON re
 });
 test('independent compensation examples cover monthly/annual cost, allowances and explicit zero',()=>{
  const C=require('../dist/compensation-engine.js');
- for(const period of ['monthly','annual'])for(const headcount of [1,3])for(const target of [0,50,100]){
-  const v=C.evaluate({...C.example,period,headcount,targetPenetration:target,bandMin:12000,bandMid:18000,bandMax:24000,currentSalary:15000,oncostPercent:10,allowancesPercent:20});
-  const salary=12000+12000*target/100,multiplier=period==='monthly'?12:1;assert.equal(v.result.targetSalary,salary);assert.equal(v.result.compaRatio,Math.round(15000/18000*1000)/1000);
+ for(const period of ['monthly','annual'])for(const headcount of [1,3])for(const target of [80,100,120]){
+  const v=C.evaluate({...C.example,period,headcount,targetCompaPercent:target,unitsConfirmed:true,progressionEnabled:true,progressionApproved:true,progressionPolicy:"Approved TR policy",progressionEvidence:"Individual performance evidence",bandMin:12000,bandMid:18000,bandMax:24000,currentSalary:15000,oncostPercent:10,allowancesPercent:20});
+  const salary=18000*target/100,multiplier=period==='monthly'?12:1;assert.equal(v.result.targetSalary,salary);assert.equal(v.result.compaRatio,Math.round(15000/18000*1000)/1000);
   assert.equal(v.result.annualEmployerCost,Math.round(Math.max(salary,15000)*multiplier*headcount*1.2*1.1));
  }
 });

@@ -27,7 +27,7 @@ def test_all_stages_budget_and_duplicate_approval(env):
     assert decide(c,auth,p,'od_specialist',{'scopeReviewed':True,'mappingReviewed':True,'businessValidated':True,'roleNotPerson':True,'businessReviewer':'Department reviewer for test','businessReviewDate':'2026-09-01'}).status_code==200
     assert decide(c,auth,p,'od_specialist',{'scopeReviewed':True,'mappingReviewed':True,'businessValidated':True,'roleNotPerson':True,'businessReviewer':'Department reviewer for test','businessReviewDate':'2026-09-01'}).status_code==403
     assert decide(c,auth,p,'total_rewards',{'payFrameworkReviewed':True}).status_code==422
-    assert c.post('/api/v1/positions/'+p['id']+'/evaluation',headers=auth('total_rewards'),json={'revision':1,'answers':{'knowledge':'2','complexity':'2','impact':'2'},'evidence':dict.fromkeys(['knowledge','complexity','impact'],'Scoped role evidence')}).status_code==200
+    assert c.post('/api/v1/positions/'+p['id']+'/evaluation',headers=auth('total_rewards'),json={'revision':1,'answers':{factor['id']:'2' for factor in DEFAULT_FRAMEWORK['factors']},'evidence':dict.fromkeys([factor['id'] for factor in DEFAULT_FRAMEWORK['factors']],'Scoped role evidence')}).status_code==200
     assert decide(c,auth,p,'total_rewards',{'payFrameworkReviewed':True}).status_code==200
     for count,budget in [(True,240000),(1,239999),(0,240000),(1.5,240000)]:
         assert decide(c,auth,p,'finance',{'vacancyConfirmed':True,'budgetConfirmed':True,'approvedAnnualBudget':budget,'approvedHeadcount':count}).status_code==422
@@ -68,7 +68,7 @@ def test_illustrative_and_proprietary_grade_gates(env):
     app,c,auth,create=env
     f=copy.deepcopy(DEFAULT_FRAMEWORK);f.update(method='korn-ferry-licensed',licenseConfirmed=True,licenseReference='test')
     assert c.post('/api/v1/settings/framework',headers=auth('admin'),json={'framework':f,'reason':'Validate method provenance'}).status_code==422
-    assert grade(DEFAULT_FRAMEWORK,dict.fromkeys(['knowledge','complexity','impact'],'2'),dict.fromkeys(['knowledge','complexity','impact'],'Evidence'))['points']==500
+    assert grade(DEFAULT_FRAMEWORK,dict.fromkeys([factor['id'] for factor in DEFAULT_FRAMEWORK['factors']],'2'),dict.fromkeys([factor['id'] for factor in DEFAULT_FRAMEWORK['factors']],'Evidence'))['points']==200
     f=copy.deepcopy(DEFAULT_FRAMEWORK);f['bands'][1]['min']=300
     with pytest.raises(ValueError):validate_framework(f)
 
@@ -134,7 +134,7 @@ def test_free_text_field_seniority_roundtrip_and_exports(env):
 def test_approved_evaluation_is_locked_after_rewards_stage(env):
     app,c,auth,create=env;p=create();submit(c,auth,p)
     decide(c,auth,p,'od_specialist',{'scopeReviewed':True,'mappingReviewed':True,'businessValidated':True,'roleNotPerson':True,'businessReviewer':'Department reviewer for test','businessReviewDate':'2026-09-01'})
-    url='/api/v1/positions/'+p['id']+'/evaluation';body={'revision':1,'answers':dict.fromkeys(['knowledge','complexity','impact'],'2'),'evidence':dict.fromkeys(['knowledge','complexity','impact'],'Reviewed scope')}
+    url='/api/v1/positions/'+p['id']+'/evaluation';body={'revision':1,'answers':dict.fromkeys([factor['id'] for factor in DEFAULT_FRAMEWORK['factors']],'2'),'evidence':dict.fromkeys([factor['id'] for factor in DEFAULT_FRAMEWORK['factors']],'Reviewed scope')}
     assert c.post(url,headers=auth('total_rewards'),json=body).status_code==200
     assert decide(c,auth,p,'total_rewards',{'payFrameworkReviewed':True}).status_code==200
     body['answers']['impact']='4'

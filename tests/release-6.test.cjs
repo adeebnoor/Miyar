@@ -77,6 +77,6 @@ test('manpower and compensation results open with a plain decision summary',asyn
   assert.match(mp.querySelector('.mp-results .decision-summary').textContent,/What this means for your decision.*Plan for 1 position\(s\).*backfills expected leavers.*growth that needs budget approval/);
   a.w.location.hash='#enterprise/compensation';for(let i=0;i<30&&!a.d.querySelector('.cp-page');i++)await settle();
   const cp=a.d.querySelector('.cp-page');cp.querySelector('[data-cp-example]').click();cp.querySelector('[data-cp-run]').click();await settle();
-  assert.match(cp.querySelector('.cp-result .decision-summary').textContent,/New position — offer at target.*Annual employer cost: 414,000 SAR/);
+  assert.match(cp.querySelector('.cp-result .decision-summary').textContent,/New-position budget estimate.*Annual employer cost: 414,000 SAR/);
  }finally{a.dom.window.close();}
 });

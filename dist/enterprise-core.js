@@ -76,9 +76,9 @@ function parseMatrix(text,keys){
 }
 function validateSalary(c){
  const hasMin=c.salaryMin!==undefined,hasMax=c.salaryMax!==undefined;
- if(hasMin!==hasMax||(hasMin&&(!Number.isFinite(c.salaryMin)||!Number.isFinite(c.salaryMax)||c.salaryMin<0||c.salaryMax<c.salaryMin||c.salaryMax>1e12)))throw Error('Enter a valid minimum and maximum salary');
+ if(hasMin!==hasMax||(hasMin&&(!Number.isFinite(c.salaryMin)||!Number.isFinite(c.salaryMax)||c.salaryMin<=0||c.salaryMax<c.salaryMin||c.salaryMax>1e12)))throw Error('Enter a valid minimum and maximum salary');
  if(c.salaryPeriod&&!['monthly','annual'].includes(c.salaryPeriod))throw Error('Choose monthly or annual salary');
- if(c.salaryCurrency&&!/^[A-Z]{3}$/.test(c.salaryCurrency))throw Error('Use a three-letter currency code');
+ if(c.salaryCurrency&&!(typeof Intl.supportedValuesOf==='function'?Intl.supportedValuesOf('currency'):['SAR','AED','BHD','KWD','OMR','QAR','USD','EUR','GBP','EGP']).includes(c.salaryCurrency))throw Error('Use a recognized currency code');
 }
 function sentences(value){return [...new Set(String(value||'').split(/[\n;؛]+/).map(s=>s.replace(/^[-•\d]+[.)\s]+/,'').trim()).filter(Boolean))];}
 function kpis(c,locale='ar'){

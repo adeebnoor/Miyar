@@ -1,0 +1,15 @@
+{
+  "commercialReady": false,
+  "acceptedCases": 0,
+  "totalCases": 0,
+  "acceptanceFraction": null,
+  "blockers": [
+    "Saudi paid hosting, residency review and restore evidence missing",
+    "Independent frozen real-job reference dataset missing",
+    "Pre-agreed professional acceptance policy missing",
+    "Need 30–50 unique reviewed cases across at least six families",
+    "Professional acceptance threshold not demonstrated",
+    "Illustrative job evaluation requires independent calibration"
+  ],
+  "notice": "Evidence-completeness gate over recorded expert assessments. It does not authenticate a reviewer or independently certify professional validity."
+}

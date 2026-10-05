@@ -1,8 +1,11 @@
 {
-  "version": "6.2.3",
-  "buildId": "20c781e25aadcc06",
-  "releasedAt": "2026-10-04",
+  "version": "6.3.0",
+  "buildId": "c778824a49080ea1",
+  "releasedAt": "2026-10-05",
   "changes": [
+    "Expert review remediation: policy-based pay, actual incumbent roster, dated Saudi cost breakdown, whole-hire budgets and pipeline review",
+    "Eight-factor illustrative framework with twelve grades; professional validation and Saudi hosting remain launch gates",
+    "Scope checks and shared OD behavior in standalone and browser engines",
     "Show original success requirements beside editable KPI proposals and flag inferred targets, periods and undefined timing for review",
     "Ask the provider to preserve supplied KPI requirements and expose measurement assumptions",
     "Preserve duties after reporting recipients and separate collaboration context in complex descriptions",
@@ -66,6 +69,7 @@
       "demo-workspace-6.js",
       "whats-new-6.js",
       "hr-service-guide.js",
+      "expert-review-6.js",
       "audit-improvements.js"
     ],
     "styles": [
