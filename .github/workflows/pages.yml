@@ -13,7 +13,7 @@ permissions:
 concurrency:
   # Retire the old group held by a cancelled, runnerless release attempt.
   # Continue serializing tests per ref and cancelling superseded attempts.
-  group: release-tests-ubuntu22-${{ github.ref }}
+  group: release-tests-stable-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
@@ -144,7 +144,8 @@ jobs:
 
   release-checks:
     name: All release checks passed
-    if: always()
+    # Evaluate failures, but do not schedule a new job after cancellation.
+    if: ${{ !cancelled() }}
     needs: [server-test, ui-test, e2e-test]
     permissions: {}
     runs-on: ubuntu-22.04
