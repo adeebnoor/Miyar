@@ -16,6 +16,8 @@ const anchors=(text,terms)=>{const n=' '+normalize(text)+' ';return [...new Set(
 const score=(text,terms)=>anchors(text,terms).reduce((n,x)=>n+Math.min(50,x.length),0);
 function explicitLevel(text){
  const n=normalize(text);
+ if(/^(?:executive assistant|personal assistant|assistant to|مساعد مدير|مساعد رئيس|سكرتير)/.test(n))return'assistant';
+ if(n==='executive')return'executive';
  if(/(?:^|\s)(?:chief|cfo|chro|coo|ceo|نائب الرئيس|executive director|رئيس تنفيذي|مدير تنفيذي)(?:\s|$)/.test(n))return'executive';
  if(/(?:^|\s)(?:director|vp|vice president|head of|head|يراس ادارة|مدير ادارة|مدير عام|رئيس ادارة|رئيس قطاع)(?:\s|$)/.test(n))return'director';
  if(/(?:^|\s)(?:line manager|heads the [a-z ]+ (?:unit|section)|manager|مدير|يراس قسم|رئيس قسم)(?:\s|$)/.test(n))return'manager';
@@ -27,7 +29,7 @@ function explicitLevel(text){
 }
 // A boundary is an independently stated action, not a noun such as
 // "development" in "permits and development stage gates".
-const englishAction='(?:manag(?:e|es|ed|ing)|supervis(?:e|es|ed|ing)|allocat(?:e|es|ed|ing)|record(?:s|ed|ing)?|sourc(?:e|es|ed|ing)|qualif(?:y|ies|ied|ying)|lead(?:s|ing)?|led|develop(?:s|ed|ing)?|evaluat(?:e|es|ed|ing)|analy[sz](?:e|es|ed|ing)|prepar(?:e|es|ed|ing)|coordinat(?:e|es|ed|ing)|perform(?:s|ed|ing)?|conduct(?:s|ed|ing)?|oversee(?:s|ing)?|deliver(?:s|ed|ing)?|test(?:s|ed|ing)?|document(?:s|ed|ing)?|monitor(?:s|ed|ing)?|track(?:s|ed|ing)?|control(?:s|led|ling)?|assess(?:es|ed|ing)?|review(?:s|ed|ing)?|follow(?:s|ed|ing)?\\s+up|align(?:s|ed|ing)?|improv(?:e|es|ed|ing)|cascad(?:e|es|ed|ing)|maintain(?:s|ed|ing)?|design(?:s|ed|ing)?|process(?:es|ed|ing)?|support(?:s|ed|ing)?|reconcil(?:e|es|ed|ing)|approv(?:e|es|ed|ing)|sign(?:s|ed|ing)?\\s+off|enter(?:s|ed|ing)?|archiv(?:e|es|ed|ing)|repair(?:s|ed|ing)?|inspect(?:s|ed|ing)?|calculat(?:e|es|ed|ing)|administer(?:s|ed|ing)?|train(?:s|ed|ing)?)';
+const englishAction='(?:manag(?:e|es|ed|ing)|supervis(?:e|es|ed|ing)|allocat(?:e|es|ed|ing)|record(?:s|ed|ing)?|sourc(?:e|es|ed|ing)|qualif(?:y|ies|ied|ying)|lead(?:s|ing)?|led|develop(?:s|ed|ing)?|evaluat(?:e|es|ed|ing)|analy[sz](?:e|es|ed|ing)|prepar(?:e|es|ed|ing)|coordinat(?:e|es|ed|ing)|perform(?:s|ed|ing)?|conduct(?:s|ed|ing)?|oversee(?:s|ing)?|deliver(?:s|ed|ing)?|test(?:s|ed|ing)?|document(?:s|ed|ing)?|monitor(?:s|ed|ing)?|track(?:s|ed|ing)?|control(?:s|led|ling)?|assess(?:es|ed|ing)?|review(?:s|ed|ing)?|follow(?:s|ed|ing)?\\s+up|align(?:s|ed|ing)?|improv(?:e|es|ed|ing)|cascad(?:e|es|ed|ing)|maintain(?:s|ed|ing)?|design(?:s|ed|ing)?|process(?:es|ed|ing)?|support(?:s|ed|ing)?|reconcil(?:e|es|ed|ing)|approv(?:e|es|ed|ing)|sign(?:s|ed|ing)?\\s+off|enter(?:s|ed|ing)?|archiv(?:e|es|ed|ing)|repair(?:s|ed|ing)?|inspect(?:s|ed|ing)?|calculat(?:e|es|ed|ing)|administer(?:s|ed|ing)?|train(?:s|ed|ing)?|heads?|authori[sz](?:e|es|ed|ing)|replac(?:e|es|ed|ing)|screen(?:s|ed|ing)?|interview(?:s|ed|ing)?|issu(?:e|es|ed|ing)|arrang(?:e|es|ed|ing)|book(?:s|ed|ing)?|renew(?:s|ed|ing)?|writ(?:e|es|ing))';
 const arabicAction='(?:يقوم|يتولى|يعد|يراجع|يدير|يحلل|يطور|ينسق|يختبر|يوثق|يرفع|يتابع|يراقب|يقيم|يصمم|يربط|يضبط|يخطط|يعالج|يشرف|ينفذ|يحسن|يقود|يعتمد|يسوي|يسجل|يصلح|يفحص|يدخل|يؤرشف|يحسب|يدرب|يحدث)';
 const arabicTask='(?:إعداد|اعداد|رفع|اختبار|توثيق|متابعة|مراقبة|تحليل|تقييم|تطوير|صياغة|تصميم|ربط|ضبط|تنسيق|معالجة|إدارة|ادارة|الإشراف|الاشراف|تنفيذ|تحسين|قيادة|تخطيط|اعتماد|إعطاء|اعطاء|تسوية|أرشفة|ارشفة|مطابقة|حساب|إدخال|ادخال|إصلاح|اصلاح|تفتيش|تسجيل|تنظيف|هندسة|بناء|تحديث|استقطاب|توظيف|مراجعة|جدولة)';
 const actionBoundary=new RegExp('\\s+(?:and|but|while)\\s+(?='+englishAction+'\\b)|\\s+(?:و\\s*|(?:و?لكن(?:ه|ها)?)\\s+)(?=(?:'+arabicAction+'|'+arabicTask+')\\s)','i');
@@ -39,11 +41,18 @@ function interpret(input={}){
  const raw=[input.objective||input.strategyObjective,input.responsibilities].filter(Boolean).join('\n'),reporting=[],excluded=[],collaboration=[];
  // Recipients, stakeholders and exclusions remain visible as context. They do
  // not establish ownership of a recipient's function or level.
- const reportingPattern=/\b((?:report(?:s|ing)?(?:\s+(?:findings|results|progress|status|monthly|weekly))*|(?:submit|send|provide|prepare|present|deliver)\w*\s+(?:\w+\s+){0,4}reports?)\s+(?:to|for))\s+[^,;.!?\n]+|((?:و?يرفع|و?ترفع|و?ارفع|و?رفع|و?تقديم|و?إعداد|و?اعداد|و?إرسال|و?ارسال)\s+(?:تقاريره|تقاريرها|تقارير|التقارير|تقرير|التقرير)(?:\s+[^\s،,;؛.]+){0,4}?\s+(?:إلى|الى|لـ?))\s*[^،,;؛.\n]+|(?:للمدير|لرئيس|للجنة)\s+[^،,;؛.\n]+/gi;
+ const reportingPattern=/\b((?:report(?:s|ing)?(?:\s+(?:findings|results|progress|status|monthly|weekly|directly|functionally|administratively|operationally|indirectly))*|(?:submit|send|provide|prepare|present|deliver)\w*\s+(?:\w+\s+){0,4}reports?)\s+(?:to|for))\s+[^,;.!?\n]+|((?:و?يرفع|و?ترفع|و?ارفع|و?رفع|و?تقديم|و?إعداد|و?اعداد|و?إرسال|و?ارسال)\s+(?:تقاريره|تقاريرها|تقارير|التقارير|تقرير|التقرير)(?:\s+[^\s،,;؛.]+){0,4}?\s+(?:إلى|الى|لـ?))\s*[^،,;؛.\n]+|(?:للمدير|لرئيس|للجنة)\s+[^،,;؛.\n]+/gi;
  const exclusionPattern=/\b(?:not responsible for|does not (?:own|manage|perform)|no responsibility for|without|excluding|exclude|no)\s+[^,;.!?\n]+|(?:و?لا يتولى|و?لا تشمل|و?لا يشمل|و?ليس مسؤول[اًا]? عن|و?دون|و?بدون|باستثناء)\s+[^،,;؛.\n]+/gi;
- let text=raw.replace(/\b(?:under the supervision of|reporting line(?: is)?(?: to)?)\s+[^,;.!?\n]+|(?:تحت إشراف|تحت اشراف|يتبع|يرتبط إدارياً بـ|يرتبط اداريا ب)\s*[^،,;؛.\n]+/gi,value=>{reporting.push(value);return '';}).replace(exclusionPattern,value=>{const [scope,tail]=contextualScope(value,exclusionBoundary);excluded.push(scope.trim());return '\n'+tail;});
+ // A comma before a relative clause does not transfer the recipient's actions
+ // back to the job holder. Preserve its actor scope until an actual duty boundary.
+ const relative=/\b(?:who|whose|which|that)\b|الذي|التي/i;
+ const context=value=>{const [scope,tail]=contextualScope(value,relative.test(value)?/$^/:actionBoundary);reporting.push(scope.trim());return '\n'+tail;};
+ const thirdParty=/\b(?:their|his|her|its|our|my)\s+(?:(?:line|finance|financial|hr|human resources|department|division)\s+)?(?:manager|director|supervisor|head|chief)\b[^,;.!?\n]*|\b(?:support(?:s|ing)?|assist(?:s|ing)?|works?\s+(?:with|alongside|for)|collaborat(?:e|es|ing)\s+with)\s+(?:(?:a|the)\s+)?(?:[a-z]+\s+){0,3}(?:manager|director|supervisor|head|chief)\b(?=[^;.!?\n]*(?:\b(?:who|whose|which|that|leads?|manages?|approves?|supervises?|oversees?|heads?)\b))[^,;.!?\n]*|(?:مديره|مديرها|رئيسه|رئيسها|مشرفه|مشرفها)\s+[^،,;؛.\n]+|(?:يعمل|تعمل|يدعم|يساعد|بالتعاون|بالتنسيق)\s+(?:مع\s+)?(?:[ء-ي]+\s+){0,2}(?:مدير|رئيس|مشرف)(?=[^;؛.\n]*(?:الذي|التي|يقود|يدير|يشرف|يعتمد))[^،,;؛.\n]*/gi;
+ let text=raw.replace(/[,،]\s*(?=\b(?:who|whose|which|that)\b|الذي|التي)/gi,' ').replace(thirdParty,value=>{reporting.push(value.trim());return '';})
+  .replace(/\b(?:under the supervision of|reporting line(?: is)?(?:\s+to|\s*:)?)[ \t]+[^,;.!?\n]+|(?:تحت إشراف|تحت اشراف|يتبع|يرتبط\s+[اإ]دار[يى][\u064b-\u065f]*ا?[\u064b-\u065f]*\s+بـ?)\s*[^،,;؛.\n]+/gi,context)
+  .replace(exclusionPattern,value=>{const [scope,tail]=contextualScope(value,exclusionBoundary);excluded.push(scope.trim());return '\n'+tail;});
  text=text.replace(reportingPattern,(value,englishPrefix,arabicPrefix)=>{
-  const [scope,tail]=contextualScope(value,/(?:الذي|التي|\bwho\b)/i.test(value)?/$^/:actionBoundary);reporting.push(scope.trim());
+  const [scope,tail]=contextualScope(value,relative.test(value)?/$^/:actionBoundary);reporting.push(scope.trim());
   // Keep the reporting activity and its work-specific modifiers, while removing
   // the recipient (e.g. "prepare project status reports for Strategy Director").
   const prefix=englishPrefix||arabicPrefix||'';
@@ -77,24 +86,27 @@ function analyzeLevel(input={}){
  const requested=explicitLevel(input.seniority||input.requestedLevel),titleLevel=explicitLevel(ownTitle)||(/^(?:vp|vice president|chief|cfo|chro|coo|director|head of|manager|line manager|heads|مدير|رئيس|يراس|نائب|مشرف|technician|فني|assistant|clerk|منسق|مدخل)(?:\s|$)/i.test(n)?explicitLevel(n):null);
  let directReports=input.directReports===undefined||input.directReports===''?null:parseCount(input.directReports);if(!Number.isInteger(directReports)||directReports<0)directReports=null;
  const people=[],supervision=[],approval=[],enterprise=[],lower=[];
- const person='(?:(?:payroll|financial|senior|junior)\\s+)?(?:direct reports?|accountants?|engineers?|employees?|staff|people|nurses?|analysts?|officers?|guards?|auditors?|developers?|researchers?|designers?|consultants?|محاسب[اينون]*|موظف[اينون]*|مهندس[اينون]*|ممرض[اينون]*|عامل[اينون]*|مرؤوس[اينون]*|حارس|حراس)';
+ const person='(?:(?:payroll|financial|finance|accounting|treasury|procurement|compliance|audit|tax|hr|recruitment|operations|warehouse|marketing|sales|software|technical|administrative|senior|junior)\\s+){0,2}(?:direct reports?|accountants?|engineers?|employees?|staff|people|nurses?|analysts?|officers?|clerks?|guards?|auditors?|developers?|researchers?|designers?|consultants?|محاسب[اينون]*|موظف[اينون]*|مهندس[اينون]*|ممرض[اينون]*|عامل[اينون]*|مرؤوس[اينون]*|حارس|حراس)';
  const lead='(?:lead(?:s|ing)?|led|manag(?:e|es|ing)|supervis(?:e|es|ing|ion)|oversee(?:s|ing)?|heads?|line manager to|responsible for|يقود|يدير|يشرف علي|يراس|قيادة|ادارة|اشراف علي|مسؤول عن)';
- const countPattern=new RegExp('(?:^|\\s)'+lead+'\\s+(?:(?:a|the)\\s+)?(?:(?:(?:[a-z]+|[ء-ي]+)\\s+){0,3}?(?:team|department|group|unit|function|فريقا?|قسم[ا]?|وحدة|ادارة)\\s+(?:(?:of|من)\\s+)?)?([\\p{L}\\d]+(?:\\s+[\\p{L}]+){0,3}?)\\s+'+person+'(?:\\s|$)','giu');
- const reportsPattern=new RegExp('([\\p{L}\\d]+(?:\\s+[\\p{L}]+){0,2}?)\\s+(?:direct reports|مرؤوسين|مرؤوسون)(?:\\s|$)','giu');
+ const countToken='(?:\\d+|zero|one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve|thirteen|fourteen|fifteen|sixteen|seventeen|eighteen|nineteen|twenty|thirty|forty|fifty|sixty|seventy|eighty|ninety|hundred|واحدا?|واحدة|اثنان|اثنين|اثنتان|اثنتين|اثنتا|اثنتي|اثنا|اثني|ثلاثة?|اربعة?|خمسة?|ستة?|سبعة?|ثمانية|ثماني|ثمان|تسعة?|عشرة?|عشرين|عشرون|ثلاثون|ثلاثين|اربعون|اربعين|خمسون|خمسين|ستون|ستين|سبعون|سبعين|ثمانون|ثمانين|تسعون|تسعين|مائة|مئة|احد|احدي)';
+ const countExpression=countToken+'(?:\\s+(?:and\\s+|و\\s*)?'+countToken+'){0,5}';
+ const countPattern=new RegExp('(?:^|\\s)'+lead+'\\s+(?:(?:a|the)\\s+)?(?:(?:(?:[a-z]+|[ء-ي]+)\\s+){0,3}?(?:team|department|group|unit|function|فريقا?|قسم[ا]?|وحدة|ادارة)\\s+(?:(?:of|من)\\s+)?)?('+countExpression+')\\s+'+person+'(?:\\s|$)','giu');
+ const reportsPattern=new RegExp('('+countExpression+')\\s+(?:direct reports|مرؤوسين|مرؤوسون)(?:\\s|$)','giu');
  const arabicAfter=new RegExp(lead+'\\s+('+person+')\\s+([\\p{L}\\d]+(?:\\s+[\\p{L}]+){0,2})','giu');
  for(const raw of interpretation.clauses){const clause=normalize(raw),member=/\b(?:within|part of|member of|one of|alongside|works? with)\b|ضمن|عضو في|احد اعضاء|مع فريق|يعمل في/.test(clause);
   if(!member){for(const match of clause.matchAll(arabicAfter)){const count=parseCount(match[2]);if(count!==null){directReports=Math.max(directReports||0,count);people.push(clause);if(/يشرف|اشراف/.test(clause))supervision.push(clause);}}for(const re of [countPattern,reportsPattern])for(const match of clause.matchAll(re)){const count=parseCount(match[1]);if(count!==null)directReports=Math.max(directReports||0,count);}
    const leads=new RegExp('(?:^|\\s)'+lead+'\\s+(?:(?:a|the)\\s+)?(?:(?:hr|finance|nursing|shift|internal|audit|engineering)\\s+){0,2}(?:team|teams|department|staff|people|employees|guards|nurses|unit|group|function|section|فريق|ادارة|موظفين|افراد|حراس|ممرضين|قسم|وحدة)(?:\\s|$)','i');
    if(leads.test(clause)||[...clause.matchAll(countPattern)].some(m=>parseCount(m[1])!==null)){people.push(clause);if(/supervis|يشرف|اشراف/.test(clause))supervision.push(clause);}
   }
-  if(/\b(?:approv(?:e|es|ing)|sign(?:s|ing)? off|budget owner|approval authority)\b|يعتمد|اعتماد|صلاحية اعتماد|صاحب ميزانية/.test(clause))approval.push(clause);
+  const recipientApproval=/\b(?:approval authority|budget approval)(?:\s+[a-z]+){0,5}\s+(?:with|by)\b|\b(?:require\w*|need\w*|subject to)\b.*\bapproval\b|\bapproval\s+(?:by|from|of)\b|(?:يحتاج|تحتاج|يتطلب|تتطلب|تستلزم|يشترط).*اعتماد|اعتماد\s+(?:مدير|رئيس|لجنة|مجلس)|(?:صلاحية|سلطة)\s+اعتماد.*(?:لدي|للمدير|للرئيس|تخص)/.test(clause);
+  if(!recipientApproval&&/\b(?:approv(?:e|es|ing)|sign(?:s|ing)? off|budget owner|approval authority)\b|يعتمد|اعتماد|صلاحية اعتماد|صاحب ميزانية/.test(clause))approval.push(clause);
   if(/\b(?:board|ceo|enterprise wide|group wide|subsidiaries|multiple entities)\b|مجلس|مستوي مجموعة|عدة كيانات/.test(clause))enterprise.push(clause);
   if(/\b(?:enter|entry|archive|archiving|routine processing)\b|ادخال|ارشفة|تنفيذ وفق اجراءات/.test(clause))lower.push(clause);
  }
  if(directReports>=2&&!people.length)people.push('direct reports: '+directReports);
  const budget=/budget owner|responsib.*budget|مسؤول.*ميزانية|صاحب ميزانية/.test(n);
  let evidenceCeiling=lower.length?'assistant':'specialist';
- if(people.length)evidenceCeiling=supervision.length===people.length&&!approval.length?'supervisor':'manager';
+ if(people.length)evidenceCeiling=supervision.length===people.length&&!approval.length?(directReports!==null&&directReports<2?'specialist':'supervisor'):'manager';
  if(approval.length&&budget)evidenceCeiling='manager';
  if(people.length&&approval.length&&(enterprise.length||directReports>=15))evidenceCeiling='director';
  const rank={assistant:0,technician:0,specialist:1,supervisor:2,manager:3,director:4,executive:5};
@@ -115,7 +127,7 @@ function canonicalDuty(text){return normalize(text).split(' ').map(word=>dutyVer
 const dutyScoreCache=new Map();
 function dutyScore(text,f){
  const scope=canonicalDuty(text),key=f.id+'\0'+scope;if(dutyScoreCache.has(key))return dutyScoreCache.get(key);
- if(f.id==='securitySafety'&&/cyber|firewall|siem|vulnerability|soc|penetration|جدار حماية|جدران حماية|ثغرات|information security|امن معلومات|امن سيبراني|سيبراني|امن بيانات/.test(scope)&&!/(?:guard|patrol|workplace|occupational|visitor|حارس|حراس|حراسة|جولات امنية|سلامة مهنية|معدات وقاية|اخطار مهنية)/.test(scope))return {value:0,specific:[]};
+ if(f.id==='securitySafety'&&/cyber|firewall|siem|vulnerability|\bsoc\b|penetration|database|digital access|security events|identity and access|\biam\b|\bedr\b|endpoint|جدار حماية|جدران حماية|ثغرات|information security|امن معلومات|امن سيبراني|سيبراني|امن بيانات|قواعد بيانات|صلاحيات رقمية/.test(scope)&&!/(?:guard|patrol|workplace|occupational|visitor|حارس|حراس|حراسة|جولات امنية|سلامة مهنية|معدات وقاية|اخطار مهنية)/.test(scope))return {value:0,specific:[]};
  const terms=domainTerms(f),specific=anchors(scope,terms);let value=score(scope,terms);
  // Shared finance nouns are usable only inside an expressly financial action.
  if(f.id==='finance'){
@@ -137,14 +149,15 @@ function detect(input={}){
  if(culinary&&!(fieldHit?.fieldScore&&['finance','supplyChain'].includes(fieldHit.family.id)&&fieldHit.specialtyClauses.length>=2))return null;
  let selected=fieldHit?.fieldScore?fieldHit:textHit?.textScore?textHit:titleHit?.titleScore?titleHit:null;
  if(!selected)return null;
- if(hasResponsibilities&&!ranked.some(x=>x.textScore>0)&&!new RegExp('(?:'+englishAction+'|'+arabicAction+'|'+arabicTask+')','i').test(text))return null;
+ if(hasResponsibilities&&!fieldHit?.fieldScore&&!ranked.some(x=>x.textScore>0)&&!new RegExp('(?:'+englishAction+'|'+arabicAction+'|'+arabicTask+')','i').test(text))return null;
  if(selected.family.id==='operations'&&textHit?.family.id==='maintenance')selected=textHit;
  const isPayroll=['payroll','salary processing','رواتب','مسير الرواتب'].some(x=>has(text,x));
  const government=catalog.roles.filter(r=>r.family==='admin'&&r.intent==='governmentRelations').flatMap(r=>r.taskKeywords).some(x=>has(text,x))&&['hc','admin'].includes(selected.family.id);
  const payrollHome=(isPayroll&&selected.family.id==='hc')||government;
  const financePayroll=isPayroll&&selected.family.id==='finance';
  // Payroll is an established HR/Finance shared process, not a nursing-like mismatch.
- const severe=Boolean(fieldHit?.fieldScore&&textHit?.textScore&&fieldHit.family.id!==textHit.family.id&&!(fieldHit.family.id==='operations'&&textHit.family.id==='maintenance')&&!payrollHome&&!financePayroll&&(fieldHit.textScore===0||fieldHit.textScore<textHit.textScore/3));
+ const decisiveForeignScope=Boolean(textHit&&(textHit.specialtyClauses.length>=2||anchors(text,domainTerms(textHit.family)).length>=2));
+ const severe=Boolean(fieldHit?.fieldScore&&textHit?.textScore&&decisiveForeignScope&&fieldHit.family.id!==textHit.family.id&&!(fieldHit.family.id==='operations'&&textHit.family.id==='maintenance')&&!payrollHome&&!financePayroll&&(fieldHit.textScore===0||fieldHit.textScore<textHit.textScore/3));
  if(financePayroll&&!selected.textScore)selected=ranked.find(x=>x.family.id==='hc');
  const conflict=financePayroll||Boolean(!payrollHome&&fieldHit?.fieldScore&&textHit?.textScore&&fieldHit.family.id!==textHit.family.id&&!(fieldHit.family.id==='operations'&&textHit.family.id==='maintenance'));
  const actionCue=new RegExp('(?:^|\\s)(?:'+englishAction+'|'+arabicAction+'|'+arabicTask+')(?:\\s|$)','i');
@@ -179,7 +192,9 @@ function recommend(input={},nodes=null,education=null){
  // Executing repairs never grants an engineering title. Keep management scope.
  if(['maintenance','engineering'].includes(family.id)&&!['manager','director','executive'].includes(chosenLevel)&&!engineeringEvidence){chosenLevel='technician';intent=family.id==='maintenance'&&['hvac','تكييف','التكييف','air conditioning'].some(x=>has(text,x))?'hvac':'technician';}
  if(family.id==='finance'&&!['manager','director','executive'].includes(chosenLevel)&&['invoice entry','enter invoices','supplier invoices','إدخال فواتير الموردين','فواتير الموردين'].some(x=>has(text,x))&&['enter','entry','إدخال','أرشفة','archive','match','مطابقة'].some(x=>has(text,x))){chosenLevel='assistant';intent='payableClerk';}
- if(family.id==='hc'&&!['manager','director','executive'].includes(chosenLevel)&&intent!=='payroll'&&roles.some(r=>r.intent==='coordinator'&&score(text,r.taskKeywords)>0)&&anchors(text,['entry','enter','archive','schedule','إدخال','أرشفة','تنسيق المقابلات','تحديث ملفات']).length>=2&&!['screen','screening','source candidates','job offers','فرز','استقطاب','عروض وظيفية'].some(x=>has(text,x))){chosenLevel='assistant';intent='coordinator';}
+ const hcRoutine=['entry','enter','archive','schedule','HRIS','employee details','employee records','salary certificates','certificates confirming pay','attendance exceptions','إدخال','أرشفة','تنسيق المقابلات','تحديث ملفات','تحديث بيانات الموظفين','شهادات الراتب','استثناءات الحضور'];
+ const hcSpecialist=['screen','screening','screen applicants','source candidates','job offers','offer letters','فرز','استقطاب','السير الذاتية','عروض وظيفية','عروض العمل'];
+ if(family.id==='hc'&&!['manager','director','executive'].includes(chosenLevel)&&intent!=='payroll'&&roles.some(r=>r.intent==='coordinator'&&score(text,r.taskKeywords)>0)&&new Set(detection.interpretation.clauses.filter(clause=>anchors(clause,hcRoutine).length).map(canonicalDuty)).size>=2&&!hcSpecialist.some(x=>has(text,x))){chosenLevel='assistant';intent='coordinator';}
  if(['admin','finance'].includes(family.id)&&['specialist','assistant'].includes(chosenLevel)&&roles.some(r=>r.intent===intent&&r.level==='assistant'))chosenLevel='assistant';
  if(family.id==='securitySafety'&&intent==='guard'&&!['manager','director','executive','supervisor'].includes(chosenLevel))chosenLevel='assistant';
  if(family.id==='securitySafety'&&chosenLevel==='specialist')intent='safety';

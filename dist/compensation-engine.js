@@ -65,7 +65,7 @@ function evaluate(raw){
 function privacyText(value){return String(value??'').normalize('NFKC').replace(/[\u200B-\u200F\u202A-\u202E\u2060-\u2069\uFEFF]/g,'').replace(/[\u0660-\u0669\u06F0-\u06F9]/g,c=>String(c.charCodeAt(0)-(c<='\u0669'?0x660:0x6f0)));}
 const givenNames=new Set(('mohammed muhammad mohammad mohammed ahmed ahmad mahmoud abdullah abdallah abdulrahman abdulaziz ibrahim faisal fares faris khalid khaled salman sultan omar omer yousef yusuf amir sami samer majed naif meshal turki nasser salem hassan hussein ali adeeb fatima fatimah aisha aishah maryam mariam noura nora sara sarah reem huda maha hind john jane james mary robert david michael william joseph charles elizabeth jennifer linda patricia محمد احمد أحمد محمود عبدالله عبدالرحمن عبدالعزيز ابراهيم إبراهيم فيصل فارس خالد سلمان سلطان عمر يوسف امير أمير سامي سامر ماجد نايف مشعل تركي ناصر سالم حسين علي أديب اديب فاطمة عائشة مريم نورة سارة ريم هدى مها هند').split(' '));
 function privacyPattern(value,{identifier=false}={}){
- const text=privacyText(value);
+ const text=privacyText(value).trim();
  if(identifier&&/^5\d{8}$/.test(text))return 'mobile';
  if(identifier&&(/^[A-Z]{1,2}\d{7,8}$/i.test(text)||/PASSPORT/i.test(text)))return 'passport';
  const jobWords=new Set('pos position senior junior accountant analyst grade dept department finance hr role manager officer specialist assistant clerk coordinator supervisor director executive engineer technician staff employee emp'.split(' '));
@@ -122,6 +122,8 @@ function evaluateRoster(raw){
 }
 // Strict, small CSV contract: fixed columns avoid silently dropping employee attributes.
 const rosterColumns=['id','currentSalary','progressionEligible','progressionEvidence','regime','housingMonthly','otherMonthly','contributoryExtraMonthly','medicalAnnual','serviceYears','sanedEligible','eosWageMonthly'];
+const rosterNumericColumns=new Set(['currentSalary','housingMonthly','otherMonthly','contributoryExtraMonthly','medicalAnnual','serviceYears','eosWageMonthly']);
+const rosterNumber=value=>privacyText(value).replace(/[,٬]/g,'').replace(/٫/g,'.');
 function parseRoster(text,rawPolicy){
  if(String(text).length>250000)throw Error('Roster CSV exceeds 250 KB');
  const policy=idPolicy(rawPolicy);
@@ -130,7 +132,21 @@ function parseRoster(text,rawPolicy){
  const headers=cellsOf(headerLine).map(x=>rosterColumns.find(c=>c.toLowerCase()===x.toLowerCase())||x);
  if(!headers.includes('id')||!headers.includes('currentSalary')||headers.some(x=>!rosterColumns.includes(x))||new Set(headers).size!==headers.length)throw Error('Use the roster CSV template headers; names, email and national IDs are not needed');
  if(lines.length<1||lines.length>500)throw Error('Roster needs 1–500 rows');
- return lines.map((line,index)=>{const rowNumber=index+2,cells=cellsOf(line);if(cells.length!==headers.length)throw Error('Invalid roster CSV row '+rowNumber);const v=Object.fromEntries(headers.map((h,i)=>[h,cells[i]]));for(const h of headers)screenRosterValue(v[h],rowNumber,{identifier:h==='id',csv:true});v.id=validatedId(v.id,rowNumber,policy,true);const bool=k=>{if(!['','true','false'].includes(v[k]??''))throw Error('Use true or false in '+k+' at row '+rowNumber);return v[k]==='true';};const row={id:v.id,currentSalary:privacyText(v.currentSalary).replace(/[,٬]/g,''),progressionEligible:bool('progressionEligible'),progressionEvidence:v.progressionEvidence||''};if(v.regime)row.employerCosts={regime:v.regime,housingMonthly:v.housingMonthly,otherMonthly:v.otherMonthly,contributoryExtraMonthly:v.contributoryExtraMonthly,medicalAnnual:v.medicalAnnual,serviceYears:v.serviceYears,sanedEligible:bool('sanedEligible'),eosWageMonthly:v.eosWageMonthly};return row;});
+ return lines.map((line,index)=>{
+  const rowNumber=index+2,cells=cellsOf(line);if(cells.length!==headers.length)throw Error('Invalid roster CSV row '+rowNumber);
+  const v=Object.fromEntries(headers.map((h,i)=>[h,cells[i]]));
+  // Screen the original cells before normalizing numeric fields for arithmetic.
+  for(const h of headers)screenRosterValue(v[h],rowNumber,{identifier:h==='id',csv:true});
+  v.id=validatedId(v.id,rowNumber,policy,true);
+  for(const h of headers)if(rosterNumericColumns.has(h))v[h]=rosterNumber(v[h]);
+  const bool=k=>{if(!['','true','false'].includes(v[k]??''))throw Error('Use true or false in '+k+' at row '+rowNumber);return v[k]==='true';};
+  const row={id:v.id,currentSalary:v.currentSalary,progressionEligible:bool('progressionEligible'),progressionEvidence:v.progressionEvidence||''};
+  // Only entered columns override the verified scenario defaults; missing CSV
+  // components must not become undefined or silently discard provided costs.
+  const costHeaders=headers.filter(h=>employerCostColumns.includes(h)&&(h!=='regime'||v[h]!==''));
+  if(costHeaders.length)row.employerCosts=Object.fromEntries(costHeaders.map(h=>[h,h==='sanedEligible'?bool(h):v[h]]));
+  return row;
+ });
 }
 const example={role:'Human Capital Projects & Operations Manager',grade:'G11 · Manager',headcount:1,currency:'SAR',period:'monthly',bandSource:'Illustrative organization band — replace with the approved Total Rewards source before use',bandMin:24000,bandMid:30000,bandMax:36000,targetCompaPercent:100,currentSalary:'',oncostPercent:15,allowancesPercent:'',progressionEnabled:false};
  root.MiyarCompensation={evaluate,example,spreadReference,saudiCost,parseRoster,rosterColumns,saudiRatePolicy,privacyPattern};if(typeof module!=='undefined')module.exports=root.MiyarCompensation;

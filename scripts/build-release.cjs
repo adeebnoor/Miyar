@@ -14,7 +14,7 @@ const lazyCode=esbuild.transformSync(lazyScripts.map(f=>fs.readFileSync('dist/'+
 const loader=fs.readFileSync('dist/lazy-workspace.js','utf8').replaceAll('__WORKSPACE_ASSET__','miyar-workspace-'+buildId+'.js');
 const js=esbuild.transformSync(fs.readFileSync('dist/release-config.js','utf8')+'\n'+loader+'\n'+scripts.filter(f=>!lazyScripts.includes(f)).map(f=>fs.readFileSync('dist/'+f,'utf8')).join('\n;\n'),{minify:true,target:'es2020',loader:'js',legalComments:'none',charset:'utf8'}).code;
 const css=esbuild.transformSync(styles.map(f=>fs.readFileSync('dist/'+f,'utf8')).join('\n'),{minify:true,loader:'css',legalComments:'none',charset:'utf8'}).code;
-for(const f of fs.readdirSync('dist'))if(/^miyar-(?:trust-)?[a-f0-9]+\.(js|css)$/.test(f))fs.unlinkSync('dist/'+f);
+for(const f of fs.readdirSync('dist'))if(/^miyar-(?:(?:trust|workspace)-)?[a-f0-9]+\.(js|css)$/.test(f))fs.unlinkSync('dist/'+f);
 const trustJs=esbuild.transformSync(fs.readFileSync('dist/release-config.js','utf8')+'\n'+fs.readFileSync('dist/config.js','utf8')+'\n'+fs.readFileSync('dist/trust.js','utf8'),{minify:true,target:'es2020',loader:'js',legalComments:'none',charset:'utf8'}).code;
 fs.writeFileSync('dist/miyar-trust-'+buildId+'.js',trustJs);fs.writeFileSync('dist/miyar-trust-'+buildId+'.css',fs.readFileSync('dist/trust.css','utf8'));
 const trust=fs.readFileSync('web/trust.template.html','utf8').replace(/<script defer[^>]+><\/script>/g,'').replace('./trust.css','./miyar-trust-'+buildId+'.css').replace('</head>','<script defer src="./miyar-trust-'+buildId+'.js"></script></head>');fs.writeFileSync('dist/trust.html',trust);
