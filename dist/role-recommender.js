@@ -119,7 +119,7 @@ function analyzeLevel(input={}){
  return {id:selected,level:selected,evidenceCeiling,directReports,evidence,scores:{},leadershipConflict,levelExceedsEvidence,levelWarning,requestedLevel:requested,rationaleAr:'المستوى مرتبط بأدلة قيادة الأفراد والاعتماد ونطاق العمل؛ المسمى وحده لا يثبت الصلاحية.',rationaleEn:'Level is bounded by evidence of people leadership, approval and work scope; a title alone does not establish authority. Final grade requires approved evaluation.'};
 }
 function level(input={}){return analyzeLevel(input).level;}
-const sharedWords=new Set(['pipeline','engineer','engineers','security','system','systems','data','team','project','نظام','بيانات','فريق','cost','costs','budget','forecast','report','reports','variance','تكلفة','تكاليف','ميزانية','موازنة','انحرافات','تقرير','تقارير'].map(normalize));
+const sharedWords=new Set(['pipeline','engineer','engineers','security','system','systems','data','team','project','meeting','meetings','objective','objectives','اجتماع','اجتماعات','هدف','أهداف','نظام','بيانات','فريق','cost','costs','budget','forecast','report','reports','variance','تكلفة','تكاليف','ميزانية','موازنة','انحرافات','تقرير','تقارير'].map(normalize));
 const domainTermCache=new Map();
 function domainTerms(f){if(!domainTermCache.has(f.id))domainTermCache.set(f.id,[...new Set([...f.terms,...catalog.roles.filter(r=>r.family===f.id).flatMap(r=>r.taskKeywords)].map(normalize))].filter(x=>!sharedWords.has(x)&&!(f.id==='investment'&&['استحواذ','اندماج'].includes(x))));return domainTermCache.get(f.id);}
 const dutyVerbForms={يختبر:'اختبار',يوثق:'توثيق',يسوي:'تسوية',يراجع:'مراجعة',يطور:'تطوير',ينسق:'تنسيق',يحدث:'تحديث',يحلل:'تحليل',يدرب:'تدريب',يخطط:'تخطيط',يقيم:'تقييم',يعد:'اعداد',يصمم:'تصميم'};

@@ -45,7 +45,9 @@ for(const [department,responsibilities,title]of [
 
 for(const [department,responsibilities]of [
  ['الشؤون الإدارية','مراجعة الأهداف؛ توثيق النتائج'],
- ['Finance','Review team objectives; document meetings; prepare management reports']
+ ['Finance','Review team objectives; document meetings; prepare management reports'],
+ ['Finance','Arrange meetings; attend meetings'],
+ ['الشؤون الإدارية','مراجعة الأهداف؛ توثيق الأهداف']
 ])test('a generic stakeholder/activity word cannot establish a department conflict: '+department,()=>{
  const input={department,responsibilities,strategyObjective:'Improve department service delivery'},r=R.recommend(input);
  assert.equal(r?.status,'needs-confirmation');assert.equal(r.detection.severeConflict,false);
