@@ -1,6 +1,13 @@
 const test=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path');
 const {JSDOM,VirtualConsole}=require('jsdom'),dir=path.join(__dirname,'../dist');
 const settle=()=>new Promise(r=>setImmediate(r));
+async function waitFor(predicate,label){
+ const deadline=Date.now()+3000;
+ while(!predicate()){
+  assert.ok(Date.now()<deadline,'Timed out waiting for '+label);
+  await new Promise(r=>setTimeout(r,5));
+ }
+}
 async function app(locale='ar',route=''){
  const errors=[],vc=new VirtualConsole();vc.on('jsdomError',e=>errors.push(e));
  const dom=new JSDOM(fs.readFileSync(path.join(dir,'index.html'),'utf8'),{url:'https://example.test/Miyar/'+route,runScripts:'outside-only',pretendToBeVisual:true,virtualConsole:vc});const w=dom.window;require('./local-workspace.cjs')(w);
@@ -18,15 +25,15 @@ test('public entrance uses one guided objective, preserves a direct known-role p
   const direct=form.querySelector('a[href="#enterprise/create"]');assert.ok(direct);
   objective.value=lang==='ar'?'رفع اعتمادية الأنظمة الميكانيكية وتقليل توقف المعدات عبر الصيانة الوقائية وتحسين إجراءات التشغيل':'Improve mechanical system reliability and reduce equipment downtime through preventive maintenance and better operating procedures';
   form.dispatchEvent(new a.w.Event('submit',{bubbles:true,cancelable:true}));
-  await new Promise(r=>setTimeout(r,25));
+  await waitFor(()=>a.w.location.hash==='#demo'&&a.$('view-home').hidden&&!a.$('view-demo').hidden,'guided demo navigation');
   assert.equal(a.w.location.hash,'#demo');assert.equal(a.$('view-home').hidden,true);assert.equal(a.$('view-demo').hidden,false);
   assert.match(a.$('objective').value,lang==='ar'?/اعتمادية الأنظمة الميكانيكية/:/mechanical system reliability/i);
-  await new Promise(r=>setTimeout(r,25));
+  await waitFor(()=>/214401/.test(a.$('result-content').textContent),'guided occupation result');
   assert.match(a.$('result-content').textContent,/214401/);
   const nav=a.w.document.querySelector('[data-strategy-nav]');assert.ok(nav);assert.equal(nav.getAttribute('href'),'#demo');assert.equal(nav.getAttribute('aria-current'),'page');
-  a.w.location.hash='home';await new Promise(r=>setTimeout(r,5));assert.equal(a.$('view-home').hidden,false);
+  a.w.location.hash='home';await waitFor(()=>!a.$('view-home').hidden,'home navigation');assert.equal(a.$('view-home').hidden,false);
   a.$('lp-language').click();await settle();
-  const sample=a.$('view-home').querySelector('[data-lp-demo]');assert.ok(sample);sample.click();await settle();
+  const sample=a.$('view-home').querySelector('[data-lp-demo]');assert.ok(sample);sample.click();await waitFor(()=>a.w.location.hash==='#enterprise/create'&&a.$('view-home').hidden&&a.w.document.querySelector('[data-field=occupationCode]')?.value==='251204','ready position example');
   assert.equal(a.w.location.hash,'#enterprise/create');assert.equal(a.$('view-home').hidden,true);assert.equal(a.w.document.querySelector('.app-shell').hidden,false);
   assert.equal(a.w.document.querySelector('[data-field=occupationCode]').value,'251204');
   assert.equal(a.w.document.querySelectorAll('[data-matrix-key=kpis][data-matrix-field=target]').length,3);
@@ -39,6 +46,6 @@ test('deep links enter the correct surface and the strategic engine stays discov
   const strategy=a.w.document.querySelector('[data-strategy-nav]');assert.ok(strategy);assert.equal(strategy.getAttribute('href'),'#demo');
   if(route==='#demo'){assert.equal(a.$('view-demo').hidden,false);assert.equal(strategy.getAttribute('aria-current'),'page');}
   if(route.endsWith('overview')){assert.deepEqual([...a.w.document.querySelectorAll('.svc-metrics strong')].map(x=>x.textContent),['٠','٠','٠','٠']);assert.ok(a.$('svc-import-file').closest('.miyar-file-control'));assert.match(a.$('svc-file-name').textContent,/لم يُختر/);assert.equal(a.$('svc-account'),null);}
-  a.w.location.hash='home';await new Promise(r=>setTimeout(r,5));assert.equal(a.$('view-home').hidden,false);assert.deepEqual(a.errors,[]);
+  a.w.location.hash='home';await waitFor(()=>!a.$('view-home').hidden,'home navigation');assert.equal(a.$('view-home').hidden,false);assert.deepEqual(a.errors,[]);
  }finally{a.dom.window.close();}}
 });

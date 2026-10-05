@@ -13,7 +13,7 @@ permissions:
 concurrency:
   # Retire the old group held by a cancelled, runnerless release attempt.
   # Continue serializing tests per ref and cancelling superseded attempts.
-  group: release-tests-stable-${{ github.ref }}
+  group: release-tests-resilient-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
@@ -69,7 +69,9 @@ jobs:
           path: test-results/local-semantic-resources.json
           retention-days: 14
   ui-test:
-    runs-on: ubuntu-22.04
+    # Short Node-only checks can use the separately provisioned container pool.
+    runs-on: ubuntu-slim
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
       - name: Set up Node
@@ -144,11 +146,12 @@ jobs:
 
   release-checks:
     name: All release checks passed
-    # Evaluate failures, but do not schedule a new job after cancellation.
-    if: ${{ !cancelled() }}
+    # Evaluate test failures, but finish promptly when a runner never started.
+    if: ${{ !cancelled() && needs.server-test.result != 'cancelled' && needs.ui-test.result != 'cancelled' && needs.e2e-test.result != 'cancelled' }}
     needs: [server-test, ui-test, e2e-test]
     permissions: {}
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-slim
+    timeout-minutes: 15
     steps:
       - name: Require every release test gate to succeed
         env:
