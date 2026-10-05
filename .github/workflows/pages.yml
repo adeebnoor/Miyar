@@ -13,12 +13,12 @@ permissions:
 concurrency:
   # Retire the old group held by a cancelled, runnerless release attempt.
   # Continue serializing tests per ref and cancelling superseded attempts.
-  group: release-tests-${{ github.ref }}
+  group: release-tests-ubuntu22-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
   server-test:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     services:
       postgres:
         image: postgres:17
@@ -67,7 +67,7 @@ jobs:
           path: test-results/local-semantic-resources.json
           retention-days: 14
   ui-test:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@v4
       - name: Set up Node
@@ -84,7 +84,7 @@ jobs:
       - name: Test classification, position workflow and interface
         run: npm test
   e2e-test:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@v4
       - name: Set up Node
@@ -145,7 +145,7 @@ jobs:
     if: always()
     needs: [server-test, ui-test, e2e-test]
     permissions: {}
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     steps:
       - name: Require every release test gate to succeed
         env:
