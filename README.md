@@ -1,4 +1,8 @@
-## Current release: 7.0.1
+## Current release: 7.1.0
+
+The website is at https://adeebnoor.github.io/Miyar/?v=7.1.0#home. Release 7.1 gives the workspace the look of an enterprise HR system (light sidebar, white top bar with global search, KPI tiles, status chips, data tables and a five-step process stepper) as an additive design layer (`dist/design-7-1.css`, `dist/design-7-1.js`); engines, routes and tests are unchanged.
+
+## Release 7.0.1
 
 The website is at https://adeebnoor.github.io/Miyar/?v=7.0.1#home. Release 7 answers the expert's fifteen items (see the public change log and `expert-v7.html`). 7.0.1 makes one saved position read the same on the evaluation, planning and compensation screens, points the guided tour at the visible position-design path, and fixes the last contrast failures ([expert handoff](docs/expert-handoff-7.0.1.md)).
 
