@@ -14,8 +14,12 @@ for(const locale of ['ar','en'])test('guided position suggests source-linked fie
  await expect(page.locator('[data-field=qualifications]')).toHaveValue(ar?/هندسة البرمجيات|البرمجة/:/IT|computer science/);
  await expect(page.locator('#ent-guided-status')).toContainText(ar?'قابلة للتعديل':'Editable');
  await page.locator('#ent-guided-proposals > details > summary').click();await expect(page.locator('#ent-guided-proposals')).toContainText('SSCO 2019');await expect(page.locator('#ent-guided-proposals')).toContainText('251204');await expect(page.locator('#ent-guided-proposals')).toContainText('63');
- for(const selector of ['[data-field=salaryGrade]','[data-number=annualCost]','[data-number=directReports]','[data-field=authority]'])await expect(page.locator(selector)).toHaveValue('');
- for(const key of ['baseline','target','duration'])await expect(page.locator('[data-matrix-key=kpis][data-matrix-field='+key+']')).toHaveValue('');
+ for(const selector of ['[data-field=salaryGrade]','[data-number=annualCost]','[data-number=directReports]'])await expect(page.locator(selector)).toHaveValue('');
+ // 7.2: authority, budget and alternatives are inferred from the need and the evidenced level, and stay tagged until edited.
+ for(const key of ['authority','budget','alternatives']){await expect(page.locator('[data-field='+key+']')).not.toHaveValue('');await expect(page.locator('label.ent-suggested:has([data-field='+key+']) .ent-suggested-tag')).toHaveText(ar?'مقترح — راجعه':'Proposed — review it');}
+ await expect(page.locator('#ent-guided-proposals')).toContainText(ar?'مستنتج من نص الحاجة':'Inferred from the need');
+ for(const key of ['baseline','target','duration'])await expect(page.locator('[data-matrix-key=kpis][data-matrix-field='+key+']').first()).toHaveValue('');
+ await expect(page.locator('[data-matrix-key=kpis][data-matrix-field=baseline]').nth(1)).toHaveValue('');
  await page.locator('[data-field=title]').fill(manualTitle);
  await page.locator('[data-field=businessNeed]').fill(ar?'ضبط إقفال الحسابات المالية':'Close financial accounts');
  await page.locator('[data-field=responsibilities]').fill(ar?'إعداد القيود المحاسبية؛ تسوية الحسابات البنكية؛ مراجعة القوائم المالية':'Prepare accounting entries; reconcile bank accounts; review financial statements');
