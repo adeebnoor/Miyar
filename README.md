@@ -1,4 +1,8 @@
-## Current release: 7.1.0
+## Current release: 7.2.0
+
+The website is at https://adeebnoor.github.io/Miyar/?v=7.2.0#home. Release 7.2 answers the external review ([response](docs/review-response-7.2.md)): the suggestion engine now infers alternatives, supervision scope, budget scope, authority, experience and two KPIs from the need, every inferred value is tagged “Proposed — review it”, all fifteen core fields explain why they are asked, and **Quick mode** (`#enterprise/quick`) reaches a defensible draft in three screens.
+
+## Release 7.1.0
 
 The website is at https://adeebnoor.github.io/Miyar/?v=7.1.0#home. Release 7.1 gives the workspace the look of an enterprise HR system (light sidebar, white top bar with global search, KPI tiles, status chips, data tables and a five-step process stepper) as an additive design layer (`dist/design-7-1.css`, `dist/design-7-1.js`); engines, routes and tests are unchanged.
 
