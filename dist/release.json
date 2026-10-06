@@ -1,8 +1,9 @@
 {
-  "version": "7.1.0",
-  "buildId": "55b811ad92e8c1a1",
+  "version": "7.2.0",
+  "buildId": "80473c0277ecaa58",
   "releasedAt": "2026-10-05",
   "changes": [
+    "7.2.0: Deeper proxy fill — alternatives, supervision scope, budget scope, authority, experience and two KPIs inferred from the need and tagged 'Proposed — review it'; a why line on all 15 core fields; Quick mode: three screens to a defensible draft",
     "7.1.0: Enterprise HR-system design — light sidebar, white top bar with global search, KPI tiles, status chips, data tables and a five-step process stepper on every working screen",
     "7.0.1: One position label on evaluation, planning and compensation; guided tour follows the visible position-design path; contrast fixes",
     "V7-01 / V7-11: Persist position revision and grade, select positions in Compensation and restore evaluation inputs",
@@ -56,6 +57,7 @@
       "hr-service-guide.js",
       "expert-review-6.js",
       "design-7-1.js",
+      "quick-mode-7-2.js",
       "audit-improvements.js"
     ],
     "styles": [
@@ -76,6 +78,7 @@
       "expert-review-5-2.css",
       "whats-new-6.css",
       "hr-service-guide.css",
+      "quick-mode-7-2.css",
       "audit-improvements.css",
       "expert-landing.css",
       "expert-workspace.css",

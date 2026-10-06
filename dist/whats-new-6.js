@@ -9,6 +9,7 @@ const SEEN='miyar-whats-new-'+RELEASE_MINOR,VISITED='miyar-new-badges-6',TOUR='m
 const store={get(k,s=localStorage){try{return s.getItem(k);}catch{return null;}},set(k,v,s=localStorage){try{s.setItem(k,v);}catch{}},del(k,s=localStorage){try{s.removeItem(k);}catch{}}};
 const version=()=>window.MIYAR_RELEASE?.version||'6.0';
 const ITEMS=[
+ ['#enterprise/quick','الوضع السريع: ثلاث شاشات تنتهي بمسودة قابلة للدفاع في نحو 20 دقيقة، مع تعبئة مستنتجة موسومة «مقترح — راجعه».','Quick mode: three screens ending in a defensible draft in about 20 minutes, with inferred values tagged “Proposed — review it”.'],
  ['#enterprise/overview','واجهة جديدة بأسلوب أنظمة الموارد البشرية العالمية: بحث عام، مؤشرات، ومسار خماسي الخطوات في كل شاشة.','A new interface in the style of global HR systems: global search, KPI tiles and a five-step path on every screen.'],
  ['#demo','ترشيح موحّد للمهن من المهام، مع توضيح الهدف والسؤال عند غموض الدور.','Unified task-to-occupation matching with goal clarification and questions for ambiguous roles.'],
  ['#enterprise/create','ابدأ بوصف الحاجة؛ تعبئة مقترحة قابلة للتعديل وإرشاد يوضح سبب كل معلومة، ثم التفاصيل عند الحاجة.','Start with the need: editable suggestions, guidance explaining why information matters, and details when needed.'],
@@ -16,7 +17,7 @@ const ITEMS=[
  ['#enterprise/compensation','تفصيل تكلفة صاحب العمل ومصادر التأمينات، وفحص العدالة وانضغاط الرواتب.','Employer cost and social-insurance sources, with pay equity and compression checks.'],
  ['#enterprise/manpower','تخطيط يرتبط بتكلفة المنصب ويأخذ مدة التعيين والتسرب في الحسبان.','Planning linked to position costs, hiring lead time and attrition.']
 ];
-const BADGES={manpower:'[data-manpower-nav]',compensation:'[data-comp-nav]',grading:'.nav-link[data-enterprise-open="grading"]',connection:'.nav-link[data-enterprise-open="connection"]',tour:'.nav-link[data-enterprise-open="tour"]'};
+const BADGES={quick:'.nav-link[data-enterprise-open="quick"]',manpower:'[data-manpower-nav]',compensation:'[data-comp-nav]',grading:'.nav-link[data-enterprise-open="grading"]',connection:'.nav-link[data-enterprise-open="connection"]',tour:'.nav-link[data-enterprise-open="tour"]'};
 const STEPS=[
  ['#demo','ابحث عن الدور المناسب','Find the right role','اختر سيناريو مثل «كفاءة التشغيل» ثم اضغط «ابحث / حلّل الاحتياج». يظهر ترشيح بمرجع مهني وسبب واضح.','Pick a scenario such as “Operational efficiency”, then press “Search / analyze the need”. You get a recommended role with its occupation reference and rationale.'],
  ['#enterprise/create','تصميم المنصب','Position design','اضغط «مثال توضيحي» ثم «تطبيق المقترحات على الحقول المتاحة»، ثم «حفظ المسودة محليًا» لتستخدم المنصب في التقييم. حزمة الوصف الموسعة اختيارية أسفل الحقول.','Press “Load example”, then “Apply suggestions to available fields”, then “Save local draft” so the position can be evaluated. The extended package below the fields is optional.'],

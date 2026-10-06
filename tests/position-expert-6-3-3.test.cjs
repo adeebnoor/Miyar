@@ -148,7 +148,8 @@ test('guided positions start with four source inputs, explain why and safely upd
   write('businessNeed','Deliver internal software services');write('responsibilities','Develop software features; perform code review; run automated tests');await guidedWait();
   let draft=a.w.MiyarEnterprise.draftContent();assert.equal(draft.occupationCode,'251204');assert.equal(draft.educationLevel,'6');assert.ok(draft.educationFieldCode);assert.ok(draft.jobFamily);
   assert.match(a.$('guided-proposals').textContent,/SSCO 2019/);assert.match(a.$('guided-proposals').textContent,/251204/);assert.match(a.$('guided-proposals').textContent,/63/);
-  for(const key of ['salaryGrade','salaryMin','salaryMax','annualCost','evaluatedPositionId','evaluatedPositionRevision','evaluationCommitteeJSON','authority','budget'])assert.equal(draft[key],undefined);
+  for(const key of ['salaryGrade','salaryMin','salaryMax','annualCost','evaluatedPositionId','evaluatedPositionRevision','evaluationCommitteeJSON'])assert.equal(draft[key],undefined);
+  for(const key of ['authority','budget'])assert.ok(String(draft[key]||'').length>20,key+' is now inferred and tagged for review');
   assert.equal(draft.kpis[0].baseline,'');assert.equal(draft.kpis[0].target,'');assert.equal(draft.kpis[0].duration,'');assert.throws(()=>C.validatePosition(draft,{submit:true}),/KPI/);
   const help=a.w.document.querySelector('[data-number="headcount"]');assert.ok(help.getAttribute('aria-describedby').includes('ent-help-headcount'));assert.ok(a.$('help-headcount').textContent.length>40);
   write('businessNeed','Close financial accounts');write('responsibilities','Prepare accounting entries; reconcile bank accounts; review financial statements');await guidedWait();

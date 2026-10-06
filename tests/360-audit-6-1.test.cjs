@@ -13,7 +13,7 @@ async function app(route='#home',locale='en'){
  return {w,dom,errors,d:w.document};
 }
 const publicViews=['home','demo','position','value','benchmarks','journey','catalog'];
-const enterpriseTabs=['overview','create','workspace','reference','intelligence','bulk','grading','readiness','evidence','market','connection','tour','review','business','manpower','compensation'];
+const enterpriseTabs=['overview','quick','create','workspace','reference','intelligence','bulk','grading','readiness','evidence','market','connection','tour','review','business','manpower','compensation'];
 function checkLinks(d){
  const allowed=new Set([...publicViews,...enterpriseTabs.map(x=>'enterprise/'+x),'home/capabilities','home/governance','home/services','landing-main','main']);
  for(const a of d.querySelectorAll('a[href]')){
