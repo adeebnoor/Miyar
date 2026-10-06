@@ -1,0 +1,173 @@
+/* Miyar 7.1 — enterprise HR-system skin (Workday-like): one accent, light sidebar, white top bar,
+   KPI tiles, status chips, data tables and a five-step process stepper. Additive layer: it restyles
+   the existing shell and components; engines, routes and selectors are unchanged. */
+:root{
+  --ds-accent:#0b5cd5;--ds-accent-ink:#0a4db3;--ds-accent-soft:#e8f0fe;--ds-accent-line:#b9d0f7;
+  --ds-ink:#1f2a37;--ds-ink-2:#3d4a5c;--ds-muted:#5b6778;--ds-line:#dfe5ec;--ds-line-strong:#c9d3de;
+  --ds-paper:#f4f6f9;--ds-surface:#fff;--ds-navy:#0f2a47;
+  --ds-ok:#0f7b4f;--ds-ok-soft:#e3f5ec;--ds-warn:#8a5a0b;--ds-warn-soft:#fff4df;--ds-info-soft:#eef3f9;
+  --ds-shadow:0 1px 2px rgb(16 30 50 / 6%),0 4px 14px rgb(16 30 50 / 5%);
+  --ds-radius:10px;
+  /* Re-point the legacy tokens so every CTA, hero and tint follows the new accent. */
+  --green:var(--ds-accent);--green-soft:var(--ds-accent-soft);--lime:#9cc4ff;--navy:var(--ds-navy);
+  --ink:var(--ds-ink);--muted:var(--ds-muted);--paper:var(--ds-paper);--line:var(--ds-line);--radius:12px;
+  --ent-line:var(--ds-line);--surface-shadow:var(--ds-shadow);--lp-dark:var(--ds-navy);
+}
+html[lang=en] body,html[lang=en] .brand-type small{font-family:Inter,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif}
+body{background:var(--ds-paper);color:var(--ds-ink)}
+.workspace{background:var(--ds-paper)}
+
+/* ---------- Sidebar: light, grouped, blue active pill ---------- */
+.sidebar,.app-shell .sidebar{background:var(--ds-surface);color:var(--ds-ink);border-inline-end:1px solid var(--ds-line);padding:18px 14px 16px;box-shadow:none}
+.sidebar .brand{padding:6px 10px 18px;border-bottom:1px solid var(--ds-line);width:auto;margin-bottom:10px}
+.sidebar .brand-mark{border-color:var(--ds-accent)}
+.sidebar .brand-mark i{background:var(--ds-accent)}
+.sidebar .brand-type{color:var(--ds-ink);font-size:26px}
+.sidebar .brand-type small,.sidebar .sidebar-label,.sidebar .nav-group-label{color:var(--ds-muted)}
+.sidebar .sidebar-label{font-size:11px;letter-spacing:.08em;text-transform:uppercase;margin:6px 10px 10px}
+.sidebar .nav-group-label{font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:#7b8794;margin-top:14px;padding:4px 10px}
+.sidebar .nav-link,.sidebar .service-nav-more .nav-link{min-height:40px;padding:9px 10px;gap:10px;color:var(--ds-ink-2);font-size:14px;font-weight:500;border:1px solid transparent;border-radius:8px}
+.sidebar .nav-link svg{color:#7b8794;width:18px;height:18px}
+.sidebar .nav-link:hover{background:var(--ds-info-soft);border-color:transparent;color:var(--ds-ink)}
+.sidebar .nav-link.active,html[dir=ltr] .sidebar .nav-link.active,html[dir=rtl] .sidebar .nav-link.active{background:var(--ds-accent-soft);border-color:transparent;color:var(--ds-accent-ink);box-shadow:none;border-inline-start:3px solid var(--ds-accent)}
+.sidebar .nav-link.active svg{color:var(--ds-accent)}
+.sidebar .nav-link .new-badge{background:var(--ds-accent);color:#fff}
+.sidebar .od-engine-sidebar-link small{color:var(--ds-muted)}
+.sidebar .service-nav-more summary{color:var(--ds-muted);font-size:12px}
+.sidebar-footer,.sidebar-footer p,.sidebar .service-footer-note{color:var(--ds-muted);font-size:12px}
+.sidebar-footer a{color:var(--ds-accent-ink)}
+.sidebar :focus-visible{outline:2px solid var(--ds-accent);outline-offset:2px}
+
+/* ---------- Top bar: compact, white, global search ---------- */
+.topbar{min-height:60px;height:auto;padding:8px 24px;background:var(--ds-surface);border-bottom:1px solid var(--ds-line);gap:14px;position:sticky;top:0;z-index:9}
+.breadcrumb{font-size:13px;color:var(--ds-muted)}
+.breadcrumb strong{color:var(--ds-ink);font-weight:600}
+.topbar .service-account-tag{border-color:var(--ds-line);background:var(--ds-paper);color:var(--ds-ink-2)}
+.ds-search{flex:1 1 280px;max-width:520px;display:flex;align-items:center;gap:8px;min-height:40px;padding:0 12px;border:1px solid var(--ds-line-strong);border-radius:8px;background:var(--ds-paper);color:var(--ds-muted)}
+.ds-search:focus-within{border-color:var(--ds-accent);background:#fff;box-shadow:0 0 0 3px var(--ds-accent-soft)}
+.ds-search svg{width:16px;height:16px;flex-shrink:0}
+.ds-search input{flex:1;min-width:0;border:0;background:transparent;font-size:14px;color:var(--ds-ink);outline:none;padding:6px 0}
+.ds-search input::placeholder{color:#8a95a3}
+.ds-search kbd{font:11px/1 ui-monospace,monospace;color:var(--ds-muted);border:1px solid var(--ds-line);border-radius:4px;padding:3px 5px;background:#fff}
+.version-badge{border-color:var(--ds-accent-line);background:var(--ds-accent-soft);color:var(--ds-accent-ink)}
+.language-button{border:1px solid var(--ds-line-strong);background:#fff;color:var(--ds-ink-2);border-radius:8px}
+.topbar .button-dark,.topbar .button-primary{background:var(--ds-accent);color:#fff;border-radius:8px;min-height:40px;box-shadow:none}
+.topbar .button-dark:hover,.topbar .button-primary:hover{background:var(--ds-accent-ink)}
+
+/* ---------- Buttons, fields, cards ---------- */
+.button{border-radius:8px;min-height:42px;font-weight:600}
+.button-primary,.ent-hero .button-primary,.mx-hero .button-primary,#view-enterprise .button-primary{background:var(--ds-accent);color:#fff;border-color:var(--ds-accent);box-shadow:none}
+.button-primary:hover{background:var(--ds-accent-ink)}
+.button-dark{background:var(--ds-navy);color:#fff}
+.button-outline{background:#fff;border:1px solid var(--ds-line-strong);color:var(--ds-ink-2)}
+.button-outline:hover{background:var(--ds-info-soft);border-color:#aebccb}
+button:focus-visible,a:focus-visible,summary:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{outline:2px solid var(--ds-accent);outline-offset:2px}
+.ent-card,.input-panel,.result-panel,.session-panel,.summary-panel,.mp-page,.cp-page,.od-workbench{border:1px solid var(--ds-line);border-radius:var(--ds-radius);background:#fff;box-shadow:var(--ds-shadow)}
+.ent-card{padding:22px 24px}
+.ent-card h2,.mp-heading h2,.cp-heading h2,.od-workbench-head h2{color:var(--ds-ink);letter-spacing:-.01em}
+.ent-field input,.ent-field select,.ent-field textarea,.mp-field input,.mp-field select,.cp-field input,.cp-field select,.od-input-grid input,.od-input-grid textarea,.od-input-grid select,.input-panel input,.input-panel textarea,.input-panel select,#ent-content input:not([type=checkbox]):not([type=radio]):not([type=file]),#ent-content select,#ent-content textarea{border:1px solid var(--ds-line-strong);border-radius:8px;background:#fff;color:var(--ds-ink);min-height:40px;padding:8px 12px}
+#ent-content input:focus,#ent-content select:focus,#ent-content textarea:focus,.input-panel textarea:focus{border-color:var(--ds-accent);box-shadow:0 0 0 3px var(--ds-accent-soft);outline:none}
+#ent-content [aria-invalid=true]{border-color:#b42318;box-shadow:0 0 0 3px #fde3e1}
+.ent-field,.mp-field,.cp-field{font-weight:600;color:var(--ds-ink-2);font-size:13px}
+.ent-field small,.mp-hint,.cp-hint{font-weight:400;color:var(--ds-muted)}
+.ent-card details,.ent-card summary{border-color:var(--ds-line)}
+.ent-card summary{color:var(--ds-ink);font-weight:600}
+.ent-note,.ent-message,.ent-readiness,.mp-profile-note,.svc-storage,.svc-resume{background:var(--ds-info-soft);border:1px solid #d8e3ef;border-radius:8px;color:var(--ds-ink-2)}
+.ent-message.error,.qa-error{background:#fdecea;border-color:#f5c2bd;color:#8a1f16}
+.page-heading h1,#enterprise-heading{color:var(--ds-ink);font-size:28px;letter-spacing:-.02em}
+.eyebrow,.edition,.ent-service-heading .eyebrow{color:var(--ds-accent-ink);letter-spacing:.08em;font-size:11px;text-transform:uppercase}
+
+/* ---------- Status chips ---------- */
+.ent-pill{border-radius:6px;padding:4px 10px;font-weight:600;font-size:12px;background:#eef1f5;border-color:#d5dce5;color:#3d4a5c;gap:6px}
+.ent-pill::before{content:"";width:7px;height:7px;border-radius:50%;background:#8a95a3;flex-shrink:0}
+.ent-pill.good{background:var(--ds-ok-soft);border-color:#bfe6d1;color:var(--ds-ok)}
+.ent-pill.good::before{background:var(--ds-ok)}
+.ent-pill.warn{background:var(--ds-warn-soft);border-color:#f0d9a8;color:var(--ds-warn)}
+.ent-pill.warn::before{background:#d19a1e}
+
+/* ---------- KPI tiles ---------- */
+.svc-metrics{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:14px}
+.ent-metric,.svc-metrics button{background:#fff;border:1px solid var(--ds-line);border-radius:var(--ds-radius);padding:18px 18px 16px;box-shadow:var(--ds-shadow);text-align:start;display:grid;gap:8px;position:relative;overflow:hidden;cursor:pointer;transition:border-color .15s,transform .15s}
+.svc-metrics button::before{content:"";position:absolute;inset-inline-start:0;top:0;bottom:0;width:4px;background:var(--ds-accent)}
+.svc-metrics button[data-svc-state="draft"]::before{background:#8a95a3}
+.svc-metrics button[data-svc-state="in_review"]::before{background:#d19a1e}
+.svc-metrics button[data-svc-state="active"]::before{background:var(--ds-ok)}
+.svc-metrics button:hover{border-color:var(--ds-accent-line);transform:translateY(-1px)}
+.svc-metrics button span,.ent-metric small{font-size:12px;font-weight:600;color:var(--ds-muted);letter-spacing:.04em;text-transform:uppercase}
+.ent-metric strong,.svc-metrics strong{color:var(--ds-ink);font-size:30px;line-height:1.1;font-weight:700}
+.svc-start h2{color:var(--ds-ink)}
+.svc-kicker{color:var(--ds-accent-ink)}
+.svc-requests button{border:1px solid var(--ds-line);border-radius:8px;background:#fff}
+.svc-requests button:hover{border-color:var(--ds-accent-line);background:var(--ds-info-soft)}
+.svc-empty{border:1px dashed var(--ds-line-strong);border-radius:var(--ds-radius);background:var(--ds-paper)}
+
+/* ---------- Data tables ---------- */
+.ent-table,.ent-grade-breakdown,.mx-requirements-table,.mp-year-table,.cp-table{width:100%;border-collapse:separate;border-spacing:0;font-size:13px}
+.ent-table th,.ent-grade-breakdown th,.mp-year-table th{background:var(--ds-paper);color:var(--ds-muted);font-weight:600;font-size:12px;letter-spacing:.04em;text-transform:uppercase;padding:10px 12px;border-bottom:1px solid var(--ds-line);text-align:start;position:sticky;top:0}
+.ent-table td,.ent-grade-breakdown td,.mp-year-table td{padding:11px 12px;border-bottom:1px solid var(--ds-line);vertical-align:top}
+.ent-table tbody tr:hover td{background:var(--ds-info-soft)}
+.ent-tabs button{border-radius:8px;color:var(--ds-ink-2)}
+.ent-tabs button[aria-current]{background:var(--ds-accent-soft);color:var(--ds-accent-ink)}
+
+/* ---------- Five-step process stepper ---------- */
+.ds-stepper{display:flex;gap:0;list-style:none;margin:0 0 14px;padding:0;counter-reset:ds;background:#fff;border:1px solid var(--ds-line);border-radius:var(--ds-radius);overflow:hidden}
+.ds-stepper li{flex:1;display:flex;align-items:center;gap:10px;padding:10px 14px;font-size:13px;color:var(--ds-muted);border-inline-end:1px solid var(--ds-line);min-width:0}
+.ds-stepper li:last-child{border-inline-end:0}
+.ds-stepper li span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ds-stepper li i{counter-increment:ds;font-style:normal;width:24px;height:24px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;background:#eef1f5;color:var(--ds-muted);flex-shrink:0}
+.ds-stepper li i::before{content:counter(ds)}
+.ds-stepper li[aria-current=step]{background:var(--ds-accent-soft);color:var(--ds-accent-ink);font-weight:600}
+.ds-stepper li[aria-current=step] i{background:var(--ds-accent);color:#fff}
+.ds-stepper li.done{color:var(--ds-ok)}
+.ds-stepper li.done i{background:var(--ds-ok-soft);color:var(--ds-ok)}
+.ds-stepper li.done i::before{content:"✓"}
+.ds-stepper li a{color:inherit;display:flex;align-items:center;gap:10px;min-width:0}
+.ds-context{display:flex;flex-wrap:wrap;align-items:center;gap:6px 10px;font-size:12px;color:var(--ds-muted);margin:0 0 14px}
+.ds-context b{color:var(--ds-ink);font-weight:600}
+.ds-context .ent-pill{margin-inline-start:4px}
+
+/* ---------- Workbench panels, OD, manpower, compensation ---------- */
+.mp-heading>div>span,.cp-heading>div>span,.mp-result-head>div>span,.od-phase{color:var(--ds-accent-ink)}
+.mp-scenario,.cp-metrics>div{border:1px solid var(--ds-line);border-radius:var(--ds-radius);background:#fff;box-shadow:var(--ds-shadow)}
+.mp-scenario.good{border-color:#bfe6d1}.mp-scenario.warn{border-color:#f0d9a8}
+.decision-summary,.od-intro,.ent-hero,.narrative-hero{background:var(--ds-navy);border-radius:var(--ds-radius)}
+.decision-summary strong,.narrative-hero .eyebrow,.narrative-hero h2 span{color:#9cc4ff}
+.mp-bridge li.gap{border-color:var(--ds-accent)}
+.cp-policy,.cp-adjust{border-color:var(--ds-line);background:var(--ds-info-soft)}
+.whats-new{background:var(--ds-accent-soft);border-color:var(--ds-accent-line)}
+#main>.whats-new{border-color:var(--ds-accent-line)}
+.whats-new-link{border-color:var(--ds-accent-line);color:var(--ds-ink)}
+.whats-new-link:hover{border-color:var(--ds-accent)}
+.whats-new-head p,.whats-new-dismiss{color:var(--ds-ink-2)}
+.tour-bar{background:var(--ds-navy)}
+.tour-bar a,.tour-count{color:#9cc4ff}
+
+/* ---------- Landing: same accent and header language as the application ---------- */
+.lp-header,.expert-landing .lp-header{background:#fff;border-bottom:1px solid var(--ds-line)}
+.lp-button.lp-primary,.lp-primary{background:var(--ds-accent)!important;border-color:var(--ds-accent)!important;color:#fff!important}
+.lp-button.lp-primary:hover,.lp-primary:hover{background:var(--ds-accent-ink)!important}
+.lp-eyebrow,.expert-landing .lp-eyebrow{color:var(--ds-accent-ink)}
+.expert-landing .release-phase-number,.expert-landing .lp-start-label>span{color:var(--ds-accent-ink);background:var(--ds-accent-soft)}
+.lp-hero,.expert-landing .lp-hero{background:linear-gradient(160deg,#0f2a47,#143a63)}
+.lp-hero em,.expert-landing .lp-hero em,.expert-landing .lp-hero h1 em{color:#9cc4ff}
+.expert-landing .lp-hero .lp-eyebrow,.lp-hero .lp-eyebrow{color:#9cc4ff}
+
+/* ---------- Mobile ---------- */
+@media(max-width:900px){
+  .sidebar,.app-shell .sidebar{border-inline-end:0;border-bottom:1px solid var(--ds-line);padding:10px 14px}
+  .sidebar .nav-link.active,html[dir=ltr] .sidebar .nav-link.active,html[dir=rtl] .sidebar .nav-link.active{border-inline-start:0;box-shadow:inset 0 -2px var(--ds-accent)}
+  .topbar{position:static;padding:8px 14px}
+  .ds-search{flex-basis:100%;max-width:none;order:9}
+  .ds-stepper{overflow-x:auto}
+  .ds-stepper li{flex:0 0 auto;min-width:120px}
+}
+@media(prefers-reduced-motion:reduce){.svc-metrics button,.button{transition:none}}
+
+/* ---------- Strategic engine scenario cards ---------- */
+.scenario{border:1px solid var(--ds-line);border-radius:var(--ds-radius);background:#fff}
+.scenario:hover{border-color:var(--ds-accent-line)}
+.scenario.selected,.scenario[aria-pressed=true]{background:var(--ds-accent-soft);border-color:var(--ds-accent-line)}
+.scenario .scenario-icon{background:var(--ds-accent-soft);color:var(--ds-accent-ink);border-radius:8px}
+.scenario.selected .scenario-icon{background:var(--ds-accent);color:#fff}
+.context-strip{background:#fff;border:1px solid var(--ds-line);border-radius:var(--ds-radius)}
+.section-index{background:var(--ds-accent-soft);color:var(--ds-accent-ink)}

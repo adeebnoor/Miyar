@@ -47,7 +47,7 @@ test('share card, CDN security headers and release 6 identity are published with
 test('returning users see what is new, New badges, a version badge and can dismiss the panel',async()=>{
  const a=await app('#home');try{
   for(let i=0;i<20&&!a.d.querySelector('.whats-new');i++)await settle();
-  const panel=a.d.querySelector('.whats-new');assert.ok(panel);assert.ok(panel.textContent.includes('What’s new in Miyar '+releaseMinor));assert.equal(panel.querySelectorAll('li').length,5);
+  const panel=a.d.querySelector('.whats-new');assert.ok(panel);assert.ok(panel.textContent.includes('What’s new in Miyar '+releaseMinor));assert.equal(panel.querySelectorAll('li').length,6);
   assert.equal(a.d.querySelector('.lp-header-inner .version-badge').textContent,'v'+releaseMinor);
   panel.querySelector('[data-whats-new-dismiss]').click();await settle();assert.equal(a.d.querySelector('.whats-new'),null);assert.equal(a.w.localStorage.getItem('miyar-whats-new-'+releaseVersion.split('.').slice(0,2).join('.')),'1');
   a.w.location.hash='#enterprise/overview';for(let i=0;i<20&&!a.d.querySelector('.sidebar [data-manpower-nav] .new-badge');i++)await settle();

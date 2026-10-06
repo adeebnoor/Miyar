@@ -9,6 +9,7 @@ const SEEN='miyar-whats-new-'+RELEASE_MINOR,VISITED='miyar-new-badges-6',TOUR='m
 const store={get(k,s=localStorage){try{return s.getItem(k);}catch{return null;}},set(k,v,s=localStorage){try{s.setItem(k,v);}catch{}},del(k,s=localStorage){try{s.removeItem(k);}catch{}}};
 const version=()=>window.MIYAR_RELEASE?.version||'6.0';
 const ITEMS=[
+ ['#enterprise/overview','واجهة جديدة بأسلوب أنظمة الموارد البشرية العالمية: بحث عام، مؤشرات، ومسار خماسي الخطوات في كل شاشة.','A new interface in the style of global HR systems: global search, KPI tiles and a five-step path on every screen.'],
  ['#demo','ترشيح موحّد للمهن من المهام، مع توضيح الهدف والسؤال عند غموض الدور.','Unified task-to-occupation matching with goal clarification and questions for ambiguous roles.'],
  ['#enterprise/create','ابدأ بوصف الحاجة؛ تعبئة مقترحة قابلة للتعديل وإرشاد يوضح سبب كل معلومة، ثم التفاصيل عند الحاجة.','Start with the need: editable suggestions, guidance explaining why information matters, and details when needed.'],
  ['#enterprise/grading','تقييم مرتبط بالمنصب ونسخته، وفحص اتساق العوامل ومراجعات اللجنة.','Evaluation bound to a position and revision, with factor consistency and committee reviews.'],
